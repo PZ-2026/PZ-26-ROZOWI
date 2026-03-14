@@ -1,0 +1,50 @@
+# PLIKI SYSTEMOWE I OGÓLNE
+.DS_Store
+HELP.md
+
+# ŚRODOWISKA PROGRAMISTYCZNE (IDE)
+### IntelliJ IDEA / Android Studio ###
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### Eclipse / STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### VS Code ###
+.vscode/
+
+### NetBeans ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# SYSTEMY BUILDOWANIA (Gradle / Kotlin)
+.gradle/
+.kotlin/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ANDROID (Frontend)
+local.properties
+.externalNativeBuild/
+.cxx/
+captures/
