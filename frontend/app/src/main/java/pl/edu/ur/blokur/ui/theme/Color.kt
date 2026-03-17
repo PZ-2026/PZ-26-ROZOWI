@@ -2,10 +2,20 @@ package pl.edu.ur.blokur.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val PrimaryBlue = Color(0xFF1D4ED8)
+val PrimaryContainer = Color(0xFFDCEAFE)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val SecondaryPurple = Color(0xFF7C3AED)
+val SecondaryContainer = Color(0xFFEDE9FE)
+
+val BackgroundLight = Color(0xFFF5F7FB)
+val SurfaceLight = Color(0xFFFFFFFF)
+val SurfaceVariantLight = Color(0xFFE5E7EB)
+
+val TextPrimary = Color(0xFF111827)
+val TextSecondary = Color(0xFF6B7280)
+
+val SuccessGreen = Color(0xFF059669)
+val WarningOrange = Color(0xFFD97706)
+val ErrorRed = Color(0xFFDC2626)
+val InfoBlue = Color(0xFF2563EB)
