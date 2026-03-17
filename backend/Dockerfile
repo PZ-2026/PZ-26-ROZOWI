@@ -7,7 +7,9 @@ COPY build.gradle* .
 COPY settings.gradle* .
 COPY src src
 
+RUN sed -i 's/\r$//' gradlew
 RUN chmod +x ./gradlew
+
 RUN ./gradlew bootJar -x test
 
 FROM eclipse-temurin:17-jre-alpine
@@ -15,7 +17,6 @@ WORKDIR /app
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Wystawiamy port
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
