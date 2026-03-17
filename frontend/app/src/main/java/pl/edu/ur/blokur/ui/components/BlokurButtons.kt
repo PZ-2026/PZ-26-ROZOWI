@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -27,10 +28,15 @@ fun BlokurPrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(56.dp),
+        modifier = modifier.height(54.dp),
         enabled = enabled,
-        shape = RoundedCornerShape(28.dp),
-        contentPadding = PaddingValues(vertical = 12.dp)
+        shape = RoundedCornerShape(18.dp),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            disabledElevation = 0.dp
+        )
     ) {
         Text(
             text = text,
@@ -48,10 +54,10 @@ fun BlokurSecondaryButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.height(56.dp),
+        modifier = modifier.height(54.dp),
         enabled = enabled,
-        shape = RoundedCornerShape(28.dp),
-        contentPadding = PaddingValues(vertical = 12.dp),
+        shape = RoundedCornerShape(18.dp),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = MaterialTheme.colorScheme.primary
         )
@@ -74,7 +80,11 @@ fun BlokurFab(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(18.dp),
+        elevation = FloatingActionButtonDefaults.elevation(
+            defaultElevation = 4.dp,
+            pressedElevation = 6.dp
+        )
     ) {
         Text(
             text = text,
