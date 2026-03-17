@@ -9,7 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @Composable
 fun BlokurEmptyState(
@@ -35,6 +37,17 @@ fun BlokurEmptyState(
             modifier = Modifier.padding(top = 8.dp),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun BlokurEmptyStatePreview() {
+    BlokurPreviewTheme {
+        BlokurEmptyState(
+            title = "Brak danych",
+            description = "Tutaj pojawi się zawartość po załadowaniu danych."
         )
     }
 }

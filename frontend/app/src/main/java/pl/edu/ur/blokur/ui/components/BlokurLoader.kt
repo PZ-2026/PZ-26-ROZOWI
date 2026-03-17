@@ -7,6 +7,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @Composable
 fun BlokurLoader(
@@ -19,5 +21,13 @@ fun BlokurLoader(
         CircularProgressIndicator(
             color = MaterialTheme.colorScheme.primary
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun BlokurLoaderPreview() {
+    BlokurPreviewTheme {
+        BlokurLoader()
     }
 }

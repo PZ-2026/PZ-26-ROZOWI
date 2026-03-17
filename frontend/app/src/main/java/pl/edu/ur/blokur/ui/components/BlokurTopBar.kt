@@ -6,6 +6,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
+import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,4 +27,12 @@ fun BlokurTopBar(
             titleContentColor = MaterialTheme.colorScheme.onBackground
         )
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun BlokurTopBarPreview() {
+    BlokurPreviewTheme {
+        BlokurTopBar(title = "Profil")
+    }
 }
