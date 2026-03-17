@@ -1,7 +1,6 @@
 package pl.edu.ur.blokur.ui.navigation
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -15,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import pl.edu.ur.blokur.ui.theme.Indigo100
-import pl.edu.ur.blokur.ui.theme.StrokeLight
 
 @Composable
 fun MainScaffold() {
@@ -27,18 +24,13 @@ fun MainScaffold() {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = StrokeLight
-            )
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 0.dp
+                tonalElevation = 8.dp
             ) {
                 bottomNavItems.forEach { item ->
-                    val selected = currentRoute == item.route
                     NavigationBarItem(
-                        selected = selected,
+                        selected = currentRoute == item.route,
                         onClick = {
                             navController.navigate(item.route) {
                                 popUpTo(navController.graph.startDestinationId) {
@@ -51,7 +43,7 @@ fun MainScaffold() {
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = Indigo100,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -64,7 +56,7 @@ fun MainScaffold() {
                         label = {
                             Text(
                                 text = item.label,
-                                style = MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
                     )
