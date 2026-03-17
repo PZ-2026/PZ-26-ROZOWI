@@ -4,14 +4,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
+import pl.edu.ur.blokur.ui.theme.NeutralSurface2
+import pl.edu.ur.blokur.ui.theme.Stroke
 
 @Composable
 fun BlokurTextField(
@@ -20,45 +23,56 @@ fun BlokurTextField(
     label: String,
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null
 ) {
-    OutlinedTextField(
-        value = value,
+    TextField(
+        value         = value,
         onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
+        modifier      = modifier.fillMaxWidth(),
         label = {
             Text(
-                text = label,
+                text  = label,
                 style = MaterialTheme.typography.bodyMedium
             )
         },
-        singleLine = singleLine,
-        enabled = enabled,
-        shape = RoundedCornerShape(18.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-            cursorColor = MaterialTheme.colorScheme.primary,
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+        singleLine   = singleLine,
+        enabled      = enabled,
+        leadingIcon  = leadingIcon,
+        trailingIcon = trailingIcon,
+        shape        = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor        = NeutralSurface2,
+            unfocusedContainerColor      = NeutralSurface2,
+            disabledContainerColor       = Color(0xFFF3F4F6),
+            focusedIndicatorColor        = MaterialTheme.colorScheme.primary,
+            unfocusedIndicatorColor      = Stroke,
+            disabledIndicatorColor       = Stroke,
+            focusedLabelColor            = MaterialTheme.colorScheme.primary,
+            unfocusedLabelColor          = MaterialTheme.colorScheme.onSurfaceVariant,
+            disabledLabelColor           = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            focusedTextColor             = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor           = MaterialTheme.colorScheme.onSurface,
+            disabledTextColor            = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            cursorColor                  = MaterialTheme.colorScheme.primary,
+            focusedLeadingIconColor      = MaterialTheme.colorScheme.primary,
+            unfocusedLeadingIconColor    = MaterialTheme.colorScheme.onSurfaceVariant,
+            focusedTrailingIconColor     = MaterialTheme.colorScheme.primary,
+            unfocusedTrailingIconColor   = MaterialTheme.colorScheme.onSurfaceVariant
         )
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0xFFF8F9FF)
 @Composable
 private fun BlokurTextFieldPreview() {
     BlokurPreviewTheme {
         BlokurTextField(
-            value = "Jan Kowalski",
+            value         = "Jan Kowalski",
             onValueChange = {},
-            label = "Imię i nazwisko",
-            modifier = Modifier.padding(16.dp)
+            label         = "Imię i nazwisko",
+            modifier      = Modifier.padding(16.dp)
         )
     }
 }
