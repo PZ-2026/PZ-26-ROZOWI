@@ -1,5 +1,11 @@
 package pl.edu.ur.blokur.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
@@ -10,7 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @Composable
@@ -55,16 +63,24 @@ fun BlokurAlertDialog(
             )
         },
         confirmButton = {
-            BlokurPrimaryButton(
-                text = confirmText,
-                onClick = onConfirm
-            )
-        },
-        dismissButton = {
-            BlokurSecondaryButton(
-                text = dismissText,
-                onClick = onDismiss
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                BlokurSecondaryButton(
+                    text = dismissText,
+                    onClick = onDismiss
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                BlokurPrimaryButton(
+                    text = confirmText,
+                    onClick = onConfirm
+                )
+            }
         }
     )
 }
