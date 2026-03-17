@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-//import pl.edu.ur.blokur.ui.navigation.MainScaffold
+import pl.edu.ur.blokur.ui.navigation.MainScaffold
 import pl.edu.ur.blokur.ui.theme.BlokurTheme
 
 class MainActivity : ComponentActivity() {
@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BlokurTheme {
-//               MainScaffold()
+               MainScaffold()
             }
         }
     }
