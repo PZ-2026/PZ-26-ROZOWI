@@ -41,7 +41,8 @@ import pl.edu.ur.blokur.data.model.TicketStatus
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TicketsScreen(
-    onNavigateToDetails: (Int) -> Unit = {}
+    onNavigateToDetails: (Int) -> Unit = {},
+    onNavigateToAddTicket: () -> Unit = {}
 ) {
     Scaffold(
         modifier = Modifier
@@ -54,7 +55,7 @@ fun TicketsScreen(
         floatingActionButton = {
             if (MockTickets.currentUser.role != "KONSERWATOR") {
                 BlokurFab(
-                    onClick = { },
+                    onClick = onNavigateToAddTicket,
                     text = "+"
                 )
             }

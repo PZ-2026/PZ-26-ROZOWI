@@ -14,7 +14,7 @@ import pl.edu.ur.blokur.ui.screens.auth.LoginScreen
 import pl.edu.ur.blokur.ui.screens.finances.FinancesScreen
 import pl.edu.ur.blokur.ui.screens.profile.ProfileScreen
 import pl.edu.ur.blokur.ui.screens.tickets.TicketsScreen
-
+import pl.edu.ur.blokur.ui.screens.tickets.CreateTicketScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import pl.edu.ur.blokur.ui.components.GodModeSwitcher
@@ -53,7 +53,16 @@ fun AppNavHost(
             TicketsScreen(
                 onNavigateToDetails = { ticketId ->
                     navController.navigate(AppRoute.TicketDetails(ticketId).route)
+                },
+                onNavigateToAddTicket = {
+                    navController.navigate(AppRoute.AddTicket.route)
                 }
+            )
+        }
+
+        composable(AppRoute.AddTicket.route) {
+            CreateTicketScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
