@@ -40,7 +40,9 @@ import pl.edu.ur.blokur.data.model.TicketStatus
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TicketsScreen() {
+fun TicketsScreen(
+    onNavigateToDetails: (Int) -> Unit = {}
+) {
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -121,7 +123,7 @@ fun TicketsScreen() {
                     categoryText = ticket.category.name,
                     statusText = statusText,
                     statusColor = statusColor,
-                    onClick = {}
+                    onClick = { onNavigateToDetails(ticket.id) }
                 )
             }
 

@@ -11,6 +11,10 @@ import pl.edu.ur.blokur.ui.screens.finances.FinancesScreen
 import pl.edu.ur.blokur.ui.screens.profile.ProfileScreen
 import pl.edu.ur.blokur.ui.screens.tickets.TicketsScreen
 
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import pl.edu.ur.blokur.ui.screens.tickets.TicketDetailsScreen
+
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -32,7 +36,24 @@ fun AppNavHost(
         }
 
         composable(AppRoute.Tickets.route) {
-            TicketsScreen()
+            TicketsScreen(
+                onNavigateToDetails = { ticketId ->
+                    navController.navigate(AppRoute.TicketDetails(ticketId).route)
+                }
+            )
+        }
+
+        composable(
+            route = AppRoute.TicketDetails.ROUTE_PATTERN,
+            arguments = listOf(
+                navArgument("ticketId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val ticketId = backStackEntry.arguments?.getInt("ticketId") ?: -1
+            TicketDetailsScreen(
+                ticketId = ticketId,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(AppRoute.Finances.route) {
