@@ -15,7 +15,8 @@ data class TicketDto(
     val isDeleted: Boolean,
     val createdAt: String,
     val closedAt: String?,
-    val images: List<String>
+    val images: List<String>,
+    val history: List<TicketHistoryDto>
 )
 
 data class TicketCategoryDto(
@@ -51,3 +52,12 @@ data class ApartmentDto(
 enum class TicketStatus {
     NOWE, ZAPLANOWANO, W_REALIZACJI, WSTRZYMANO, ZAKONCZONE, ZAMKNIETE, ODRZUCONE
 }
+
+data class TicketHistoryDto(
+    val id: Int,
+    val ticketId: Int,
+    val status: TicketStatus,
+    val changedBy: AppUserDto,
+    val comment: String?,
+    val createdAt: String
+)
