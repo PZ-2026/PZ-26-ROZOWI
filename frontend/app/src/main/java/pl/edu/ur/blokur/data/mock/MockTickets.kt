@@ -8,6 +8,9 @@ import pl.edu.ur.blokur.data.model.TicketCategoryDto
 import pl.edu.ur.blokur.data.model.TicketDto
 import pl.edu.ur.blokur.data.model.TicketHistoryDto
 import pl.edu.ur.blokur.data.model.TicketStatus
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 object MockTickets {
     private val categoryHydraulika = TicketCategoryDto(1, "Hydraulika")
@@ -31,6 +34,16 @@ object MockTickets {
     private val staircaseB = StaircaseDto(3, "B")
     
     private val apt45 = ApartmentDto(45, "45")
+
+    var currentUser by mutableStateOf(mockAdmin1)
+
+    fun cycleUser() {
+        currentUser = when (currentUser.role) {
+            "ADMINISTRATOR" -> mockConservator1
+            "KONSERWATOR" -> mockUser1
+            else -> mockAdmin1
+        }
+    }
 
     val tickets = listOf(
         TicketDto(

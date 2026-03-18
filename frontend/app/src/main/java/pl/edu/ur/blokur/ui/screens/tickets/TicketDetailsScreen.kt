@@ -91,7 +91,7 @@ fun TicketDetailsScreen(
             )
         },
         floatingActionButton = {
-            if (ticket?.status == TicketStatus.NOWE) {
+            if (ticket?.status == TicketStatus.NOWE && MockTickets.currentUser.role == "ADMINISTRATOR") {
                 FloatingActionButton(
                     onClick = { showAssignSheet = true },
                     containerColor = MaterialTheme.colorScheme.primary,

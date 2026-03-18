@@ -52,10 +52,12 @@ fun TicketsScreen(
             BlokurTopBar(title = "Zgłoszenia")
         },
         floatingActionButton = {
-            BlokurFab(
-                onClick = { },
-                text = "+"
-            )
+            if (MockTickets.currentUser.role != "KONSERWATOR") {
+                BlokurFab(
+                    onClick = { },
+                    text = "+"
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -69,34 +71,6 @@ fun TicketsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-
-/*
-            BlokurHighlightCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Masz 3 aktywne zgłoszenia",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Śledź status spraw, dodawaj nowe zgłoszenia i sprawdzaj odpowiedzi administracji.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                BlokurPrimaryButton(
-                    text = "Dodaj nowe zgłoszenie",
-                    onClick = {},
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            */
 
             MockTickets.tickets.forEach { ticket ->
                 val (statusText, statusColor) = when (ticket.status) {
