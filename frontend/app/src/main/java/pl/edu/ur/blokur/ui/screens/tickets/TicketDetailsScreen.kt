@@ -23,9 +23,13 @@ import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -46,6 +50,7 @@ import pl.edu.ur.blokur.data.model.TicketStatus
 import pl.edu.ur.blokur.ui.components.BlokurStatusBadge
 import pl.edu.ur.blokur.ui.components.BlokurTagBadge
 import pl.edu.ur.blokur.ui.screens.tickets.components.AssignConservatorSheet
+import pl.edu.ur.blokur.ui.screens.tickets.components.ConservatorActionSheet
 import pl.edu.ur.blokur.ui.screens.tickets.components.TicketTimeline
 import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.InfoBlue
@@ -60,6 +65,9 @@ fun TicketDetailsScreen(
 ) {
     val ticket = MockTickets.tickets.find { it.id == ticketId }
     var showAssignSheet by remember { mutableStateOf(false) }
+    
+    // UI state for Conservator actions
+    var actionSheetType by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         modifier = Modifier
@@ -98,6 +106,61 @@ fun TicketDetailsScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Rounded.Person, contentDescription = "Przypisz konserwatora")
+                }
+            }
+        },
+        bottomBar = {
+            if (MockTickets.currentUser.role == "KONSERWATOR" && ticket != null) {
+                // Koncepcja dolnego paska akcji dla różnych statusów usterki
+                when (ticket.status) {
+                    TicketStatus.ZAPLANOWANO -> {
+                        Surface(
+                            shadowElevation = 8.dp,
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Button(
+                                    onClick = { actionSheetType = "START" },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                ) {
+                                    Text("Rozpocznij realizację", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                }
+                            }
+                        }
+                    }
+                    TicketStatus.W_REALIZACJI, TicketStatus.WSTRZYMANO -> {
+                        Surface(
+                            shadowElevation = 8.dp,
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { actionSheetType = "FINISH" },
+                                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                ) {
+                                    Text("Zakończ pracę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                }
+                                
+                                OutlinedButton(
+                                    onClick = { actionSheetType = "PAUSE_OR_COMMENT" },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                ) {
+                                    Text("Dodaj komentarz / Wstrzymaj", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                }
+                            }
+                        }
+                    }
+                    else -> {} // Brak akcji dla innych statusów (np. NOWE, ZAMKNIETE)
                 }
             }
         }
@@ -232,6 +295,18 @@ fun TicketDetailsScreen(
                 // Tu w przyszłości API wyśle akcję przypisania
                 // Na razie tylko ukrywamy modal
                 showAssignSheet = false
+            }
+        )
+    }
+
+    // Mock sheet placeholders for the requested Conservator actions
+    if (actionSheetType != null) {
+        ConservatorActionSheet(
+            actionType = actionSheetType!!,
+            onDismissRequest = { actionSheetType = null },
+            onSubmit = {
+                // UI Mockup: Zamykamy modal po "wysłaniu"
+                actionSheetType = null
             }
         )
     }
