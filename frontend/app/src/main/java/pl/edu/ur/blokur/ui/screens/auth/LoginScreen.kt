@@ -22,7 +22,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,11 +51,19 @@ import pl.edu.ur.blokur.ui.theme.NeutralBg
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (email: String, password: String) -> Unit = { _, _ -> }
+    authState: AuthState = AuthState.Idle,
+    onLoginClick: (email: String, password: String) -> Unit = { _, _ -> },
+    onLoginSuccess: () -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onLoginSuccess()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -154,11 +164,22 @@ fun LoginScreen(
 
                 // Przycisk logowania
                 BlokurPrimaryButton(
-                    text = stringResource(R.string.login_button),
+                    text = if (authState is AuthState.Loading) stringResource(R.string.login_button) + "..." else stringResource(R.string.login_button),
                     onClick = { onLoginClick(email, password) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = email.isNotBlank() && password.isNotBlank()
+                    enabled = email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading
                 )
+                
+                if (authState is AuthState.Error) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = authState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(64.dp))
@@ -184,20 +205,6 @@ private fun LoginScreenPreviewDark() {
         LoginScreen()
     }
 }
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true,
-    name = "Login – Filled"
-)
-@Composable
-private fun LoginScreenPreviewFilled() {
-    BlokurPreviewTheme(darkTheme = false) {
-        // LoginScreen zarządza własnym stanem – preview pokazuje ekran z domyślnymi wartościami
-        LoginScreen()
-    }
-}
-
 
 @Preview(
     showBackground = true,
