@@ -6,6 +6,7 @@ import pl.edu.ur.blokur.data.model.BuildingDto
 import pl.edu.ur.blokur.data.model.StaircaseDto
 import pl.edu.ur.blokur.data.model.TicketCategoryDto
 import pl.edu.ur.blokur.data.model.TicketDto
+import pl.edu.ur.blokur.data.model.TicketHistoryDto
 import pl.edu.ur.blokur.data.model.TicketStatus
 
 object MockTickets {
