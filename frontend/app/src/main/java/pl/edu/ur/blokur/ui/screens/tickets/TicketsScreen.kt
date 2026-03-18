@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.components.BlokurCard
+import pl.edu.ur.blokur.ui.components.BlokurTicketItem
 import pl.edu.ur.blokur.ui.components.BlokurFab
 import pl.edu.ur.blokur.ui.components.BlokurHighlightCard
 import pl.edu.ur.blokur.ui.components.BlokurPrimaryButton
@@ -34,6 +35,8 @@ import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.InfoBlue
 import pl.edu.ur.blokur.ui.theme.SuccessGreen
 import pl.edu.ur.blokur.ui.theme.WarningOrange
+import pl.edu.ur.blokur.data.mock.MockTickets
+import pl.edu.ur.blokur.data.model.TicketStatus
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -65,6 +68,7 @@ fun TicketsScreen() {
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
+/*
             BlokurHighlightCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -90,46 +94,34 @@ fun TicketsScreen() {
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            */
 
-            BlokurCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Ostatnie zgłoszenie",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Niedziałające oświetlenie na klatce schodowej",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Zgłoszenie zostało przekazane do realizacji przez administrację.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    BlokurTagBadge(text = "Klatka A")
-                    BlokurTagBadge(text = "Techniczne")
+            MockTickets.tickets.forEach { ticket ->
+                val (statusText, statusColor) = when (ticket.status) {
+                    TicketStatus.NOWE -> "Nowe" to InfoBlue
+                    TicketStatus.ZAPLANOWANO -> "Zaplanowano" to InfoBlue
+                    TicketStatus.W_REALIZACJI -> "W realizacji" to WarningOrange
+                    TicketStatus.WSTRZYMANO -> "Wstrzymano" to WarningOrange
+                    TicketStatus.ZAKONCZONE -> "Do weryfikacji" to SuccessGreen
+                    TicketStatus.ZAMKNIETE -> "Zamknięte" to SuccessGreen
+                    TicketStatus.ODRZUCONE -> "Odrzucone" to ErrorRed
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                // Temporary logic to format assignee for the ticket.
+                // Depending on requirements, we can show assignee name or author name
+                val dateOrAssignee = if (ticket.assignedTo != null) {
+                    "${ticket.createdAt.substring(0, 10)} • Przypisane: ${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName}"
+                } else {
+                    "${ticket.createdAt.substring(0, 10)} • Brak przypisania"
+                }
 
-                BlokurStatusBadge(
-                    text = "W trakcie",
-                    dotColor = WarningOrange
+                BlokurTicketItem(
+                    title = ticket.title,
+                    date = dateOrAssignee,
+                    categoryText = ticket.category.name,
+                    statusText = statusText,
+                    statusColor = statusColor,
+                    onClick = {}
                 )
             }
 
@@ -157,7 +149,10 @@ fun TicketsScreen() {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     BlokurStatusBadge("Nowe", InfoBlue)
-                    BlokurStatusBadge("W trakcie", WarningOrange)
+                    BlokurStatusBadge("Zaplanowano", InfoBlue)
+                    BlokurStatusBadge("W realizacji", WarningOrange)
+                    BlokurStatusBadge("Wstrzymano", WarningOrange)
+                    BlokurStatusBadge("Do weryfikacji", SuccessGreen)
                     BlokurStatusBadge("Zamknięte", SuccessGreen)
                     BlokurStatusBadge("Odrzucone", ErrorRed)
                 }
