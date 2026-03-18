@@ -14,12 +14,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -51,6 +57,7 @@ import pl.edu.ur.blokur.ui.components.BlokurStatusBadge
 import pl.edu.ur.blokur.ui.components.BlokurTagBadge
 import pl.edu.ur.blokur.ui.screens.tickets.components.AssignConservatorSheet
 import pl.edu.ur.blokur.ui.screens.tickets.components.ConservatorActionSheet
+import pl.edu.ur.blokur.ui.screens.tickets.components.ManagerRejectSheet
 import pl.edu.ur.blokur.ui.screens.tickets.components.TicketTimeline
 import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.InfoBlue
@@ -65,6 +72,7 @@ fun TicketDetailsScreen(
 ) {
     val ticket = MockTickets.tickets.find { it.id == ticketId }
     var showAssignSheet by remember { mutableStateOf(false) }
+    var showRejectSheet by remember { mutableStateOf(false) }
     
     // UI state for Conservator actions
     var actionSheetType by remember { mutableStateOf<String?>(null) }
@@ -99,68 +107,60 @@ fun TicketDetailsScreen(
             )
         },
         floatingActionButton = {
-            if (ticket?.status == TicketStatus.NOWE && MockTickets.currentUser.role == "ADMINISTRATOR") {
-                FloatingActionButton(
-                    onClick = { showAssignSheet = true },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(Icons.Rounded.Person, contentDescription = "Przypisz konserwatora")
-                }
-            }
-        },
-        bottomBar = {
-            if (MockTickets.currentUser.role == "KONSERWATOR" && ticket != null) {
-                // Koncepcja dolnego paska akcji dla różnych statusów usterki
-                when (ticket.status) {
-                    TicketStatus.ZAPLANOWANO -> {
-                        Surface(
-                            shadowElevation = 8.dp,
-                            color = MaterialTheme.colorScheme.surface
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.End
+            ) {
+                if (MockTickets.currentUser.role == "ADMINISTRATOR" && ticket != null) {
+                    if (ticket.status == TicketStatus.NOWE) {
+                        FloatingActionButton(
+                            onClick = { showRejectSheet = true },
+                            containerColor = ErrorRed,
+                            contentColor = androidx.compose.ui.graphics.Color.White
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                Button(
-                                    onClick = { actionSheetType = "START" },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp)
-                                ) {
-                                    Text("Rozpocznij realizację", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                }
-                            }
+                            Icon(Icons.Rounded.Close, contentDescription = "Odrzuć zgłoszenie")
+                        }
+                        FloatingActionButton(
+                            onClick = { showAssignSheet = true },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ) {
+                            Icon(Icons.Rounded.Person, contentDescription = "Przypisz konserwatora")
+                        }
+                    } else if (ticket.status == TicketStatus.WSTRZYMANO) {
+                        FloatingActionButton(
+                            onClick = { showAssignSheet = true },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ) {
+                            Icon(Icons.Rounded.PlayArrow, contentDescription = "Wznów zgłoszenie")
                         }
                     }
-                    TicketStatus.W_REALIZACJI, TicketStatus.WSTRZYMANO -> {
-                        Surface(
-                            shadowElevation = 8.dp,
-                            color = MaterialTheme.colorScheme.surface
+                } else if (MockTickets.currentUser.role == "KONSERWATOR" && ticket != null) {
+                    if (ticket.status == TicketStatus.ZAPLANOWANO) {
+                        FloatingActionButton(
+                            onClick = { actionSheetType = "START" },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Button(
-                                    onClick = { actionSheetType = "FINISH" },
-                                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
-                                    modifier = Modifier.fillMaxWidth().height(56.dp)
-                                ) {
-                                    Text("Zakończ pracę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                }
-                                
-                                OutlinedButton(
-                                    onClick = { actionSheetType = "PAUSE_OR_COMMENT" },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp)
-                                ) {
-                                    Text("Dodaj komentarz / Wstrzymaj", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                }
-                            }
+                            Icon(Icons.Rounded.PlayArrow, contentDescription = "Rozpocznij realizację")
+                        }
+                    } else if (ticket.status == TicketStatus.W_REALIZACJI || ticket.status == TicketStatus.WSTRZYMANO) {
+                        FloatingActionButton(
+                            onClick = { actionSheetType = "PAUSE_OR_COMMENT" },
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ) {
+                            Icon(Icons.Rounded.Pause, contentDescription = "Wstrzymaj / Komentarz")
+                        }
+                        FloatingActionButton(
+                            onClick = { actionSheetType = "FINISH" },
+                            containerColor = SuccessGreen,
+                            contentColor = androidx.compose.ui.graphics.Color.White
+                        ) {
+                            Icon(Icons.Rounded.CheckCircle, contentDescription = "Zakończ pracę")
                         }
                     }
-                    else -> {} // Brak akcji dla innych statusów (np. NOWE, ZAMKNIETE)
                 }
             }
         }
@@ -292,9 +292,18 @@ fun TicketDetailsScreen(
             conservators = MockTickets.availableConservators,
             onDismissRequest = { showAssignSheet = false },
             onAssign = { conservator, date ->
-                // Tu w przyszłości API wyśle akcję przypisania
-                // Na razie tylko ukrywamy modal
+                // Tu w przyszłości API wyśle akcję przypisania/wznowienia
                 showAssignSheet = false
+            }
+        )
+    }
+
+    if (showRejectSheet) {
+        ManagerRejectSheet(
+            onDismissRequest = { showRejectSheet = false },
+            onSubmit = { reason ->
+                // Odrzucenie zgłoszenia API 
+                showRejectSheet = false
             }
         )
     }
