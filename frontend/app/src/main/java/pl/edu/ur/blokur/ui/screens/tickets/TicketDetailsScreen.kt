@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +31,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -40,6 +45,7 @@ import pl.edu.ur.blokur.data.model.TicketDto
 import pl.edu.ur.blokur.data.model.TicketStatus
 import pl.edu.ur.blokur.ui.components.BlokurStatusBadge
 import pl.edu.ur.blokur.ui.components.BlokurTagBadge
+import pl.edu.ur.blokur.ui.screens.tickets.components.AssignConservatorSheet
 import pl.edu.ur.blokur.ui.screens.tickets.components.TicketTimeline
 import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.InfoBlue
@@ -53,6 +59,7 @@ fun TicketDetailsScreen(
     onNavigateBack: () -> Unit
 ) {
     val ticket = MockTickets.tickets.find { it.id == ticketId }
+    var showAssignSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier
@@ -82,6 +89,17 @@ fun TicketDetailsScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
+        },
+        floatingActionButton = {
+            if (ticket?.status == TicketStatus.NOWE) {
+                FloatingActionButton(
+                    onClick = { showAssignSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Rounded.Person, contentDescription = "Przypisz konserwatora")
+                }
+            }
         }
     ) { innerPadding ->
         if (ticket == null) {
@@ -202,8 +220,20 @@ fun TicketDetailsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(80.dp)) // Dodane miejsce na dole żeby nie zasłaniał FAB
         }
+    }
+
+    if (showAssignSheet) {
+        AssignConservatorSheet(
+            conservators = MockTickets.availableConservators,
+            onDismissRequest = { showAssignSheet = false },
+            onAssign = { conservator, date ->
+                // Tu w przyszłości API wyśle akcję przypisania
+                // Na razie tylko ukrywamy modal
+                showAssignSheet = false
+            }
+        )
     }
 }
 

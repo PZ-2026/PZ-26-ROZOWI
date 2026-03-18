@@ -293,4 +293,6 @@ object MockTickets {
             )
         )
     )
+
+    val availableConservators = listOf(mockConservator1, mockConservator2)
 }
