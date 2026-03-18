@@ -30,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -73,7 +74,24 @@ fun AssignConservatorSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
-    val dateState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    // Daty z przeszłości zablokowane, dzisiaj dozwolone
+    val todayMillisStart = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    val dateState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis >= todayMillisStart
+            }
+        }
+    )
     val timeState = rememberTimePickerState(is24Hour = true)
 
     val formattedDate = remember(selectedDateMillis) {
@@ -87,6 +105,27 @@ fun AssignConservatorSheet(
             String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
         } else {
             "Wybierz godzinę"
+        }
+    }
+
+    // Walidacja czasu dla "dzisiaj"
+    val isTimeValid = remember(selectedDateMillis, selectedHour, selectedMinute) {
+        if (selectedDateMillis == null || selectedHour == null || selectedMinute == null) return@remember false
+        
+        val selectedCalendar = Calendar.getInstance().apply {
+            timeInMillis = selectedDateMillis!!
+            set(Calendar.HOUR_OF_DAY, selectedHour!!)
+            set(Calendar.MINUTE, selectedMinute!!)
+        }
+        
+        val now = Calendar.getInstance()
+        
+        // Jeśli wybrany dzień to dzisiaj to czas musi być w przyszłości
+        if (selectedCalendar.get(Calendar.YEAR) == now.get(Calendar.YEAR) && 
+            selectedCalendar.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)) {
+            selectedCalendar.timeInMillis > now.timeInMillis
+        } else {
+            true // Dla dni z przyszłości każda godzina jest ok
         }
     }
 
@@ -161,8 +200,17 @@ fun AssignConservatorSheet(
                         trailingIcon = {
                             Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Zmień godzinę", modifier = Modifier.clickable { showTimePicker = true })
                         },
+                        isError = (selectedDateMillis != null && selectedHour != null && !isTimeValid),
                         shape = RoundedCornerShape(12.dp)
                     )
+                    if (selectedDateMillis != null && selectedHour != null && !isTimeValid) {
+                        Text(
+                            text = "Godzina musi być późniejsza niż obecna",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -172,7 +220,7 @@ fun AssignConservatorSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    enabled = selectedDateMillis != null && selectedHour != null,
+                    enabled = isTimeValid,
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
