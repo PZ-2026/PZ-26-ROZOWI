@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,18 +24,16 @@ fun BlokurTagBadge(
     text: String,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .background(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(50)
-            )
-            .padding(horizontal = 12.dp, vertical = 5.dp)
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.secondaryContainer
     ) {
         Text(
-            text  = text,
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.labelMedium
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            color = MaterialTheme.colorScheme.secondary,
+            style = MaterialTheme.typography.labelLarge
         )
     }
 }
@@ -45,33 +44,32 @@ fun BlokurStatusBadge(
     dotColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .background(
-                color = dotColor.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(50)
-            )
-            .padding(horizontal = 10.dp, vertical = 5.dp)
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment     = Alignment.CenterVertically
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(7.dp)
+                    .size(8.dp)
                     .background(dotColor, CircleShape)
             )
+
             Text(
-                text  = text,
-                color = dotColor,
-                style = MaterialTheme.typography.labelMedium
+                text = text,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelLarge
             )
         }
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFF8F9FF)
+@Preview(showBackground = true)
 @Composable
 private fun BlokurBadgePreview() {
     BlokurPreviewTheme {
@@ -79,10 +77,8 @@ private fun BlokurBadgePreview() {
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            BlokurTagBadge(text = "Hydraulika")
-            BlokurStatusBadge(text = "W realizacji", dotColor = Color(0xFFD97706))
-            BlokurStatusBadge(text = "Zakończone",   dotColor = Color(0xFF059669))
-            BlokurStatusBadge(text = "Odrzucone",    dotColor = Color(0xFFDC2626))
+            BlokurTagBadge(text = "Nowe")
+            BlokurStatusBadge(text = "Aktywne", dotColor = Color(0xFF059669))
         }
     }
 }

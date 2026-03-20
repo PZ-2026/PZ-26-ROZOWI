@@ -1,7 +1,6 @@
 package pl.edu.ur.blokur.ui.navigation
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -15,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import pl.edu.ur.blokur.ui.theme.Indigo100
-import pl.edu.ur.blokur.ui.theme.StrokeLight
 
 @Composable
 fun MainScaffold() {
@@ -29,14 +26,15 @@ fun MainScaffold() {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
+bottomBar = {
             if (showBottomBar) {
                 HorizontalDivider(
                     thickness = 1.dp,
-                    color = StrokeLight
+                    color = MaterialTheme.colorScheme.outlineVariant // Użyto standardowego koloru z Material w razie braku StrokeLight
                 )
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 0.dp
+                    tonalElevation = 0.dp // Zachowano 0.dp z Twojej gałęzi ze względu na dodany Divider
                 ) {
                     bottomNavItems.forEach { item ->
                         val selected = currentRoute == item.route
@@ -49,6 +47,32 @@ fun MainScaffold() {
                                     }
                                     launchSingleTop = true
                                     restoreState = true
+                                }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer, // Z gałęzi dev
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            icon = {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = item.label,
+                                    style = MaterialTheme.typography.labelLarge // Z gałęzi dev
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
@@ -70,8 +94,27 @@ fun MainScaffold() {
                                     style = MaterialTheme.typography.labelMedium
                                 )
                             }
-                        )
-                    }
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        icon = {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = item.label,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    )
                 }
             }
         }
