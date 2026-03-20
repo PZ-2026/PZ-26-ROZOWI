@@ -39,7 +39,7 @@ fun BlokurTextField(
                 style = MaterialTheme.typography.bodyMedium
             )
         },
-singleLine = singleLine,
+        singleLine = singleLine,
         enabled = enabled,
         keyboardOptions = keyboardOptions,
         visualTransformation = visualTransformation,
@@ -59,7 +59,6 @@ singleLine = singleLine,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
         )
         )
-    )
 }
 
 @Preview(showBackground = true)
