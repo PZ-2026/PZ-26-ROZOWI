@@ -25,73 +25,71 @@ fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-<<<<<<< HEAD
-    NavHost(
-        navController = navController,
-        startDestination = AppRoute.Login.route,
-        modifier = modifier
-    ) {
-        composable(AppRoute.Login.route) {
-            LoginScreen(
-                onLoginClick = { _, _ ->
-                    navController.navigate(AppRoute.Tickets.route) {
-                        popUpTo(AppRoute.Login.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-=======
     Box(modifier = modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
-            startDestination = AppRoute.Tickets.route,
+            // Zachowujemy Login jako startDestination z HEAD
+            startDestination = AppRoute.Login.route,
             modifier = Modifier.fillMaxSize()
         ) {
->>>>>>> 2e811e3 (BLOK-38 Implementacja globalnego przelacznika rol (God Mode))
-        composable(AppRoute.Tickets.route) {
-            TicketsScreen(
-                onNavigateToDetails = { ticketId ->
-                    navController.navigate(AppRoute.TicketDetails(ticketId).route)
-                },
-                onNavigateToAddTicket = {
-                    navController.navigate(AppRoute.AddTicket.route)
-                }
-            )
+            composable(AppRoute.Login.route) {
+                LoginScreen(
+                    onLoginClick = { _, _ ->
+                        navController.navigate(AppRoute.Tickets.route) {
+                            popUpTo(AppRoute.Login.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(AppRoute.Tickets.route) {
+                TicketsScreen(
+                    onNavigateToDetails = { ticketId ->
+                        navController.navigate(AppRoute.TicketDetails(ticketId).route)
+                    },
+                    onNavigateToAddTicket = {
+                        navController.navigate(AppRoute.AddTicket.route)
+                    }
+                )
+            }
+
+            composable(AppRoute.AddTicket.route) {
+                CreateTicketScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = AppRoute.TicketDetails.ROUTE_PATTERN,
+                arguments = listOf(
+                    navArgument("ticketId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val ticketId = backStackEntry.arguments?.getInt("ticketId") ?: -1
+                TicketDetailsScreen(
+                    ticketId = ticketId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(AppRoute.Finances.route) {
+                FinancesScreen()
+            }
+
+            composable(AppRoute.Announcements.route) {
+                AnnouncementsScreen()
+            }
+
+            composable(AppRoute.Profile.route) {
+                ProfileScreen()
+            }
         }
 
-        composable(AppRoute.AddTicket.route) {
-            CreateTicketScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = AppRoute.TicketDetails.ROUTE_PATTERN,
-            arguments = listOf(
-                navArgument("ticketId") { type = NavType.IntType }
-            )
-        ) { backStackEntry ->
-            val ticketId = backStackEntry.arguments?.getInt("ticketId") ?: -1
-            TicketDetailsScreen(
-                ticketId = ticketId,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(AppRoute.Finances.route) {
-            FinancesScreen()
-        }
-
-        composable(AppRoute.Announcements.route) {
-            AnnouncementsScreen()
-        }
-
-        composable(AppRoute.Profile.route) {
-            ProfileScreen()
-        }
-    }
-        
-    GodModeSwitcher(modifier = Modifier.align(Alignment.TopCenter).zIndex(100f))
+        // Nakładka "God Mode" z gałęzi BLOK-38
+        GodModeSwitcher(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(100f)
+        )
     }
 }

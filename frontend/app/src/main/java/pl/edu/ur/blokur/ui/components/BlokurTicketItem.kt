@@ -32,9 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
-import pl.edu.ur.blokur.ui.theme.GradientEnd
-import pl.edu.ur.blokur.ui.theme.GradientStart
-import pl.edu.ur.blokur.ui.theme.Stroke
+
 
 @Composable
 fun BlokurTicketItem(

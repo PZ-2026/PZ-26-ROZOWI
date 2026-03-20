@@ -10,6 +10,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
@@ -21,7 +22,11 @@ fun BlokurTextField(
     label: String,
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -33,6 +38,10 @@ fun BlokurTextField(
                 style = MaterialTheme.typography.bodyMedium
             )
         },
+        keyboardOptions = keyboardOptions,
+        visualTransformation = visualTransformation,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
         singleLine = singleLine,
         enabled = enabled,
         shape = RoundedCornerShape(18.dp),
@@ -48,7 +57,7 @@ fun BlokurTextField(
             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
         )
-        )
+    )
 }
 
 @Preview(showBackground = true)
