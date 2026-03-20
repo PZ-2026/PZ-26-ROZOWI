@@ -48,7 +48,7 @@ fun BlokurTextField(
             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
         )
-    )
+        )
 }
 
 @Preview(showBackground = true)
