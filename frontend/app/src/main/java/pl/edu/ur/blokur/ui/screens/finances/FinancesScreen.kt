@@ -25,20 +25,22 @@ import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 @Composable
 fun FinancesScreen() {
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { BlokurTopBar(title = "Finanse") }
+        topBar = { BlokurTopBar(title = "Finanse") },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -46,20 +48,20 @@ fun FinancesScreen() {
                 Text(
                     text = "Moduł finansów",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Tutaj będą prezentowane saldo, opłaty i historia rozliczeń mieszkańca.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             BlokurEmptyState(
                 title = "Brak danych finansowych",
                 description = "Po integracji z backendem w tym miejscu pojawią się informacje o płatnościach i rozliczeniach.",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
     }

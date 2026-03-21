@@ -7,30 +7,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import pl.edu.ur.blokur.ui.components.GodModeSwitcher
 import pl.edu.ur.blokur.ui.screens.announcements.AnnouncementsScreen
 import pl.edu.ur.blokur.ui.screens.auth.LoginScreen
 import pl.edu.ur.blokur.ui.screens.finances.FinancesScreen
 import pl.edu.ur.blokur.ui.screens.profile.ProfileScreen
-import pl.edu.ur.blokur.ui.screens.tickets.TicketsScreen
 import pl.edu.ur.blokur.ui.screens.tickets.CreateTicketScreen
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
-import pl.edu.ur.blokur.ui.components.GodModeSwitcher
 import pl.edu.ur.blokur.ui.screens.tickets.TicketDetailsScreen
+import pl.edu.ur.blokur.ui.screens.tickets.TicketsScreen
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             // Zachowujemy Login jako startDestination z HEAD
             startDestination = AppRoute.Login.route,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             composable(AppRoute.Login.route) {
                 LoginScreen(
@@ -38,7 +38,7 @@ fun AppNavHost(
                         navController.navigate(AppRoute.Tickets.route) {
                             popUpTo(AppRoute.Login.route) { inclusive = true }
                         }
-                    }
+                    },
                 )
             }
 
@@ -49,26 +49,27 @@ fun AppNavHost(
                     },
                     onNavigateToAddTicket = {
                         navController.navigate(AppRoute.AddTicket.route)
-                    }
+                    },
                 )
             }
 
             composable(AppRoute.AddTicket.route) {
                 CreateTicketScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
 
             composable(
                 route = AppRoute.TicketDetails.ROUTE_PATTERN,
-                arguments = listOf(
-                    navArgument("ticketId") { type = NavType.IntType }
-                )
+                arguments =
+                    listOf(
+                        navArgument("ticketId") { type = NavType.IntType },
+                    ),
             ) { backStackEntry ->
                 val ticketId = backStackEntry.arguments?.getInt("ticketId") ?: -1
                 TicketDetailsScreen(
                     ticketId = ticketId,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
 
@@ -87,9 +88,10 @@ fun AppNavHost(
 
         // Nakładka "God Mode" z gałęzi BLOK-38
         GodModeSwitcher(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .zIndex(100f)
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .zIndex(100f),
         )
     }
 }

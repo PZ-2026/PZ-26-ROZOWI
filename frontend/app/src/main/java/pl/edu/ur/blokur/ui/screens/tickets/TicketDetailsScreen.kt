@@ -4,38 +4,32 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.data.mock.MockTickets
-import pl.edu.ur.blokur.data.model.TicketDto
 import pl.edu.ur.blokur.data.model.TicketStatus
 import pl.edu.ur.blokur.ui.components.BlokurStatusBadge
 import pl.edu.ur.blokur.ui.components.BlokurTagBadge
@@ -68,19 +61,20 @@ import pl.edu.ur.blokur.ui.theme.WarningOrange
 @Composable
 fun TicketDetailsScreen(
     ticketId: Int,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val ticket = MockTickets.tickets.find { it.id == ticketId }
     var showAssignSheet by remember { mutableStateOf(false) }
     var showRejectSheet by remember { mutableStateOf(false) }
-    
+
     // UI state for Conservator actions
     var actionSheetType by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
@@ -88,7 +82,7 @@ fun TicketDetailsScreen(
                     Text(
                         text = "Szczegóły zgłoszenia",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                 },
                 navigationIcon = {
@@ -96,34 +90,35 @@ fun TicketDetailsScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
                             contentDescription = "Powrót",
-                            tint = MaterialTheme.colorScheme.onBackground
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    ),
             )
         },
         floatingActionButton = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = androidx.compose.ui.Alignment.End
+                horizontalAlignment = androidx.compose.ui.Alignment.End,
             ) {
                 if (MockTickets.currentUser.role == "ADMINISTRATOR" && ticket != null) {
                     if (ticket.status == TicketStatus.NOWE) {
                         FloatingActionButton(
                             onClick = { showRejectSheet = true },
                             containerColor = ErrorRed,
-                            contentColor = androidx.compose.ui.graphics.Color.White
+                            contentColor = androidx.compose.ui.graphics.Color.White,
                         ) {
                             Icon(Icons.Rounded.Close, contentDescription = "Odrzuć zgłoszenie")
                         }
                         FloatingActionButton(
                             onClick = { showAssignSheet = true },
                             containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                         ) {
                             Icon(Icons.Rounded.Person, contentDescription = "Przypisz konserwatora")
                         }
@@ -131,7 +126,7 @@ fun TicketDetailsScreen(
                         FloatingActionButton(
                             onClick = { showAssignSheet = true },
                             containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                         ) {
                             Icon(Icons.Rounded.PlayArrow, contentDescription = "Wznów zgłoszenie")
                         }
@@ -141,7 +136,7 @@ fun TicketDetailsScreen(
                         FloatingActionButton(
                             onClick = { actionSheetType = "START" },
                             containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                         ) {
                             Icon(Icons.Rounded.PlayArrow, contentDescription = "Rozpocznij realizację")
                         }
@@ -149,28 +144,29 @@ fun TicketDetailsScreen(
                         FloatingActionButton(
                             onClick = { actionSheetType = "PAUSE_OR_COMMENT" },
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ) {
                             Icon(Icons.Rounded.Pause, contentDescription = "Wstrzymaj / Komentarz")
                         }
                         FloatingActionButton(
                             onClick = { actionSheetType = "FINISH" },
                             containerColor = SuccessGreen,
-                            contentColor = androidx.compose.ui.graphics.Color.White
+                            contentColor = androidx.compose.ui.graphics.Color.White,
                         ) {
                             Icon(Icons.Rounded.CheckCircle, contentDescription = "Zakończ pracę")
                         }
                     }
                 }
             }
-        }
+        },
     ) { innerPadding ->
         if (ticket == null) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                contentAlignment = androidx.compose.ui.Alignment.Center,
             ) {
                 Text(text = "Nie znaleziono zgłoszenia", color = MaterialTheme.colorScheme.error)
             }
@@ -180,25 +176,26 @@ fun TicketDetailsScreen(
         val (_, statusColor) = getStatusColor(ticket.status)
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // HEADER SEKCJA
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // Tagi (Kategoria i Status)
                 androidx.compose.foundation.layout.FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     BlokurStatusBadge(text = getStatusText(ticket.status), dotColor = statusColor)
                     BlokurTagBadge(text = ticket.category.name)
@@ -209,12 +206,12 @@ fun TicketDetailsScreen(
                         text = ticket.title,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
                         text = ticket.description,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -222,48 +219,50 @@ fun TicketDetailsScreen(
             // METADATA SEKCJA (Zgłaszający, Lokalizacja)
             androidx.compose.material3.Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = androidx.compose.material3.CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
+                colors =
+                    androidx.compose.material3.CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    ),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 0.dp)
+                elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     MetadataRow(
                         icon = Icons.Rounded.Article,
                         label = "Numer zgłoszenia",
-                        value = ticket.ticketNumber
+                        value = ticket.ticketNumber,
                     )
                     Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-                    
+
                     MetadataRow(
                         icon = Icons.Rounded.Person,
                         label = "Zgłaszający",
-                        value = "${ticket.author.firstName} ${ticket.author.lastName}"
+                        value = "${ticket.author.firstName} ${ticket.author.lastName}",
                     )
-                    
-                    val locationText = buildString {
-                        ticket.building?.let { append("${it.address}\n") }
-                        ticket.staircase?.let { append("Klatka: ${it.label} ") }
-                        ticket.apartment?.let { append("Mieszkanie: ${it.number}") }
-                    }
+
+                    val locationText =
+                        buildString {
+                            ticket.building?.let { append("${it.address}\n") }
+                            ticket.staircase?.let { append("Klatka: ${it.label} ") }
+                            ticket.apartment?.let { append("Mieszkanie: ${it.number}") }
+                        }
                     if (locationText.isNotBlank()) {
                         Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
                         MetadataRow(
                             icon = Icons.Rounded.Place,
                             label = "Lokalizacja",
-                            value = locationText.trimEnd()
+                            value = locationText.trimEnd(),
                         )
                     }
-                    
+
                     Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
                     MetadataRow(
                         icon = Icons.Rounded.CalendarToday,
                         label = "Data utworzenia",
-                        value = formatDateTime(ticket.createdAt)
+                        value = formatDateTime(ticket.createdAt),
                     )
                 }
             }
@@ -274,12 +273,12 @@ fun TicketDetailsScreen(
                     text = "Historia zgłoszenia",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 TicketTimeline(
                     history = ticket.history,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -294,7 +293,7 @@ fun TicketDetailsScreen(
             onAssign = { conservator, date ->
                 // Tu w przyszłości API wyśle akcję przypisania/wznowienia
                 showAssignSheet = false
-            }
+            },
         )
     }
 
@@ -302,9 +301,9 @@ fun TicketDetailsScreen(
         ManagerRejectSheet(
             onDismissRequest = { showRejectSheet = false },
             onSubmit = { reason ->
-                // Odrzucenie zgłoszenia API 
+                // Odrzucenie zgłoszenia API
                 showRejectSheet = false
-            }
+            },
         )
     }
 
@@ -316,44 +315,49 @@ fun TicketDetailsScreen(
             onSubmit = {
                 // UI Mockup: Zamykamy modal po "wysłaniu"
                 actionSheetType = null
-            }
+            },
         )
     }
 }
 
 @Composable
-private fun MetadataRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+private fun MetadataRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+) {
     Row(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+            contentAlignment = androidx.compose.ui.Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
         }
-        
+
         Column {
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -391,6 +395,7 @@ private fun formatDateTime(isoString: String): String {
             val time = parts[1].substring(0, 5)
             return "$date, $time"
         }
-    } catch (e: Exception) {}
+    } catch (e: Exception) {
+    }
     return isoString
 }

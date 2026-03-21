@@ -11,15 +11,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @Composable
-fun BlokurLoader(
-    modifier: Modifier = Modifier
-) {
+fun BlokurLoader(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }

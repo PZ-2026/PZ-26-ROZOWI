@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 @Composable
 fun BlokurPreviewTheme(
     darkTheme: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     BlokurTheme(darkTheme = darkTheme) {
         content()
