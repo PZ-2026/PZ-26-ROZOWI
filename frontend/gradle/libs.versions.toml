@@ -15,7 +15,9 @@ lifecycleViewmodelCompose = "2.8.6"
 jetbrainsKotlinJvm = "2.0.21"
 appcompat = "1.6.1"
 material = "1.10.0"
+navigationCompose = "2.8.8"
 [libraries]
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
