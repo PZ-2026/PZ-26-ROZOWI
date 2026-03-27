@@ -50,28 +50,6 @@ private val DarkColors = darkColorScheme(
     onErrorContainer = ErrorRed
 )
 
-private val DarkColors = darkColorScheme(
-    primary = Indigo100,
-    onPrimary = Indigo700,
-    primaryContainer = Indigo700,
-    onPrimaryContainer = Indigo50,
-
-    secondary = Amber600,
-    onSecondary = White,
-    secondaryContainer = Amber100,
-    onSecondaryContainer = Amber600,
-
-    tertiary = SuccessGreen,
-    onTertiary = White,
-    tertiaryContainer = SuccessGreenBg,
-    onTertiaryContainer = SuccessGreen,
-
-    error = ErrorRed,
-    onError = White,
-    errorContainer = ErrorRedBg,
-    onErrorContainer = ErrorRed
-)
-
 @Composable
 fun BlokurTheme(
     darkTheme: Boolean = false,
