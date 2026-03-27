@@ -18,11 +18,11 @@ import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -209,6 +209,18 @@ private fun LoginScreenPreviewDark() {
 @Preview(
     showBackground = true,
     showSystemUi = true,
+    name = "Login – Filled"
+)
+@Composable
+private fun LoginScreenPreviewFilled() {
+    BlokurPreviewTheme(darkTheme = false) {
+        LoginScreen()
+    }
+}
+
+@Preview(
+    showBackground = true,
+    showSystemUi = true,
     name = "Login – Large Font",
     fontScale = 1.5f
 )
@@ -218,4 +230,3 @@ private fun LoginScreenPreviewLargeFont() {
         LoginScreen()
     }
 }
-

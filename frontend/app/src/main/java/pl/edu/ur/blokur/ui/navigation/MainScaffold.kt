@@ -15,8 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import pl.edu.ur.blokur.ui.theme.Indigo100
-import pl.edu.ur.blokur.ui.theme.StrokeLight
 
 @Composable
 fun MainScaffold() {
@@ -32,7 +30,7 @@ fun MainScaffold() {
             if (showBottomBar) {
                 HorizontalDivider(
                     thickness = 1.dp,
-                    color = StrokeLight
+                    color = MaterialTheme.colorScheme.outlineVariant
                 )
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -54,7 +52,7 @@ fun MainScaffold() {
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = Indigo100,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             ),
@@ -67,7 +65,7 @@ fun MainScaffold() {
                             label = {
                                 Text(
                                     text = item.label,
-                                    style = MaterialTheme.typography.labelMedium
+                                    style = MaterialTheme.typography.labelLarge
                                 )
                             }
                         )

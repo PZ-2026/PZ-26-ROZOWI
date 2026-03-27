@@ -2,6 +2,7 @@ package pl.edu.ur.blokur.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,9 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
-import pl.edu.ur.blokur.ui.theme.GradientEnd
-import pl.edu.ur.blokur.ui.theme.GradientStart
-import pl.edu.ur.blokur.ui.theme.Stroke
+
 
 @Composable
 fun BlokurTicketItem(
@@ -120,7 +119,9 @@ fun BlokurTicketItem(
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .horizontalScroll(androidx.compose.foundation.rememberScrollState())
                     ) {
                         BlokurTagBadge(text = categoryText)
                         BlokurStatusBadge(text = statusText, dotColor = statusColor)
