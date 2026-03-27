@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "pl.edu.ur.blokur"
+    namespace = "pl.edu.ur.blokur.android"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "pl.edu.ur.blokur"
+        applicationId = "pl.edu.ur.blokur.android"
         minSdk = 27
         targetSdk = 36
         versionCode = 1
