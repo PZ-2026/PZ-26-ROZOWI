@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import pl.edu.ur.blokur.ui.android.common.components.CommonEmptyState
 import pl.edu.ur.blokur.ui.android.resident.viewmodels.FinancesViewModel
 
 @Composable
@@ -17,6 +18,6 @@ fun FinancesScreen(
 
         }
     }
-
+    CommonEmptyState("Finances")
     //contents
 }

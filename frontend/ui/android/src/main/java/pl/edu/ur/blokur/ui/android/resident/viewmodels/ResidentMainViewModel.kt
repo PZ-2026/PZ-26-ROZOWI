@@ -1,12 +1,15 @@
 package pl.edu.ur.blokur.ui.android.resident.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.ui.android.resident.NavBarOption
 import pl.edu.ur.blokur.ui.android.resident.states.ResidentMainEvent
 import pl.edu.ur.blokur.ui.android.resident.states.ResidentMainState
 import javax.inject.Inject
@@ -24,6 +27,10 @@ class ResidentMainViewModel @Inject constructor(
 
     }
 
-
+    fun onOptionClicked(option: NavBarOption) {
+        viewModelScope.launch {
+            _events.send(ResidentMainEvent.ChangeResidentView(option))
+        }
+    }
 
 }
