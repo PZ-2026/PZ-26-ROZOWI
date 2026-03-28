@@ -34,7 +34,6 @@ fun BottomNavBar(
         thickness = 1.dp,
         color = MaterialTheme.colorScheme.outlineVariant
     )
-
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,

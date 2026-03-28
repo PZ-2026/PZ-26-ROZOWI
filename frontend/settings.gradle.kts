@@ -26,6 +26,5 @@ include(":application")
 include(":ui")
 include(":ui:android")
 include(":ui:cli")
+
 include(":infrastructure")
-include(":infrastructure:android")
-include(":infrastructure:common")

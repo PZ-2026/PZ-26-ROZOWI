@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import pl.edu.ur.blokur.ui.android.common.components.CommonEmptyState
+import pl.edu.ur.blokur.ui.android.common.components.CommonTopBar
 import pl.edu.ur.blokur.ui.android.resident.NavBarOption
 import pl.edu.ur.blokur.ui.android.resident.contents.BottomNavBar
 import pl.edu.ur.blokur.ui.android.resident.states.ResidentMainEvent
@@ -31,8 +32,9 @@ fun ResidentMainScreen(
     }
 
     Scaffold(
+        topBar = { CommonTopBar(state.toString()) },
         bottomBar = {
-            BottomNavBar(state,onNavBarItemClicked)
+            BottomNavBar(state,viewModel::onOptionClicked)
         }
     ) {
         innerPadding -> innerContent(Modifier.padding(innerPadding))

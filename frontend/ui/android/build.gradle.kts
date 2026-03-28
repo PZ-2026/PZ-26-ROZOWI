@@ -82,4 +82,6 @@ dependencies {
 
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+
+    api(project(":application"))
 }
