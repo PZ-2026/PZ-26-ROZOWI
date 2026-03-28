@@ -8,10 +8,6 @@ plugins {
     kotlin("kapt")
 }
 
-hilt {
-    enableAggregatingTask = false
-}
-
 android {
     namespace = "pl.edu.ur.blokur.ui.android"
     compileSdk = 36
@@ -83,5 +79,8 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
 
-    api(project(":application"))
+    //In clean DDD UI should only see application layer, but we highly depends on hilt dependency injector which has to see infra implementation
+    implementation(project(":application"))
+    implementation(project(":domain"))
+    implementation(project(":infrastructure"))
 }

@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.application.usecase.TestAUseCase
 import pl.edu.ur.blokur.ui.android.resident.NavBarOption
-import pl.edu.ur.blokur.ui.android.resident.screens.ResidentMainScreen
 import pl.edu.ur.blokur.ui.android.resident.states.ResidentMainEvent
 import pl.edu.ur.blokur.ui.android.resident.states.ResidentMainState
 import javax.inject.Inject
