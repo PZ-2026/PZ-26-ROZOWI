@@ -9,7 +9,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.android.common.BlokurTheme
 import pl.edu.ur.blokur.ui.android.resident.contents.BottomNavBar
-import pl.edu.ur.blokur.ui.android.resident.states.MainState
+import pl.edu.ur.blokur.ui.android.resident.states.ResidentMainState
 
 @Preview(showBackground = true)
 @Composable
@@ -21,11 +21,11 @@ private fun PreviewBottomNavBar(
             modifier = Modifier.padding(40.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            BottomNavBar(MainState.ViewingWelcome) { }
-            BottomNavBar(MainState.ViewingTickets) { }
-            BottomNavBar(MainState.ViewingFinances) { }
-            BottomNavBar(MainState.ViewingAnnouncements) { }
-            BottomNavBar(MainState.ViewingProfile) { }
+            BottomNavBar(ResidentMainState.ViewingWelcome) { }
+            BottomNavBar(ResidentMainState.ViewingTickets) { }
+            BottomNavBar(ResidentMainState.ViewingFinances) { }
+            BottomNavBar(ResidentMainState.ViewingAnnouncements) { }
+            BottomNavBar(ResidentMainState.ViewingProfile) { }
         }
     }
 }

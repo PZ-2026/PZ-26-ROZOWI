@@ -11,23 +11,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.android.resident.NavBarOption
 import pl.edu.ur.blokur.ui.android.resident.bottomNavItems
-import pl.edu.ur.blokur.ui.android.resident.states.MainState
+import pl.edu.ur.blokur.ui.android.resident.states.ResidentMainState
 
 @Composable
 fun BottomNavBar(
-    state : MainState,
+    state : ResidentMainState,
     onItemClicked: (NavBarOption) -> Unit,
     ) {
     var selectedOption = NavBarOption.NONE
 
     when(state){
-        is MainState.Error -> selectedOption = NavBarOption.NONE
-        is MainState.Loading -> selectedOption = NavBarOption.NONE
-        is MainState.ViewingAnnouncements -> selectedOption = NavBarOption.ANNOUNCEMENTS
-        is MainState.ViewingFinances -> selectedOption = NavBarOption.FINANCES
-        is MainState.ViewingProfile -> selectedOption = NavBarOption.PROFILE
-        is MainState.ViewingTickets -> selectedOption = NavBarOption.TICKETS
-        is MainState.ViewingWelcome -> selectedOption = NavBarOption.NONE
+        is ResidentMainState.Error -> selectedOption = NavBarOption.NONE
+        is ResidentMainState.Loading -> selectedOption = NavBarOption.NONE
+        is ResidentMainState.ViewingAnnouncements -> selectedOption = NavBarOption.ANNOUNCEMENTS
+        is ResidentMainState.ViewingFinances -> selectedOption = NavBarOption.FINANCES
+        is ResidentMainState.ViewingProfile -> selectedOption = NavBarOption.PROFILE
+        is ResidentMainState.ViewingTickets -> selectedOption = NavBarOption.TICKETS
+        is ResidentMainState.ViewingWelcome -> selectedOption = NavBarOption.NONE
     }
 
     HorizontalDivider(

@@ -5,8 +5,4 @@ import dagger.hilt.android.HiltAndroidApp
 
 // main application class, this is app main process, initialize all that is needed here
 @HiltAndroidApp
-class AndroidApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-    }
-}
+class AndroidApplication : Application()

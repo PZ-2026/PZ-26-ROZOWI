@@ -5,11 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import pl.edu.ur.blokur.ui.android.resident.viewmodels.MainViewModel
+import pl.edu.ur.blokur.ui.android.resident.viewmodels.ResidentMainViewModel
 
 @Composable
 fun ResidentMainScreen(
-    viewModel: MainViewModel,
+    viewModel: ResidentMainViewModel,
 ) {
     val state by viewModel.state.collectAsState()
 
