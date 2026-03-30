@@ -2,28 +2,33 @@ package pl.edu.ur.blokur.ui.screens.finances
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.ui.components.BlokurCard
-import pl.edu.ur.blokur.ui.components.BlokurEmptyState
+import pl.edu.ur.blokur.data.mock.MockFinances
 import pl.edu.ur.blokur.ui.components.BlokurTopBar
+import pl.edu.ur.blokur.ui.screens.finances.components.BalanceCard
+import pl.edu.ur.blokur.ui.screens.finances.components.TransactionItem
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @Composable
 fun FinancesScreen() {
+    val balance = MockFinances.balance
+    val transactions = MockFinances.transactions
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -31,7 +36,7 @@ fun FinancesScreen() {
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { BlokurTopBar(title = "Finanse") }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -40,27 +45,24 @@ fun FinancesScreen() {
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            BlokurCard(modifier = Modifier.fillMaxWidth()) {
+            item { BalanceCard(balance = balance) }
+
+            item {
                 Text(
-                    text = "Moduł finansów",
+                    text = "Historia transakcji (24 mies.)",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Tutaj będą prezentowane saldo, opłaty i historia rozliczeń mieszkańca.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
-            BlokurEmptyState(
-                title = "Brak danych finansowych",
-                description = "Po integracji z backendem w tym miejscu pojawią się informacje o płatnościach i rozliczeniach.",
-                modifier = Modifier.weight(1f)
-            )
+            items(transactions) { transaction ->
+                TransactionItem(transaction = transaction)
+            }
+
+            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
 }
