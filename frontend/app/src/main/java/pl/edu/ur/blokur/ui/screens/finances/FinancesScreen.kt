@@ -12,15 +12,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.data.mock.MockFinances
 import pl.edu.ur.blokur.ui.components.BlokurTopBar
 import pl.edu.ur.blokur.ui.screens.finances.components.BalanceCard
+import pl.edu.ur.blokur.ui.screens.finances.components.DocumentItem
 import pl.edu.ur.blokur.ui.screens.finances.components.TransactionItem
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
@@ -28,13 +34,18 @@ import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 fun FinancesScreen() {
     val balance = MockFinances.balance
     val transactions = MockFinances.transactions
+    val documents = MockFinances.documents
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .safeDrawingPadding(),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { BlokurTopBar(title = "Finanse") }
+        topBar = { BlokurTopBar(title = "Finanse") },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -60,6 +71,26 @@ fun FinancesScreen() {
 
             items(transactions) { transaction ->
                 TransactionItem(transaction = transaction)
+            }
+
+            item {
+                Text(
+                    text = "Dokumenty",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            items(documents) { document ->
+                DocumentItem(
+                    document = document,
+                    onDownload = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Pobieranie: ${document.title}")
+                        }
+                    }
+                )
             }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
