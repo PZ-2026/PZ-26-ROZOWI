@@ -20,7 +20,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "My Application"
-include(":ui-android-refactor-wip")
+include(":app")
 include(":domain")
 include(":application")
 include(":ui")
