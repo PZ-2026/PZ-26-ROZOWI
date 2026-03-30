@@ -20,10 +20,12 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "My Application"
-include(":app")
+include(":app-old")
 include(":domain")
 include(":application")
-include(":ui")
+include(":ui-old-presentation")
 include(":ui:android")
 include(":ui:cli")
 include(":infrastructure")
+include(":presentation")
+include(":app")
