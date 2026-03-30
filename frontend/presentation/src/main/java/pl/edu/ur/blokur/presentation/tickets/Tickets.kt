@@ -9,6 +9,9 @@ import pl.edu.ur.blokur.presentation.common.AppRoute
 import pl.edu.ur.blokur.presentation.tickets.screen.CreateTicketScreen
 import pl.edu.ur.blokur.presentation.tickets.screen.TicketDetailsScreen
 import pl.edu.ur.blokur.presentation.tickets.screen.TicketsScreen
+import pl.edu.ur.blokur.presentation.tickets.viewmodel.CreateTicketViewModel
+import pl.edu.ur.blokur.presentation.tickets.viewmodel.TicketDetailsViewModel
+import pl.edu.ur.blokur.presentation.tickets.viewmodel.TicketsViewModel
 
 sealed interface TicketRoutes : AppRoute {
     @Serializable

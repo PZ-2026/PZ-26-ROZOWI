@@ -45,9 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.presentation.tickets.CreateTicketEvent
-import pl.edu.ur.blokur.presentation.tickets.CreateTicketState
-import pl.edu.ur.blokur.presentation.tickets.CreateTicketViewModel
+import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketEvent
+import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketState
+import pl.edu.ur.blokur.presentation.tickets.viewmodel.CreateTicketViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

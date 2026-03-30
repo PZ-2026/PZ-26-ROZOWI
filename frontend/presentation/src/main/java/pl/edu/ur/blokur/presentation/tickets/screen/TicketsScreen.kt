@@ -22,10 +22,10 @@ import pl.edu.ur.blokur.presentation.common.component.EmptyState
 import pl.edu.ur.blokur.presentation.common.component.FloatingActionButton
 import pl.edu.ur.blokur.presentation.common.component.LoadingIndicator
 import pl.edu.ur.blokur.presentation.common.component.TopBar
-import pl.edu.ur.blokur.presentation.tickets.TicketsEvent
-import pl.edu.ur.blokur.presentation.tickets.TicketsState
-import pl.edu.ur.blokur.presentation.tickets.TicketsViewModel
+import pl.edu.ur.blokur.presentation.tickets.util.TicketsEvent
+import pl.edu.ur.blokur.presentation.tickets.util.TicketsState
 import pl.edu.ur.blokur.presentation.tickets.content.TicketListContent
+import pl.edu.ur.blokur.presentation.tickets.viewmodel.TicketsViewModel
 
 @Composable
 fun TicketsScreen(

@@ -50,14 +50,13 @@ import pl.edu.ur.blokur.presentation.common.component.EmptyState
 import pl.edu.ur.blokur.presentation.common.component.LoadingIndicator
 import pl.edu.ur.blokur.presentation.common.component.StatusBadge
 import pl.edu.ur.blokur.presentation.common.component.TagBadge
-import pl.edu.ur.blokur.presentation.tickets.TicketDetailsEvent
-import pl.edu.ur.blokur.presentation.tickets.TicketDetailsState
-import pl.edu.ur.blokur.presentation.tickets.TicketDetailsViewModel
+import pl.edu.ur.blokur.presentation.tickets.util.TicketDetailsEvent
+import pl.edu.ur.blokur.presentation.tickets.util.TicketDetailsState
+import pl.edu.ur.blokur.presentation.tickets.viewmodel.TicketDetailsViewModel
 import pl.edu.ur.blokur.presentation.tickets.component.AssignConservatorSheet
 import pl.edu.ur.blokur.presentation.tickets.component.ManagerRejectSheet
 import pl.edu.ur.blokur.presentation.tickets.component.TicketTimeline
 import pl.edu.ur.blokur.presentation.tickets.util.toPresentation
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketDetailsScreen(
