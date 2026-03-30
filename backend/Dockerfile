@@ -10,7 +10,7 @@ COPY src src
 RUN sed -i 's/\r$//' gradlew
 RUN chmod +x ./gradlew
 
-RUN ./gradlew bootJar -x test
+RUN ./gradlew clean bootJar -x test
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
