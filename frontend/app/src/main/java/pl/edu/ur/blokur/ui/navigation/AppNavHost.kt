@@ -12,6 +12,8 @@ import androidx.navigation.compose.composable
 import pl.edu.ur.blokur.ui.screens.announcements.AnnouncementsScreen
 import pl.edu.ur.blokur.ui.screens.auth.LoginScreen
 import pl.edu.ur.blokur.ui.screens.finances.FinancesScreen
+import pl.edu.ur.blokur.ui.screens.finances.TransactionsScreen
+import pl.edu.ur.blokur.ui.screens.finances.DocumentsScreen
 import pl.edu.ur.blokur.ui.screens.profile.ProfileScreen
 import pl.edu.ur.blokur.ui.screens.tickets.TicketsScreen
 import pl.edu.ur.blokur.ui.screens.tickets.CreateTicketScreen
@@ -73,7 +75,22 @@ fun AppNavHost(
             }
 
             composable(AppRoute.Finances.route) {
-                FinancesScreen()
+                FinancesScreen(
+                    onNavigateToTransactions = { navController.navigate(AppRoute.Transactions.route) },
+                    onNavigateToDocuments = { navController.navigate(AppRoute.Documents.route) }
+                )
+            }
+
+            composable(AppRoute.Transactions.route) {
+                TransactionsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(AppRoute.Documents.route) {
+                DocumentsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
             composable(AppRoute.Announcements.route) {
