@@ -11,3 +11,10 @@ sealed interface AuthEvent {
     data object NavigateToMain : AuthEvent
     data class ShowError(val message: String) : AuthEvent
 }
+
+//tutaj moze jakos inaczej to trzymac chociaz poki co jest chyba okej
+data class LoginFormFields (
+    val email: String,
+    val password: String,
+    val passwordVisible: Boolean
+)

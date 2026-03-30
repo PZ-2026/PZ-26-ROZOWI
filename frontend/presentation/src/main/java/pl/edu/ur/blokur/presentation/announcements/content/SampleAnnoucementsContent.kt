@@ -21,13 +21,12 @@ import pl.edu.ur.blokur.presentation.common.component.NormalCard
 import pl.edu.ur.blokur.presentation.common.theme.PreviewTheme
 
 @Composable
-fun SampleAnnouncementsContent(state: AnnouncementsState) {
+fun SampleAnnouncementsContent(
+    state: AnnouncementsState,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp)
-            .navigationBarsPadding(),
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Spacer(modifier = Modifier.height(8.dp))
@@ -45,28 +44,29 @@ fun SampleAnnouncementsContent(state: AnnouncementsState) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-    when (state) {
-        AnnouncementsState.Empty -> {
-            EmptyState(
+
+        when (state) {
+            AnnouncementsState.Empty -> EmptyState(
                 title = "Brak ogłoszeń",
                 description = "Po podłączeniu danych tutaj pojawią się najnowsze komunikaty i aktualności."
             )
-        }
-        AnnouncementsState.Loading -> {
-            LoadingIndicator()
+            AnnouncementsState.Loading -> LoadingIndicator()
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun SampleAnnouncementsContentLoadingPreview() {
-    PreviewTheme { SampleAnnouncementsContent(AnnouncementsState.Loading) }
+private fun AnnouncementsLoadingPreview() {
+    PreviewTheme {
+        SampleAnnouncementsContent(AnnouncementsState.Loading)
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun SampleAnnouncementsContentEmptyPreview() {
-    PreviewTheme { SampleAnnouncementsContent(AnnouncementsState.Loading) }
+private fun AnnouncementsEmptyPreview() {
+    PreviewTheme {
+        SampleAnnouncementsContent(AnnouncementsState.Empty)
+    }
 }

@@ -14,9 +14,7 @@ sealed interface ProfileRoutes : AppRoute {
     data object Main : ProfileRoutes
 }
 
-fun NavGraphBuilder.profileGraph(
-    navController: NavController
-) {
+fun NavGraphBuilder.profileGraph(navController: NavController) {
     composable<ProfileRoutes.Main> {
         val viewModel: ProfileViewModel = hiltViewModel()
         ProfileScreen(viewModel)

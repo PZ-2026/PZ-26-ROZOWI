@@ -22,8 +22,8 @@ import pl.edu.ur.blokur.presentation.common.component.EmptyState
 import pl.edu.ur.blokur.presentation.common.component.FloatingActionButton
 import pl.edu.ur.blokur.presentation.common.component.LoadingIndicator
 import pl.edu.ur.blokur.presentation.common.component.TopBar
-import pl.edu.ur.blokur.presentation.tickets.util.TicketsEvent
-import pl.edu.ur.blokur.presentation.tickets.util.TicketsState
+import pl.edu.ur.blokur.presentation.tickets.util.TicketsListState
+import pl.edu.ur.blokur.presentation.tickets.util.TicketsScreenEvent
 import pl.edu.ur.blokur.presentation.tickets.content.TicketListContent
 import pl.edu.ur.blokur.presentation.tickets.viewmodel.TicketsViewModel
 
@@ -38,8 +38,8 @@ fun TicketsScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is TicketsEvent.NavigateToDetails -> onNavigateToDetails(event.ticketId)
-                is TicketsEvent.NavigateToCreate -> onNavigateToCreate()
+                is TicketsScreenEvent.NavigateToDetails -> onNavigateToDetails(event.ticketId)
+                is TicketsScreenEvent.NavigateToCreate -> onNavigateToCreate()
             }
         }
     }
@@ -52,9 +52,9 @@ fun TicketsScreen(
         }
     ) { innerPadding ->
         when (val s = state) {
-            is TicketsState.Loading -> LoadingIndicator()
-            is TicketsState.Error -> EmptyState(title = "Błąd", description = s.message)
-            is TicketsState.Data -> {
+            is TicketsListState.Loading -> LoadingIndicator()
+            is TicketsListState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is TicketsListState.Success -> {
                 if (s.tickets.isEmpty()) {
                     EmptyState(
                         title = "Brak zgłoszeń",

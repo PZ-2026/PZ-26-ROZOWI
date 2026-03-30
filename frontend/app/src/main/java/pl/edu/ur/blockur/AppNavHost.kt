@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import pl.edu.ur.blokur.presentation.announcements.AnnouncementsRoutes
 import pl.edu.ur.blokur.presentation.announcements.announcementsGraph
+import pl.edu.ur.blokur.presentation.auth.Auth
 import pl.edu.ur.blokur.presentation.auth.AuthRoutes
 import pl.edu.ur.blokur.presentation.auth.authGraph
 import pl.edu.ur.blokur.presentation.common.AppRoute
@@ -27,7 +28,6 @@ fun AppNavHost(
         navController = appNavController,
         startDestination = startDestination
     ) {
-        // Auth flow
         authGraph(
             navController = appNavController,
             onLoginSuccess = {
@@ -37,7 +37,6 @@ fun AppNavHost(
             }
         )
 
-        // Main resident shell with bottom navigation
         residentGraph(
             navController = appNavController,
             announcementsRoute = AnnouncementsRoutes.Main,

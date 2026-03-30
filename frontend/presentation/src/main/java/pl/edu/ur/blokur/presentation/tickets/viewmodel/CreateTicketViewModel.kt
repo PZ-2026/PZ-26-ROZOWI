@@ -12,8 +12,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.usecase.CreateServiceTicketUseCase
-import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketEvent
-import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketState
+import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketFormState
+import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketScreenEvent
+import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketSubmitState
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,24 +22,39 @@ class CreateTicketViewModel @Inject constructor(
     private val createServiceTicketUseCase: CreateServiceTicketUseCase
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<CreateTicketState>(CreateTicketState.Idle)
-    val state: StateFlow<CreateTicketState> = _state.asStateFlow()
-
-    private val _events = Channel<CreateTicketEvent>()
-    val events: Flow<CreateTicketEvent> = _events.receiveAsFlow()
-
     val categories = listOf("Hydraulika", "Elektryka", "Domofony", "Części wspólne", "Winda", "Inne")
 
-    fun submit(title: String, category: String, description: String) {
+    private val _formState = MutableStateFlow(CreateTicketFormState())
+    val formState: StateFlow<CreateTicketFormState> = _formState.asStateFlow()
+
+    private val _submitState = MutableStateFlow<CreateTicketSubmitState>(CreateTicketSubmitState.Idle)
+    val submitState: StateFlow<CreateTicketSubmitState> = _submitState.asStateFlow()
+
+    private val _events = Channel<CreateTicketScreenEvent>()
+    val events: Flow<CreateTicketScreenEvent> = _events.receiveAsFlow()
+
+    fun onFormChanged(state: CreateTicketFormState) {
+        _formState.value = state
+        if (_submitState.value is CreateTicketSubmitState.Error) {
+            _submitState.value = CreateTicketSubmitState.Idle
+        }
+    }
+
+    fun submit() {
+        val form = _formState.value
+        if (form.title.isBlank() || form.selectedCategory.isBlank() || form.description.isBlank()) {
+            _submitState.value = CreateTicketSubmitState.Error("Wypełnij wszystkie pola")
+            return
+        }
         viewModelScope.launch {
-            _state.value = CreateTicketState.Submitting
-            delay(800) // Symulacja zapisu — UseCase niezaimplementowany
-            _state.value = CreateTicketState.Success
-            _events.send(CreateTicketEvent.NavigateBack)
+            _submitState.value = CreateTicketSubmitState.Submitting
+            delay(800) // UseCase niezaimplementowany
+            _submitState.value = CreateTicketSubmitState.Success
+            _events.send(CreateTicketScreenEvent.NavigateBack)
         }
     }
 
     fun onNavigateBack() {
-        viewModelScope.launch { _events.send(CreateTicketEvent.NavigateBack) }
+        viewModelScope.launch { _events.send(CreateTicketScreenEvent.NavigateBack) }
     }
 }

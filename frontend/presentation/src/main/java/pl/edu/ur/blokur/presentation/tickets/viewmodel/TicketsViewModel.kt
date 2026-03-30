@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.repository.TicketRepository
-import pl.edu.ur.blokur.presentation.tickets.util.TicketsEvent
-import pl.edu.ur.blokur.presentation.tickets.util.TicketsState
+import pl.edu.ur.blokur.presentation.tickets.util.TicketsListState
+import pl.edu.ur.blokur.presentation.tickets.util.TicketsScreenEvent
 import javax.inject.Inject
 
 @HiltViewModel
@@ -20,11 +20,11 @@ class TicketsViewModel @Inject constructor(
     private val ticketRepository: TicketRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<TicketsState>(TicketsState.Loading)
-    val state: StateFlow<TicketsState> = _state.asStateFlow()
+    private val _state = MutableStateFlow<TicketsListState>(TicketsListState.Loading)
+    val state: StateFlow<TicketsListState> = _state.asStateFlow()
 
-    private val _events = Channel<TicketsEvent>()
-    val events: Flow<TicketsEvent> = _events.receiveAsFlow()
+    private val _events = Channel<TicketsScreenEvent>()
+    val events: Flow<TicketsScreenEvent> = _events.receiveAsFlow()
 
     init {
         loadTickets()
@@ -33,20 +33,20 @@ class TicketsViewModel @Inject constructor(
     private fun loadTickets() {
         viewModelScope.launch {
             runCatching { ticketRepository.getTickets() }
-                .onSuccess { tickets -> _state.value = TicketsState.Data(tickets) }
-                .onFailure { e -> _state.value = TicketsState.Error(e.message ?: "Błąd ładowania zgłoszeń") }
+                .onSuccess { tickets -> _state.value = TicketsListState.Success(tickets) }
+                .onFailure { e -> _state.value = TicketsListState.Error(e.message ?: "Błąd ładowania zgłoszeń") }
         }
     }
 
     fun onTicketClicked(ticketId: Int) {
         viewModelScope.launch {
-            _events.send(TicketsEvent.NavigateToDetails(ticketId))
+            _events.send(TicketsScreenEvent.NavigateToDetails(ticketId))
         }
     }
 
     fun onCreateTicketClicked() {
         viewModelScope.launch {
-            _events.send(TicketsEvent.NavigateToCreate)
+            _events.send(TicketsScreenEvent.NavigateToCreate)
         }
     }
 }

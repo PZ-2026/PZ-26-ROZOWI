@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.usecase.LoginUseCase
 import pl.edu.ur.blokur.presentation.auth.util.AuthEvent
 import pl.edu.ur.blokur.presentation.auth.util.AuthState
+import pl.edu.ur.blokur.presentation.auth.util.LoginFormFields
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,24 +25,31 @@ class AuthViewModel @Inject constructor(
     private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
+    private val _formFields = MutableStateFlow(LoginFormFields("", "", false))
+    val formFields: StateFlow<LoginFormFields> = _formFields.asStateFlow()
+
     private val _events = Channel<AuthEvent>()
     val events: Flow<AuthEvent> = _events.receiveAsFlow()
 
-    fun login(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
+    fun onFormChanged(fields: LoginFormFields) {
+        _formFields.value = fields
+        // Clear error on any input change
+        if (_state.value is AuthState.Error) _state.value = AuthState.Idle
+    }
+
+    fun login() {
+        val fields = _formFields.value
+        if (fields.email.isBlank() || fields.password.isBlank()) {
             _state.value = AuthState.Error("Wypełnij wszystkie pola")
             return
         }
         viewModelScope.launch {
+            // LoginUseCase(fields.email,fields.password)
+            //this is mock
             _state.value = AuthState.Loading
-            // LoginUseCase is not yet implemented — simulate success for UI demo
             delay(800)
             _state.value = AuthState.Success
             _events.send(AuthEvent.NavigateToMain)
         }
-    }
-
-    fun resetError() {
-        if (_state.value is AuthState.Error) _state.value = AuthState.Idle
     }
 }

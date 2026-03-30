@@ -3,38 +3,58 @@ package pl.edu.ur.blokur.presentation.tickets.util
 import pl.edu.ur.blokur.domain.model.AppUser
 import pl.edu.ur.blokur.domain.model.Ticket
 
-sealed interface TicketsState {
-    data object Loading : TicketsState
-    data class Error(val message: String) : TicketsState
-    data class Data(val tickets: List<Ticket>, val currentUser: AppUser? = null) : TicketsState
+// ─── Ticket List ──────────────────────────────────────────────────────────────
+
+sealed interface TicketsListState {
+    data object Loading : TicketsListState
+    data class Error(val message: String) : TicketsListState
+    data class Success(val tickets: List<Ticket>) : TicketsListState
 }
 
-sealed interface TicketsEvent {
-    data class NavigateToDetails(val ticketId: Int) : TicketsEvent
-    data object NavigateToCreate : TicketsEvent
+sealed interface TicketsScreenEvent {
+    data class NavigateToDetails(val ticketId: Int) : TicketsScreenEvent
+    data object NavigateToCreate : TicketsScreenEvent
 }
 
-sealed interface TicketDetailsState {
-    data object Loading : TicketDetailsState
-    data class Error(val message: String) : TicketDetailsState
-    data class Data(
+// ─── Ticket Details ───────────────────────────────────────────────────────────
+
+sealed interface TicketDetailsListState {
+    data object Loading : TicketDetailsListState
+    data class Error(val message: String) : TicketDetailsListState
+    data class Success(
         val ticket: Ticket,
-        val currentUser: AppUser? = null,
         val availableConservators: List<AppUser> = emptyList()
-    ) : TicketDetailsState
+    ) : TicketDetailsListState
 }
 
-sealed interface TicketDetailsEvent {
-    data object NavigateBack : TicketDetailsEvent
+sealed interface TicketDetailsScreenEvent {
+    data object NavigateBack : TicketDetailsScreenEvent
 }
 
-sealed interface CreateTicketState {
-    data object Idle : CreateTicketState
-    data object Submitting : CreateTicketState
-    data object Success : CreateTicketState
-    data class Error(val message: String) : CreateTicketState
+// ─── Create Ticket ────────────────────────────────────────────────────────────
+
+data class CreateTicketFormState(
+    val title: String = "",
+    val description: String = "",
+    val selectedCategory: String = "",
+    val isCategoryExpanded: Boolean = false
+)
+
+sealed interface CreateTicketSubmitState {
+    data object Idle : CreateTicketSubmitState
+    data object Submitting : CreateTicketSubmitState
+    data object Success : CreateTicketSubmitState
+    data class Error(val message: String) : CreateTicketSubmitState
 }
 
-sealed interface CreateTicketEvent {
-    data object NavigateBack : CreateTicketEvent
+sealed interface CreateTicketScreenEvent {
+    data object NavigateBack : CreateTicketScreenEvent
 }
+
+// backward compat aliases (used in TicketDetailsViewModel via SavedStateHandle)
+typealias TicketsState = TicketsListState
+typealias TicketsEvent = TicketsScreenEvent
+typealias TicketDetailsState = TicketDetailsListState
+typealias TicketDetailsEvent = TicketDetailsScreenEvent
+typealias CreateTicketState = CreateTicketSubmitState
+typealias CreateTicketEvent = CreateTicketScreenEvent

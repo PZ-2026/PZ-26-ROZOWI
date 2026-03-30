@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.repository.TicketRepository
 import pl.edu.ur.blokur.presentation.tickets.TicketRoutes
-import pl.edu.ur.blokur.presentation.tickets.util.TicketDetailsEvent
-import pl.edu.ur.blokur.presentation.tickets.util.TicketDetailsState
+import pl.edu.ur.blokur.presentation.tickets.util.TicketDetailsListState
+import pl.edu.ur.blokur.presentation.tickets.util.TicketDetailsScreenEvent
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,11 +26,11 @@ class TicketDetailsViewModel @Inject constructor(
 
     private val route = savedStateHandle.toRoute<TicketRoutes.Details>()
 
-    private val _state = MutableStateFlow<TicketDetailsState>(TicketDetailsState.Loading)
-    val state: StateFlow<TicketDetailsState> = _state.asStateFlow()
+    private val _state = MutableStateFlow<TicketDetailsListState>(TicketDetailsListState.Loading)
+    val state: StateFlow<TicketDetailsListState> = _state.asStateFlow()
 
-    private val _events = Channel<TicketDetailsEvent>()
-    val events: Flow<TicketDetailsEvent> = _events.receiveAsFlow()
+    private val _events = Channel<TicketDetailsScreenEvent>()
+    val events: Flow<TicketDetailsScreenEvent> = _events.receiveAsFlow()
 
     init {
         loadTicket()
@@ -44,16 +44,16 @@ class TicketDetailsViewModel @Inject constructor(
                 val conservators = ticketRepository.getAvailableConservators()
                 ticket to conservators
             }.onSuccess { (ticket, conservators) ->
-                _state.value = TicketDetailsState.Data(ticket, availableConservators = conservators)
+                _state.value = TicketDetailsListState.Success(ticket, availableConservators = conservators)
             }.onFailure { e ->
-                _state.value = TicketDetailsState.Error(e.message ?: "Błąd ładowania zgłoszenia")
+                _state.value = TicketDetailsListState.Error(e.message ?: "Błąd ładowania zgłoszenia")
             }
         }
     }
 
     fun onNavigateBack() {
         viewModelScope.launch {
-            _events.send(TicketDetailsEvent.NavigateBack)
+            _events.send(TicketDetailsScreenEvent.NavigateBack)
         }
     }
 }
