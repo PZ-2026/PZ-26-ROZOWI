@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.auth
+package pl.edu.ur.blokur.presentation.auth.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.usecase.LoginUseCase
+import pl.edu.ur.blokur.presentation.auth.util.AuthEvent
+import pl.edu.ur.blokur.presentation.auth.util.AuthState
 import javax.inject.Inject
 
 @HiltViewModel

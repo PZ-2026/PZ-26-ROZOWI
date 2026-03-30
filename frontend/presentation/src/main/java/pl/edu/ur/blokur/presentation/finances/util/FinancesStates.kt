@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.finances
+package pl.edu.ur.blokur.presentation.finances.util
 
 import pl.edu.ur.blokur.domain.model.ApartmentBalance
 import pl.edu.ur.blokur.domain.model.FinancialDocument

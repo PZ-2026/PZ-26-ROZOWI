@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.auth
+package pl.edu.ur.blokur.presentation.auth.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +45,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import pl.edu.ur.blokur.presentation.auth.util.AuthEvent
+import pl.edu.ur.blokur.presentation.auth.util.AuthState
+import pl.edu.ur.blokur.presentation.auth.viewmodel.AuthViewModel
 import pl.edu.ur.blokur.presentation.common.component.PrimaryButton
 import pl.edu.ur.blokur.presentation.common.theme.GradientEnd
 import pl.edu.ur.blokur.presentation.common.theme.GradientStart

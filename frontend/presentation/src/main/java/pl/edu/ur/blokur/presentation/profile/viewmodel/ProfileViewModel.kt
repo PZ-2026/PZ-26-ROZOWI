@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.profile
+package pl.edu.ur.blokur.presentation.profile.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.presentation.profile.util.ProfileEvent
+import pl.edu.ur.blokur.presentation.profile.util.ProfileState
 import javax.inject.Inject
 
 @HiltViewModel

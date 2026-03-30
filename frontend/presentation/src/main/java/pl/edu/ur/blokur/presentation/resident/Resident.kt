@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
 import pl.edu.ur.blokur.presentation.common.AppRoute
 import pl.edu.ur.blokur.presentation.resident.screen.ResidentMainScreen
-import pl.edu.ur.blokur.presentation.resident.state.NavBarOption
+import pl.edu.ur.blokur.presentation.resident.util.NavBarOption
 import pl.edu.ur.blokur.presentation.resident.viewmodel.ResidentMainViewModel
 
 sealed interface ResidentRoutes : AppRoute {

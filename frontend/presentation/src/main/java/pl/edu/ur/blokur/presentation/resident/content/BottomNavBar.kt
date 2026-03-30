@@ -9,9 +9,9 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.presentation.resident.state.NavBarOption
-import pl.edu.ur.blokur.presentation.resident.state.ResidentMainState
-import pl.edu.ur.blokur.presentation.resident.state.bottomNavItems
+import pl.edu.ur.blokur.presentation.resident.util.NavBarOption
+import pl.edu.ur.blokur.presentation.resident.util.ResidentMainState
+import pl.edu.ur.blokur.presentation.resident.util.bottomNavItems
 
 @Composable
 fun BottomNavBar(

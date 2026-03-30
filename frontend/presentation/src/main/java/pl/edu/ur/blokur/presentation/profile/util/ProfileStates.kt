@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.profile
+package pl.edu.ur.blokur.presentation.profile.util
 
 sealed interface ProfileState {
     data object Loading : ProfileState

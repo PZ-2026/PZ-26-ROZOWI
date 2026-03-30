@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.usecase.TestAUseCase
-import pl.edu.ur.blokur.presentation.resident.state.NavBarOption
-import pl.edu.ur.blokur.presentation.resident.state.ResidentMainEvent
-import pl.edu.ur.blokur.presentation.resident.state.ResidentMainState
+import pl.edu.ur.blokur.presentation.resident.util.NavBarOption
+import pl.edu.ur.blokur.presentation.resident.util.ResidentMainEvent
+import pl.edu.ur.blokur.presentation.resident.util.ResidentMainState
 import javax.inject.Inject
 
 @HiltViewModel

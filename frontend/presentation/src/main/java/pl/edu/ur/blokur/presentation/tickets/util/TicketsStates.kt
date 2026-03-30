@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.tickets
+package pl.edu.ur.blokur.presentation.tickets.util
 
 import pl.edu.ur.blokur.domain.model.AppUser
 import pl.edu.ur.blokur.domain.model.Ticket

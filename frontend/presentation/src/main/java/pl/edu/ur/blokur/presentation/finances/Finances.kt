@@ -10,6 +10,8 @@ import pl.edu.ur.blokur.presentation.common.AppRoute
 import pl.edu.ur.blokur.presentation.finances.screen.DocumentsScreen
 import pl.edu.ur.blokur.presentation.finances.screen.FinancesScreen
 import pl.edu.ur.blokur.presentation.finances.screen.TransactionsScreen
+import pl.edu.ur.blokur.presentation.finances.util.FinancesState
+import pl.edu.ur.blokur.presentation.finances.viewmodel.FinancesViewModel
 
 sealed interface FinancesRoutes : AppRoute {
     @Serializable

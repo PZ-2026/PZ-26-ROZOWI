@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.finances
+package pl.edu.ur.blokur.presentation.finances.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.repository.FinancesRepository
+import pl.edu.ur.blokur.presentation.finances.util.FinancesEvent
+import pl.edu.ur.blokur.presentation.finances.util.FinancesState
 import javax.inject.Inject
 
 @HiltViewModel

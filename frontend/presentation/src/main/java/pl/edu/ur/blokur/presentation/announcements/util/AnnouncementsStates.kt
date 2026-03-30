@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.announcements
+package pl.edu.ur.blokur.presentation.announcements.util
 
 sealed interface AnnouncementsState {
     data object Loading : AnnouncementsState

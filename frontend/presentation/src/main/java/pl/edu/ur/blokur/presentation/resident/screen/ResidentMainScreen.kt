@@ -8,8 +8,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import pl.edu.ur.blokur.presentation.common.component.TopBar
-import pl.edu.ur.blokur.presentation.resident.state.NavBarOption
-import pl.edu.ur.blokur.presentation.resident.state.ResidentMainEvent
+import pl.edu.ur.blokur.presentation.resident.util.NavBarOption
+import pl.edu.ur.blokur.presentation.resident.util.ResidentMainEvent
 import pl.edu.ur.blokur.presentation.resident.content.BottomNavBar
 import pl.edu.ur.blokur.presentation.resident.viewmodel.ResidentMainViewModel
 

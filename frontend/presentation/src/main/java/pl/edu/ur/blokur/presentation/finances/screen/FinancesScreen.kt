@@ -36,10 +36,10 @@ import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.presentation.common.component.EmptyState
 import pl.edu.ur.blokur.presentation.common.component.LoadingIndicator
 import pl.edu.ur.blokur.presentation.common.component.TopBar
-import pl.edu.ur.blokur.presentation.finances.FinancesEvent
-import pl.edu.ur.blokur.presentation.finances.FinancesState
-import pl.edu.ur.blokur.presentation.finances.FinancesViewModel
 import pl.edu.ur.blokur.presentation.finances.component.BalanceCard
+import pl.edu.ur.blokur.presentation.finances.util.FinancesEvent
+import pl.edu.ur.blokur.presentation.finances.util.FinancesState
+import pl.edu.ur.blokur.presentation.finances.viewmodel.FinancesViewModel
 
 @Composable
 fun FinancesScreen(

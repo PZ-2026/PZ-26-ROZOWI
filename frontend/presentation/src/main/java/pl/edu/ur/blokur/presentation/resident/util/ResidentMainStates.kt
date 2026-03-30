@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.resident.state
+package pl.edu.ur.blokur.presentation.resident.util
 
 sealed interface ResidentMainState {
     data object Loading : ResidentMainState

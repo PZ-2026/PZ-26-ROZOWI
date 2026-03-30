@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.resident.state
+package pl.edu.ur.blokur.presentation.resident.util
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle

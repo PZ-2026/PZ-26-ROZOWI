@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.auth
+package pl.edu.ur.blokur.presentation.auth.util
 
 sealed interface AuthState {
     data object Idle : AuthState

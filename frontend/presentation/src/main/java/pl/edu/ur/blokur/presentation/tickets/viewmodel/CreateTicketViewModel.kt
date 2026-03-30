@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.tickets
+package pl.edu.ur.blokur.presentation.tickets.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.domain.usecase.CreateServiceTicketUseCase
+import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketEvent
+import pl.edu.ur.blokur.presentation.tickets.util.CreateTicketState
 import javax.inject.Inject
 
 @HiltViewModel

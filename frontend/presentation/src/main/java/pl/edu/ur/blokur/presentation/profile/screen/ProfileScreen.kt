@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.presentation.profile
+package pl.edu.ur.blokur.presentation.profile.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +33,9 @@ import pl.edu.ur.blokur.presentation.common.component.NormalCard
 import pl.edu.ur.blokur.presentation.common.component.PrimaryButton
 import pl.edu.ur.blokur.presentation.common.component.TopBar
 import pl.edu.ur.blokur.presentation.common.theme.PreviewTheme
+import pl.edu.ur.blokur.presentation.profile.util.ProfileEvent
+import pl.edu.ur.blokur.presentation.profile.util.ProfileState
+import pl.edu.ur.blokur.presentation.profile.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel) {
