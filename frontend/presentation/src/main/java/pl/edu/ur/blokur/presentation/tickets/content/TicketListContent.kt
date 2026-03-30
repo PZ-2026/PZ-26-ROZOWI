@@ -23,7 +23,7 @@ fun TicketListContent(
             val presentation = ticket.status.toPresentation()
             val assignedTo = ticket.assignedTo
             val dateOrAssignee = if (assignedTo != null)
-                "${ticket.createdAt.take(10)} • ${assignedTo.fullName}"
+                "${ticket.createdAt.take(10)} • Przypisane: ${assignedTo.fullName}"
             else
                 "${ticket.createdAt.take(10)} • Brak przypisania"
 

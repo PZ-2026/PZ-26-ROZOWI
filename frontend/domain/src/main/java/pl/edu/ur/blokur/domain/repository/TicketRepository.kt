@@ -8,4 +8,5 @@ interface TicketRepository {
     suspend fun getTicketById(id: Int): Ticket?
     suspend fun getAvailableConservators(): List<AppUser>
     suspend fun getCategories(): List<String>
+    suspend fun getCurrentUserRole(): String
 }

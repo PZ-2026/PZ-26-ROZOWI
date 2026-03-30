@@ -20,6 +20,8 @@ internal class MockTicketRepository @Inject constructor() : TicketRepository {
     private val conservator2 = AppUser(202, "Zdzisław", "Kabel", "zdzislaw.k@blokur.pl", "KONSERWATOR")
     private val admin = AppUser(301, "Anna", "Zarządca", "anna.z@blokur.pl", "ADMINISTRATOR")
 
+    private var currentUser: AppUser = admin
+
     private val buildingKwiatowa = Building(12, "Osiedle Róż", "Blok 12", "ul. Kwiatowa 12")
     private val buildingMickiewicza = Building(15, "Osiedle Centrum", "Wieżowiec 15", "al. Mickiewicza 15")
     private val staircaseA = Staircase(1, "A")
@@ -116,4 +118,6 @@ internal class MockTicketRepository @Inject constructor() : TicketRepository {
 
     override suspend fun getCategories(): List<String> =
         listOf("Hydraulika", "Elektryka", "Domofony", "Części wspólne", "Winda", "Inne")
+
+    override suspend fun getCurrentUserRole(): String = admin.role
 }

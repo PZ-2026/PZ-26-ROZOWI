@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,9 +16,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Divider
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,21 +42,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.domain.model.AppUser
 import pl.edu.ur.blokur.domain.model.Ticket
+import pl.edu.ur.blokur.domain.model.TicketStatus
 import pl.edu.ur.blokur.presentation.common.component.EmptyState
 import pl.edu.ur.blokur.presentation.common.component.LoadingIndicator
 import pl.edu.ur.blokur.presentation.common.component.StatusBadge
 import pl.edu.ur.blokur.presentation.common.component.TagBadge
+import pl.edu.ur.blokur.presentation.common.theme.ErrorRed
 import pl.edu.ur.blokur.presentation.common.theme.PreviewTheme
+import pl.edu.ur.blokur.presentation.common.theme.SuccessGreen
 import pl.edu.ur.blokur.presentation.tickets.component.AssignConservatorSheet
+import pl.edu.ur.blokur.presentation.tickets.component.ConservatorActionSheet
 import pl.edu.ur.blokur.presentation.tickets.component.ManagerRejectSheet
 import pl.edu.ur.blokur.presentation.tickets.component.TicketTimeline
+import pl.edu.ur.blokur.presentation.tickets.util.ConservatorActionType
 import pl.edu.ur.blokur.presentation.tickets.util.TicketDetailsListState
 import pl.edu.ur.blokur.presentation.tickets.util.toPresentation
 
 @Composable
 fun TicketDetailsContent(
     state: TicketDetailsListState,
-    onNavigateBack: () -> Unit,
+    onAssignConservator: (AppUser, String) -> Unit,
+    onRejectTicket: (String) -> Unit,
+    onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (state) {
@@ -58,7 +72,10 @@ fun TicketDetailsContent(
         is TicketDetailsListState.Success -> TicketDetailsSuccessContent(
             ticket = state.ticket,
             conservators = state.availableConservators,
-            onNavigateBack = onNavigateBack,
+            currentUserRole = state.currentUserRole,
+            onAssignConservator = onAssignConservator,
+            onRejectTicket = onRejectTicket,
+            onConservatorAction = onConservatorAction,
             modifier = modifier
         )
     }
@@ -68,82 +85,200 @@ fun TicketDetailsContent(
 private fun TicketDetailsSuccessContent(
     ticket: Ticket,
     conservators: List<AppUser>,
-    onNavigateBack: () -> Unit,
+    currentUserRole: String,
+    onAssignConservator: (AppUser, String) -> Unit,
+    onRejectTicket: (String) -> Unit,
+    onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val presentation = ticket.status.toPresentation()
+
     var showAssignSheet by remember { mutableStateOf(false) }
     var showRejectSheet by remember { mutableStateOf(false) }
+    var conservatorActionType by remember { mutableStateOf<ConservatorActionType?>(null) }
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Spacer(modifier = Modifier.height(4.dp))
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Spacer(Modifier.height(4.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatusBadge(text = presentation.label, dotColor = presentation.color)
-            TagBadge(text = ticket.category.name)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusBadge(text = presentation.label, dotColor = presentation.color)
+                TagBadge(text = ticket.category.name)
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = ticket.title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = ticket.description,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                MetadataRow(Icons.Rounded.Article, "Numer zgłoszenia", ticket.ticketNumber)
+                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                MetadataRow(Icons.Rounded.Person, "Zgłaszający", ticket.author.fullName)
+                val location = buildString {
+                    ticket.building?.let { append(it.address) }
+                    ticket.staircase?.let { append(" • Klatka ${it.label}") }
+                    ticket.apartment?.let { append(" • Mieszkanie ${it.number}") }
+                }
+                if (location.isNotBlank()) {
+                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    MetadataRow(Icons.Rounded.Place, "Lokalizacja", location)
+                }
+                ticket.assignedTo?.let {
+                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    MetadataRow(Icons.Rounded.Person, "Przypisany konserwator", it.fullName)
+                }
+                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                MetadataRow(Icons.Rounded.CalendarToday, "Data utworzenia", formatDateTime(ticket.createdAt))
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Historia zgłoszenia",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                TicketTimeline(history = ticket.history)
+            }
+
+            Spacer(Modifier.height(100.dp))
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = ticket.title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = ticket.description,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
+        // ── Kontekstowe FABs zależne od roli i statusu ──
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.End
         ) {
-            MetadataRow(Icons.Rounded.Article, "Numer zgłoszenia", ticket.ticketNumber)
-            Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
-            MetadataRow(Icons.Rounded.Person, "Zgłaszający", ticket.author.fullName)
-            val location = buildString {
-                ticket.building?.let { append(it.address) }
-                ticket.staircase?.let { append(" • Klatka ${it.label}") }
-                ticket.apartment?.let { append(" • Mieszkanie ${it.number}") }
+            when (currentUserRole) {
+                "ADMINISTRATOR" -> {
+                    when (ticket.status) {
+                        TicketStatus.NOWE -> {
+                            TicketFab(
+                                icon = Icons.Rounded.Close,
+                                contentDescription = "Odrzuć zgłoszenie",
+                                containerColor = ErrorRed,
+                                onClick = { showRejectSheet = true }
+                            )
+                            TicketFab(
+                                icon = Icons.Rounded.Person,
+                                contentDescription = "Przypisz konserwatora",
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                onClick = { showAssignSheet = true }
+                            )
+                        }
+                        TicketStatus.WSTRZYMANO -> {
+                            TicketFab(
+                                icon = Icons.Rounded.PlayArrow,
+                                contentDescription = "Wznów zgłoszenie",
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                onClick = { showAssignSheet = true }
+                            )
+                        }
+                        else -> Unit
+                    }
+                }
+                "KONSERWATOR" -> {
+                    when (ticket.status) {
+                        TicketStatus.ZAPLANOWANO -> {
+                            TicketFab(
+                                icon = Icons.Rounded.PlayArrow,
+                                contentDescription = "Rozpocznij realizację",
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                onClick = { conservatorActionType = ConservatorActionType.START }
+                            )
+                        }
+                        TicketStatus.W_REALIZACJI, TicketStatus.WSTRZYMANO -> {
+                            TicketFab(
+                                icon = Icons.Rounded.Pause,
+                                contentDescription = "Wstrzymaj / Komentarz",
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                onClick = { conservatorActionType = ConservatorActionType.PAUSE_OR_COMMENT }
+                            )
+                            TicketFab(
+                                icon = Icons.Rounded.CheckCircle,
+                                contentDescription = "Zakończ pracę",
+                                containerColor = SuccessGreen,
+                                onClick = { conservatorActionType = ConservatorActionType.FINISH }
+                            )
+                        }
+                        else -> Unit
+                    }
+                }
+                else -> Unit
             }
-            if (location.isNotBlank()) {
-                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
-                MetadataRow(Icons.Rounded.Place, "Lokalizacja", location)
-            }
-            Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
-            MetadataRow(Icons.Rounded.CalendarToday, "Data utworzenia", formatDateTime(ticket.createdAt))
         }
-
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "Historia zgłoszenia",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            TicketTimeline(history = ticket.history)
-        }
-
-        Spacer(modifier = Modifier.height(80.dp))
     }
 
     if (showAssignSheet) {
         AssignConservatorSheet(
             conservators = conservators,
             onDismissRequest = { showAssignSheet = false },
-            onAssign = { showAssignSheet = false }
+            onAssign = { conservator, scheduledAt ->
+                showAssignSheet = false
+                onAssignConservator(conservator, scheduledAt)
+            }
         )
     }
+
     if (showRejectSheet) {
         ManagerRejectSheet(
             onDismissRequest = { showRejectSheet = false },
-            onSubmit = { showRejectSheet = false }
+            onSubmit = { reason ->
+                showRejectSheet = false
+                onRejectTicket(reason)
+            }
         )
+    }
+
+    conservatorActionType?.let { type ->
+        ConservatorActionSheet(
+            actionType = type,
+            onDismissRequest = { conservatorActionType = null },
+            onSubmit = { comment, pause ->
+                conservatorActionType = null
+                onConservatorAction(type, comment, pause)
+            }
+        )
+    }
+}
+
+@Composable
+private fun TicketFab(
+    icon: ImageVector,
+    contentDescription: String,
+    containerColor: androidx.compose.ui.graphics.Color,
+    contentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.White,
+    onClick: () -> Unit
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = FloatingActionButtonDefaults.elevation(4.dp)
+    ) {
+        Icon(icon, contentDescription = contentDescription)
     }
 }
 
@@ -160,12 +295,7 @@ private fun MetadataRow(icon: ImageVector, label: String, value: String) {
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp)
-            )
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
         }
         Column {
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -182,11 +312,11 @@ private fun formatDateTime(iso: String): String = try {
 @Preview(showBackground = true)
 @Composable
 private fun TicketDetailsLoadingPreview() {
-    PreviewTheme { TicketDetailsContent(TicketDetailsListState.Loading, onNavigateBack = {}) }
+    PreviewTheme { TicketDetailsContent(TicketDetailsListState.Loading, { _, _ -> }, {}, { _, _, _ -> }) }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun TicketDetailsErrorPreview() {
-    PreviewTheme { TicketDetailsContent(TicketDetailsListState.Error("Nie znaleziono zgłoszenia"), onNavigateBack = {}) }
+    PreviewTheme { TicketDetailsContent(TicketDetailsListState.Error("Nie znaleziono zgłoszenia"), { _, _ -> }, {}, { _, _, _ -> }) }
 }

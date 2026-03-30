@@ -32,9 +32,15 @@ class TicketsViewModel @Inject constructor(
 
     private fun loadTickets() {
         viewModelScope.launch {
-            runCatching { ticketRepository.getTickets() }
-                .onSuccess { tickets -> _state.value = TicketsListState.Success(tickets) }
-                .onFailure { e -> _state.value = TicketsListState.Error(e.message ?: "Błąd ładowania zgłoszeń") }
+            runCatching {
+                val tickets = ticketRepository.getTickets()
+                val role = ticketRepository.getCurrentUserRole()
+                tickets to role
+            }.onSuccess { (tickets, role) ->
+                _state.value = TicketsListState.Success(tickets, currentUserRole = role)
+            }.onFailure { e ->
+                _state.value = TicketsListState.Error(e.message ?: "Błąd ładowania zgłoszeń")
+            }
         }
     }
 

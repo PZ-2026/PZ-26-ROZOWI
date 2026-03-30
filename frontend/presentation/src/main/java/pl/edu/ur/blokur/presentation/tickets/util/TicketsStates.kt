@@ -3,12 +3,10 @@ package pl.edu.ur.blokur.presentation.tickets.util
 import pl.edu.ur.blokur.domain.model.AppUser
 import pl.edu.ur.blokur.domain.model.Ticket
 
-// ─── Ticket List ──────────────────────────────────────────────────────────────
-
 sealed interface TicketsListState {
     data object Loading : TicketsListState
     data class Error(val message: String) : TicketsListState
-    data class Success(val tickets: List<Ticket>) : TicketsListState
+    data class Success(val tickets: List<Ticket>, val currentUserRole: String = "MIESZKANIEC") : TicketsListState
 }
 
 sealed interface TicketsScreenEvent {
@@ -16,22 +14,27 @@ sealed interface TicketsScreenEvent {
     data object NavigateToCreate : TicketsScreenEvent
 }
 
-// ─── Ticket Details ───────────────────────────────────────────────────────────
-
 sealed interface TicketDetailsListState {
     data object Loading : TicketDetailsListState
     data class Error(val message: String) : TicketDetailsListState
     data class Success(
         val ticket: Ticket,
-        val availableConservators: List<AppUser> = emptyList()
+        val availableConservators: List<AppUser> = emptyList(),
+        val currentUserRole: String = "MIESZKANIEC"
     ) : TicketDetailsListState
 }
 
+/** Akcje konserwatora — typ przekazywany do ConservatorActionSheet */
+enum class ConservatorActionType { START, FINISH, PAUSE_OR_COMMENT }
+
 sealed interface TicketDetailsScreenEvent {
     data object NavigateBack : TicketDetailsScreenEvent
+    data class AssignConservator(val conservatorId: Int, val scheduledAt: String) : TicketDetailsScreenEvent
+    data class RejectTicket(val reason: String) : TicketDetailsScreenEvent
+    data class ConservatorAction(val type: ConservatorActionType, val comment: String, val pause: Boolean = false) : TicketDetailsScreenEvent
+    data object ShowSnackbar : TicketDetailsScreenEvent
 }
 
-// ─── Create Ticket ────────────────────────────────────────────────────────────
 
 data class CreateTicketFormState(
     val title: String = "",
@@ -51,7 +54,6 @@ sealed interface CreateTicketScreenEvent {
     data object NavigateBack : CreateTicketScreenEvent
 }
 
-// backward compat aliases (used in TicketDetailsViewModel via SavedStateHandle)
 typealias TicketsState = TicketsListState
 typealias TicketsEvent = TicketsScreenEvent
 typealias TicketDetailsState = TicketDetailsListState
