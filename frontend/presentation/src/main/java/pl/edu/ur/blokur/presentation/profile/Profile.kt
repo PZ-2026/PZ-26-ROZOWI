@@ -19,5 +19,4 @@ fun NavGraphBuilder.profileGraph(
         val viewModel: ProfileViewModel = hiltViewModel()
         ProfileScreen(viewModel)
     }
-
 }

@@ -1,4 +1,4 @@
-package pl.edu.ur.blokur.application.usecase
+package pl.edu.ur.blokur.domain.usecase
 
 import pl.edu.ur.blokur.domain.UseCaseNotImplementedException
 import javax.inject.Inject
