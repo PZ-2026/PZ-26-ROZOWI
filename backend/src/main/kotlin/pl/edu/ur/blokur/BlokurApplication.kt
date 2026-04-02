@@ -6,8 +6,8 @@ import org.springframework.boot.runApplication
 @SpringBootApplication(
     excludeName = [
         "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
-        "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"
-    ]
+        "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration",
+    ],
 )
 class BlokurApplication
 

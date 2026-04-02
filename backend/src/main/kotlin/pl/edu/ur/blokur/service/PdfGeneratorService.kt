@@ -20,7 +20,6 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class PdfGeneratorService {
-
     fun generateWorkAcceptanceProtocol(request: WorkAcceptanceProtocolRequest): ByteArray {
         val outputStream = ByteArrayOutputStream()
 
@@ -35,20 +34,20 @@ class PdfGeneratorService {
             Paragraph("BLOKUR")
                 .setBold()
                 .setFontSize(18f)
-                .setTextAlignment(TextAlignment.CENTER)
+                .setTextAlignment(TextAlignment.CENTER),
         )
 
         document.add(
             Paragraph("Dane wspólnoty / zarządcy")
                 .setFontSize(11f)
-                .setTextAlignment(TextAlignment.CENTER)
+                .setTextAlignment(TextAlignment.CENTER),
         )
 
         document.add(
             Paragraph("Miejsce na logo wspólnoty")
                 .setItalic()
                 .setFontSize(10f)
-                .setTextAlignment(TextAlignment.CENTER)
+                .setTextAlignment(TextAlignment.CENTER),
         )
 
         document.add(Paragraph("\n"))
@@ -57,7 +56,7 @@ class PdfGeneratorService {
             Paragraph("PROTOKÓŁ ODBIORU PRAC")
                 .setBold()
                 .setFontSize(16f)
-                .setTextAlignment(TextAlignment.CENTER)
+                .setTextAlignment(TextAlignment.CENTER),
         )
 
         document.add(Paragraph("\n"))
@@ -66,13 +65,14 @@ class PdfGeneratorService {
 
         document.add(
             Paragraph("Data wygenerowania dokumentu: $currentDate")
-                .setFontSize(11f)
+                .setFontSize(11f),
         )
 
         document.add(Paragraph("\n"))
 
-        val table = Table(UnitValue.createPercentArray(floatArrayOf(30f, 70f)))
-            .useAllAvailableWidth()
+        val table =
+            Table(UnitValue.createPercentArray(floatArrayOf(30f, 70f)))
+                .useAllAvailableWidth()
 
         table.addCell(Cell().add(Paragraph("Numer zgłoszenia")))
         table.addCell(Cell().add(Paragraph(request.ticketNumber)))
@@ -103,7 +103,7 @@ class PdfGeneratorService {
         return PdfFontFactory.createFont(
             fontBytes,
             PdfEncodings.IDENTITY_H,
-            PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED
+            PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED,
         )
     }
 }

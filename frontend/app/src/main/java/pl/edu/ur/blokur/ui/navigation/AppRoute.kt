@@ -14,8 +14,11 @@ sealed class AppRoute(val route: String) {
     }
 
     data object Finances : AppRoute("finances")
+
     data object Transactions : AppRoute("finances/transactions")
+
     data object Documents : AppRoute("finances/documents")
+
     data object Announcements : AppRoute("announcements")
 
     data object Profile : AppRoute("profile")

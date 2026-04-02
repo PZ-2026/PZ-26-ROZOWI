@@ -50,7 +50,7 @@ import pl.edu.ur.blokur.ui.theme.NeutralBg
 fun LoginScreen(
     authState: AuthState = AuthState.Idle,
     onLoginClick: (email: String, password: String) -> Unit = { _, _ -> },
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -169,10 +169,17 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 BlokurPrimaryButton(
-                    text = if (authState is AuthState.Loading) stringResource(R.string.login_button) + "..." else stringResource(R.string.login_button),
+                    text =
+                        if (authState is AuthState.Loading) {
+                            stringResource(R.string.login_button) + "..."
+                        } else {
+                            stringResource(
+                                R.string.login_button,
+                            )
+                        },
                     onClick = { onLoginClick(email, password) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading
+                    enabled = email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading,
                 )
 
                 if (authState is AuthState.Error) {
@@ -182,7 +189,7 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }

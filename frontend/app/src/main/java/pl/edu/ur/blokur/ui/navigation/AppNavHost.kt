@@ -54,9 +54,10 @@ fun AppNavHost(
             modifier = Modifier.fillMaxSize(),
         ) {
             composable(AppRoute.Login.route) {
-                val authViewModel: AuthViewModel = viewModel(
-                    factory = AuthViewModelFactory.provideFactory(LocalContext.current)
-                )
+                val authViewModel: AuthViewModel =
+                    viewModel(
+                        factory = AuthViewModelFactory.provideFactory(LocalContext.current),
+                    )
                 val authState by authViewModel.authState.collectAsState()
 
                 LoginScreen(
@@ -66,7 +67,7 @@ fun AppNavHost(
                     },
                     onLoginSuccess = {
                         // Nawigacja obsługiwana przez LaunchedEffect wyżej po zapisaniu tokenu
-                    }
+                    },
                 )
             }
 
@@ -104,19 +105,19 @@ fun AppNavHost(
             composable(AppRoute.Finances.route) {
                 FinancesScreen(
                     onNavigateToTransactions = { navController.navigate(AppRoute.Transactions.route) },
-                    onNavigateToDocuments = { navController.navigate(AppRoute.Documents.route) }
+                    onNavigateToDocuments = { navController.navigate(AppRoute.Documents.route) },
                 )
             }
 
             composable(AppRoute.Transactions.route) {
                 TransactionsScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
 
             composable(AppRoute.Documents.route) {
                 DocumentsScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
 
