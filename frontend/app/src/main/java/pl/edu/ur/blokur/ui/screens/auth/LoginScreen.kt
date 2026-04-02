@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,10 +47,20 @@ import pl.edu.ur.blokur.ui.theme.Indigo50
 import pl.edu.ur.blokur.ui.theme.NeutralBg
 
 @Composable
-fun LoginScreen(onLoginClick: (email: String, password: String) -> Unit = { _, _ -> }) {
+fun LoginScreen(
+    authState: AuthState = AuthState.Idle,
+    onLoginClick: (email: String, password: String) -> Unit = { _, _ -> },
+    onLoginSuccess: () -> Unit = {}
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onLoginSuccess()
+        }
+    }
 
     Box(
         modifier =
@@ -57,7 +68,6 @@ fun LoginScreen(onLoginClick: (email: String, password: String) -> Unit = { _, _
                 .fillMaxSize()
                 .background(NeutralBg),
     ) {
-        // Dekoracyjny gradient w górnej części ekranu
         Box(
             modifier =
                 Modifier
@@ -82,7 +92,6 @@ fun LoginScreen(onLoginClick: (email: String, password: String) -> Unit = { _, _
         ) {
             Spacer(modifier = Modifier.height(64.dp))
 
-            // Logo / nagłówek
             Text(
                 text = stringResource(R.string.login_title),
                 style = MaterialTheme.typography.displayMedium,
@@ -103,7 +112,6 @@ fun LoginScreen(onLoginClick: (email: String, password: String) -> Unit = { _, _
             BlokurCard(
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                // Pole e-mail
                 BlokurTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -120,7 +128,6 @@ fun LoginScreen(onLoginClick: (email: String, password: String) -> Unit = { _, _
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pole hasła
                 BlokurTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -161,13 +168,23 @@ fun LoginScreen(onLoginClick: (email: String, password: String) -> Unit = { _, _
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Przycisk logowania
                 BlokurPrimaryButton(
-                    text = stringResource(R.string.login_button),
+                    text = if (authState is AuthState.Loading) stringResource(R.string.login_button) + "..." else stringResource(R.string.login_button),
                     onClick = { onLoginClick(email, password) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = email.isNotBlank() && password.isNotBlank(),
+                    enabled = email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading
                 )
+
+                if (authState is AuthState.Error) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = authState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(64.dp))
@@ -202,7 +219,6 @@ private fun LoginScreenPreviewDark() {
 @Composable
 private fun LoginScreenPreviewFilled() {
     BlokurPreviewTheme(darkTheme = false) {
-        // LoginScreen zarządza własnym stanem – preview pokazuje ekran z domyślnymi wartościami
         LoginScreen()
     }
 }

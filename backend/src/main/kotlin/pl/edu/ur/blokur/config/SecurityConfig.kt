@@ -25,11 +25,12 @@ class SecurityConfig {
             .httpBasic { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
-                auth
-                    .requestMatchers("/api/auth/login", "/error")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated()
+                auth.requestMatchers(
+                    "/api/auth/login",
+                    "/api/pdf/**",
+                    "/error"
+                ).permitAll()
+                    .anyRequest().authenticated()
             }
 
         return http.build()

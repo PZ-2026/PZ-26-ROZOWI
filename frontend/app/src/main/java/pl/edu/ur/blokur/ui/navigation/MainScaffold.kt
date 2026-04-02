@@ -23,6 +23,8 @@ fun MainScaffold() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showBottomBar = currentRoute != AppRoute.Login.route
+        && currentRoute != AppRoute.Transactions.route
+        && currentRoute != AppRoute.Documents.route
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
