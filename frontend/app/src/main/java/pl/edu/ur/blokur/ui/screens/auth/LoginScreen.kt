@@ -18,7 +18,6 @@ import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,8 +43,6 @@ import pl.edu.ur.blokur.ui.components.BlokurCard
 import pl.edu.ur.blokur.ui.components.BlokurPrimaryButton
 import pl.edu.ur.blokur.ui.components.BlokurTextField
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
-import pl.edu.ur.blokur.ui.theme.GradientEnd
-import pl.edu.ur.blokur.ui.theme.GradientStart
 import pl.edu.ur.blokur.ui.theme.Indigo50
 import pl.edu.ur.blokur.ui.theme.NeutralBg
 
@@ -53,7 +50,7 @@ import pl.edu.ur.blokur.ui.theme.NeutralBg
 fun LoginScreen(
     authState: AuthState = AuthState.Idle,
     onLoginClick: (email: String, password: String) -> Unit = { _, _ -> },
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -66,38 +63,39 @@ fun LoginScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(NeutralBg)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(NeutralBg),
     ) {
-        // Dekoracyjny gradient w górnej części ekranu
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Indigo50, NeutralBg)
-                    )
-                )
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Indigo50, NeutralBg),
+                        ),
+                    ),
         )
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(horizontal = 24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+                    .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Spacer(modifier = Modifier.height(64.dp))
 
-            // Logo / nagłówek
             Text(
                 text = stringResource(R.string.login_title),
                 style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -106,15 +104,14 @@ fun LoginScreen(
                 text = stringResource(R.string.login_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
             BlokurCard(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                // Pole e-mail
                 BlokurTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -124,52 +121,67 @@ fun LoginScreen(
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Rounded.Email,
-                            contentDescription = null
+                            contentDescription = null,
                         )
-                    }
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pole hasła
                 BlokurTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = stringResource(R.string.login_password_label),
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = if (passwordVisible) VisualTransformation.None
-                    else PasswordVisualTransformation(),
+                    visualTransformation =
+                        if (passwordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Rounded.Lock,
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Rounded.VisibilityOff
-                                else Icons.Rounded.Visibility,
-                                contentDescription = if (passwordVisible)
-                                    stringResource(R.string.login_hide_password)
-                                else
-                                    stringResource(R.string.login_show_password)
+                                imageVector =
+                                    if (passwordVisible) {
+                                        Icons.Rounded.VisibilityOff
+                                    } else {
+                                        Icons.Rounded.Visibility
+                                    },
+                                contentDescription =
+                                    if (passwordVisible) {
+                                        stringResource(R.string.login_hide_password)
+                                    } else {
+                                        stringResource(R.string.login_show_password)
+                                    },
                             )
                         }
-                    }
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Przycisk logowania
                 BlokurPrimaryButton(
-                    text = if (authState is AuthState.Loading) stringResource(R.string.login_button) + "..." else stringResource(R.string.login_button),
+                    text =
+                        if (authState is AuthState.Loading) {
+                            stringResource(R.string.login_button) + "..."
+                        } else {
+                            stringResource(
+                                R.string.login_button,
+                            )
+                        },
                     onClick = { onLoginClick(email, password) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading
+                    enabled = email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading,
                 )
-                
+
                 if (authState is AuthState.Error) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -177,7 +189,7 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -190,7 +202,7 @@ fun LoginScreen(
 @Preview(
     showBackground = true,
     showSystemUi = true,
-    name = "Login – Light"
+    name = "Login – Light",
 )
 @Composable
 private fun LoginScreenPreviewLight() {
@@ -209,7 +221,7 @@ private fun LoginScreenPreviewDark() {
 @Preview(
     showBackground = true,
     showSystemUi = true,
-    name = "Login – Filled"
+    name = "Login – Filled",
 )
 @Composable
 private fun LoginScreenPreviewFilled() {
@@ -222,7 +234,7 @@ private fun LoginScreenPreviewFilled() {
     showBackground = true,
     showSystemUi = true,
     name = "Login – Large Font",
-    fontScale = 1.5f
+    fontScale = 1.5f,
 )
 @Composable
 private fun LoginScreenPreviewLargeFont() {

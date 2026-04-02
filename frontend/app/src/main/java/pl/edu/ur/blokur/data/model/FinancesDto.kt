@@ -3,7 +3,7 @@ package pl.edu.ur.blokur.data.model
 enum class TransactionType {
     WPLATA,
     NALICZENIE,
-    KOREKTA
+    KOREKTA,
 }
 
 enum class DocumentType {
@@ -11,13 +11,13 @@ enum class DocumentType {
     ROZLICZENIE,
     ZAWIADOMIENIE,
     FAKTURA,
-    INNE
+    INNE,
 }
 
 enum class BalanceStatus {
     NADPLATA,
     ZALEGLOSC,
-    WYZEROWANY
+    WYZEROWANY,
 }
 
 data class FinancialTransactionDto(
@@ -28,7 +28,7 @@ data class FinancialTransactionDto(
     val description: String,
     val transactionDate: String,
     val recordedById: Int,
-    val recordedBy: AppUserDto?
+    val recordedBy: AppUserDto?,
 )
 
 data class FinancialDocumentDto(
@@ -41,7 +41,7 @@ data class FinancialDocumentDto(
     val apartmentId: Int?,
     val buildingId: Int?,
     val ticketId: Int?,
-    val createdAt: String
+    val createdAt: String,
 )
 
 data class ApartmentBalanceDto(
@@ -52,5 +52,5 @@ data class ApartmentBalanceDto(
     val lastTransactionDate: String?,
     val status: BalanceStatus,
     val totalPaid: Double,
-    val totalCharged: Double
+    val totalCharged: Double,
 )

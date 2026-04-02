@@ -45,22 +45,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-    // TODO: Use actual image thumbnail here
+// TODO: Use actual image thumbnail here
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateTicketScreen(
-    onNavigateBack: () -> Unit
-) {
+fun CreateTicketScreen(onNavigateBack: () -> Unit) {
     val context = LocalContext.current
-    
+
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    
+
     val categories = listOf("Hydraulika", "Elektryka", "Domofony", "Części wspólne")
     var expandedCategory by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("") }
@@ -70,26 +67,27 @@ fun CreateTicketScreen(
     var imageError by remember { mutableStateOf<String?>(null) }
 
     // Launcher do wyboru wielu zdjęć z galerii
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
-    ) { uris ->
-        // Walidacja frontendowa (mockowanie po stronie UI)
-        val maxFileSizeMb = 10
-        var hasSizeError = false
-        var hasTypeError = false
+    val photoPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5),
+        ) { uris ->
+            // Walidacja frontendowa (mockowanie po stronie UI)
+            val maxFileSizeMb = 10
+            var hasSizeError = false
+            var hasTypeError = false
 
-        // W produkcyjnej aplikacji odczytywalibyśmy MIME type i rozmiar ze streamu (ContentResolver)
-        // Tu zrobimy proste przypisanie
-        val validUris = uris.take(5 - selectedImages.size) // Ogranicz do max 5 w sumie
-        
-        if (uris.size + selectedImages.size > 5) {
-            imageError = "Możesz dodać maksymalnie 5 zdjęć."
-        } else {
-            imageError = null
+            // W produkcyjnej aplikacji odczytywalibyśmy MIME type i rozmiar ze streamu (ContentResolver)
+            // Tu zrobimy proste przypisanie
+            val validUris = uris.take(5 - selectedImages.size) // Ogranicz do max 5 w sumie
+
+            if (uris.size + selectedImages.size > 5) {
+                imageError = "Możesz dodać maksymalnie 5 zdjęć."
+            } else {
+                imageError = null
+            }
+
+            selectedImages = selectedImages + validUris
         }
-        
-        selectedImages = selectedImages + validUris
-    }
 
     Scaffold(
         topBar = {
@@ -99,12 +97,12 @@ fun CreateTicketScreen(
                         Text(
                             text = "Nowe zgłoszenie",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                         Text(
                             text = "Formularz usterki",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
@@ -113,28 +111,30 @@ fun CreateTicketScreen(
                         Icon(imageVector = Icons.Rounded.ArrowBack, contentDescription = "Wróć")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    ),
             )
-        }
+        },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Tytuł usterki",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             OutlinedTextField(
                 value = title,
@@ -146,34 +146,35 @@ fun CreateTicketScreen(
                     Text(
                         text = "${title.length}/100",
                         modifier = Modifier.fillMaxWidth(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
                     )
                 },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
             )
 
             Text(
                 text = "Kategoria",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             ExposedDropdownMenuBox(
                 expanded = expandedCategory,
-                onExpandedChange = { expandedCategory = it }
+                onExpandedChange = { expandedCategory = it },
             ) {
                 OutlinedTextField(
                     value = selectedCategory.ifBlank { "Wybierz kategorię" },
                     onValueChange = {},
                     readOnly = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory) },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
                 ExposedDropdownMenu(
                     expanded = expandedCategory,
-                    onDismissRequest = { expandedCategory = false }
+                    onDismissRequest = { expandedCategory = false },
                 ) {
                     categories.forEach { category ->
                         DropdownMenuItem(
@@ -181,7 +182,7 @@ fun CreateTicketScreen(
                             onClick = {
                                 selectedCategory = category
                                 expandedCategory = false
-                            }
+                            },
                         )
                     }
                 }
@@ -190,41 +191,42 @@ fun CreateTicketScreen(
             Text(
                 text = "Zwięzły opis",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             OutlinedTextField(
                 value = description,
                 onValueChange = { if (it.length <= 2000) description = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(140.dp),
                 placeholder = { Text("Dokładnie opisz problem i jego lokalizację...") },
                 maxLines = 5,
                 supportingText = {
                     Text(
                         text = "${description.length}/2000",
                         modifier = Modifier.fillMaxWidth(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
                     )
                 },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = "Zdjęcia dokumentujące",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = "${selectedImages.size}/5",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -232,34 +234,36 @@ fun CreateTicketScreen(
                     Text(
                         text = imageError!!,
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                
+
                 Text(
                     text = "Maksymalnie 5 plików (JPEG, PNG). Maks. 10 MB na plik.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (selectedImages.size < 5) {
                         Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .clickable {
-                                    photoPickerLauncher.launch(
-                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                    )
-                                },
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(100.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .clickable {
+                                        photoPickerLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                                        )
+                                    },
+                            contentAlignment = Alignment.Center,
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -271,25 +275,27 @@ fun CreateTicketScreen(
 
                     selectedImages.forEach { uri ->
                         Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(100.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.AddPhotoAlternate,
                                 contentDescription = "Miniaturka",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(40.dp),
                             )
                             IconButton(
                                 onClick = { selectedImages = selectedImages - uri },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .size(24.dp)
-                                    .padding(4.dp)
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(24.dp)
+                                        .padding(4.dp)
+                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), RoundedCornerShape(12.dp)),
                             ) {
                                 Icon(Icons.Rounded.Close, contentDescription = "Usuń", modifier = Modifier.size(16.dp))
                             }
@@ -302,19 +308,20 @@ fun CreateTicketScreen(
 
             Button(
                 onClick = { onNavigateBack() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                 enabled = title.isNotBlank() && selectedCategory.isNotBlank() && description.isNotBlank(),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Text(
                     text = "Zgłoś usterkę",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
