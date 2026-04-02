@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 android {
@@ -80,6 +80,6 @@ ktlint {
     outputToConsole.set(true)
 }
 
-tasks.named("preBuild") {
+tasks.named("check") {
     dependsOn("ktlintCheck")
 }
