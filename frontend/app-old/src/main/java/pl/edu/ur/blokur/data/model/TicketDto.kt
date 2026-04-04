@@ -16,12 +16,12 @@ data class TicketDto(
     val createdAt: String,
     val closedAt: String?,
     val images: List<String>,
-    val history: List<TicketHistoryDto>
+    val history: List<TicketHistoryDto>,
 )
 
 data class TicketCategoryDto(
     val id: Int,
-    val name: String
+    val name: String,
 )
 
 data class AppUserDto(
@@ -29,28 +29,34 @@ data class AppUserDto(
     val firstName: String,
     val lastName: String,
     val email: String,
-    val role: String
+    val role: String,
 )
 
 data class BuildingDto(
     val id: Int,
     val estateName: String,
     val name: String,
-    val address: String
+    val address: String,
 )
 
 data class StaircaseDto(
     val id: Int,
-    val label: String
+    val label: String,
 )
 
 data class ApartmentDto(
     val id: Int,
-    val number: String
+    val number: String,
 )
 
 enum class TicketStatus {
-    NOWE, ZAPLANOWANO, W_REALIZACJI, WSTRZYMANO, ZAKONCZONE, ZAMKNIETE, ODRZUCONE
+    NOWE,
+    ZAPLANOWANO,
+    W_REALIZACJI,
+    WSTRZYMANO,
+    ZAKONCZONE,
+    ZAMKNIETE,
+    ODRZUCONE,
 }
 
 data class TicketHistoryDto(
@@ -59,5 +65,5 @@ data class TicketHistoryDto(
     val status: TicketStatus,
     val changedBy: AppUserDto,
     val comment: String?,
-    val createdAt: String
+    val createdAt: String,
 )

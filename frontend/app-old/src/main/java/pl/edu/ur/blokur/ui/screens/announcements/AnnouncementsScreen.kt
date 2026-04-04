@@ -25,20 +25,22 @@ import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 @Composable
 fun AnnouncementsScreen() {
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { BlokurTopBar(title = "Ogłoszenia") }
+        topBar = { BlokurTopBar(title = "Ogłoszenia") },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -46,20 +48,20 @@ fun AnnouncementsScreen() {
                 Text(
                     text = "Tablica ogłoszeń",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "W tym module będą wyświetlane komunikaty administracji, wydarzenia i ważne informacje dla mieszkańców.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             BlokurEmptyState(
                 title = "Brak ogłoszeń",
                 description = "Po podłączeniu danych tutaj pojawią się najnowsze komunikaty i aktualności.",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
     }

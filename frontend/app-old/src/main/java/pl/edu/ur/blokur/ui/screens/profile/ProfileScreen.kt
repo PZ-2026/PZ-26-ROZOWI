@@ -45,16 +45,17 @@ fun ProfileScreen() {
     var showEmptyState by remember { mutableStateOf(false) }
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             BlokurTopBar(title = "Profil")
         },
         snackbarHost = {
             BlokurSnackbarHost(hostState = snackbarHostState)
-        }
+        },
     ) { innerPadding ->
         if (showDialog) {
             BlokurAlertDialog(
@@ -68,51 +69,54 @@ fun ProfileScreen() {
                 },
                 onDismiss = {
                     showDialog = false
-                }
+                },
             )
         }
 
         if (showEmptyState) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(innerPadding),
             ) {
                 BlokurEmptyState(
                     title = "Brak danych",
                     description = "Tutaj pojawią się dane profilu użytkownika.",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
 
                 BlokurPrimaryButton(
                     text = "Wróć",
                     onClick = { showEmptyState = false },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                 )
             }
         } else {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp)
-                    .verticalScroll(rememberScrollState())
-                    .navigationBarsPadding(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(innerPadding)
+                        .padding(horizontal = 16.dp)
+                        .verticalScroll(rememberScrollState())
+                        .navigationBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 BlokurCard(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         text = "Dane użytkownika",
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -120,7 +124,7 @@ fun ProfileScreen() {
                     Text(
                         text = "Zmień podstawowe informacje profilu i przetestuj komponenty interfejsu.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -128,7 +132,7 @@ fun ProfileScreen() {
                     BlokurTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = "Imię i nazwisko"
+                        label = "Imię i nazwisko",
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -136,7 +140,7 @@ fun ProfileScreen() {
                     BlokurPrimaryButton(
                         text = "Zapisz zmiany",
                         onClick = { showDialog = true },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -148,7 +152,7 @@ fun ProfileScreen() {
                                 snackbarHostState.showSnackbar("To jest przykładowy snackbar")
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -156,7 +160,7 @@ fun ProfileScreen() {
                     BlokurPrimaryButton(
                         text = "Symuluj brak danych",
                         onClick = { showEmptyState = true },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }

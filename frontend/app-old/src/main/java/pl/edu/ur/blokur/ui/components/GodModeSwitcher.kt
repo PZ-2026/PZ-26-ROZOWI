@@ -19,18 +19,19 @@ import pl.edu.ur.blokur.data.mock.MockTickets
 @Composable
 fun GodModeSwitcher(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
-            .background(Color(0xFF6200EE)) // Fioletowy/indyk żeby się rzucało w oczy do testów
-            .clickable { MockTickets.cycleUser() }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
+                .background(Color(0xFF6200EE)) // Fioletowy/indyk żeby się rzucało w oczy do testów
+                .clickable { MockTickets.cycleUser() }
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "⚙️ GOD MODE: ${MockTickets.currentUser.role}",
             color = Color.White,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
         )
     }
 }

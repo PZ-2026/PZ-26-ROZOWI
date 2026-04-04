@@ -17,19 +17,24 @@ import pl.edu.ur.blokur.repository.AuthRepository
 
 sealed class AuthState {
     object Idle : AuthState()
+
     object Loading : AuthState()
+
     object Success : AuthState()
+
     data class Error(val message: String) : AuthState()
 }
 
 class AuthViewModel(
-    private val repository: AuthRepository
+    private val repository: AuthRepository,
 ) : ViewModel() {
-
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
-    fun login(email: String, pass: String) {
+    fun login(
+        email: String,
+        pass: String,
+    ) {
         _authState.value = AuthState.Loading
         viewModelScope.launch {
             val result = repository.login(LoginRequest(username = email, password = pass))
@@ -47,11 +52,12 @@ class AuthViewModel(
 }
 
 object AuthViewModelFactory {
-    fun provideFactory(context: Context): ViewModelProvider.Factory = viewModelFactory {
-        initializer {
-            val userPrefs = UserPreferences(context)
-            val repository = AuthRepository(RetrofitClient.apiService, userPrefs)
-            AuthViewModel(repository)
+    fun provideFactory(context: Context): ViewModelProvider.Factory =
+        viewModelFactory {
+            initializer {
+                val userPrefs = UserPreferences(context)
+                val repository = AuthRepository(RetrofitClient.apiService, userPrefs)
+                AuthViewModel(repository)
+            }
         }
-    }
 }
