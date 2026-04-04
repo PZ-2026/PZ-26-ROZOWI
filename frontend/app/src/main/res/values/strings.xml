@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Blokur</string>
+
+    <!-- Login screen -->
+    <string name="login_title">Blokur</string>
+    <string name="login_subtitle">Zaloguj się do swojego konta</string>
+    <string name="login_email_label">Adres e-mail</string>
+    <string name="login_password_label">Hasło</string>
+    <string name="login_button">Zaloguj się</string>
+    <string name="login_show_password">Pokaż hasło</string>
+    <string name="login_hide_password">Ukryj hasło</string>
 </resources>
