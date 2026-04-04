@@ -2,14 +2,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 android {
-    namespace = "pl.edu.ur.blokur.android"
+    namespace = "pl.edu.ur.blokur"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "pl.edu.ur.blokur.android"
+        applicationId = "pl.edu.ur.blokur"
         minSdk = 27
         targetSdk = 36
         versionCode = 1
@@ -23,7 +24,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -71,4 +72,14 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+ktlint {
+    ignoreFailures.set(false)
+    verbose.set(true)
+    outputToConsole.set(true)
+}
+
+tasks.named("check") {
+    dependsOn("ktlintCheck")
 }
