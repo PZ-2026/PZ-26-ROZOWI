@@ -6,7 +6,7 @@ import pl.edu.ur.blokur.network.dto.LoginRequest
 
 class AuthRepository(
     private val api: ApiService,
-    private val userPrefs: UserPreferences
+    private val userPrefs: UserPreferences,
 ) {
     suspend fun login(loginRequest: LoginRequest): Result<Unit> {
         return try {
@@ -26,7 +26,7 @@ class AuthRepository(
             Result.failure(e)
         }
     }
-    
+
     suspend fun logout() {
         userPrefs.clearAuthData()
     }

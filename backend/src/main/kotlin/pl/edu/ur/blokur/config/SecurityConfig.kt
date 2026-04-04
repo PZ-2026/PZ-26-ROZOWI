@@ -17,7 +17,6 @@ import org.springframework.security.web.SecurityFilterChain
 @Configuration
 @EnableWebSecurity
 class SecurityConfig {
-
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
@@ -26,8 +25,14 @@ class SecurityConfig {
             .httpBasic { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/api/auth/login", "/error").permitAll()
-                    .anyRequest().authenticated()
+                auth
+                    .requestMatchers(
+                        "/api/auth/login",
+                        "/api/pdf/**",
+                        "/error",
+                    ).permitAll()
+                    .anyRequest()
+                    .authenticated()
             }
 
         return http.build()
@@ -35,23 +40,29 @@ class SecurityConfig {
 
     @Bean
     fun userDetailsService(passwordEncoder: PasswordEncoder): UserDetailsService {
-        val zarzadca = User.builder()
-            .username("zarzadca")
-            .password(passwordEncoder.encode("haslo123"))
-            .roles("ZARZADCA")
-            .build()
+        val zarzadca =
+            User
+                .builder()
+                .username("zarzadca")
+                .password(passwordEncoder.encode("haslo123"))
+                .roles("ZARZADCA")
+                .build()
 
-        val mieszkaniec = User.builder()
-            .username("mieszkaniec")
-            .password(passwordEncoder.encode("haslo123"))
-            .roles("MIESZKANIEC")
-            .build()
+        val mieszkaniec =
+            User
+                .builder()
+                .username("mieszkaniec")
+                .password(passwordEncoder.encode("haslo123"))
+                .roles("MIESZKANIEC")
+                .build()
 
-        val konserwator = User.builder()
-            .username("konserwator")
-            .password(passwordEncoder.encode("haslo123"))
-            .roles("KONSERWATOR")
-            .build()
+        val konserwator =
+            User
+                .builder()
+                .username("konserwator")
+                .password(passwordEncoder.encode("haslo123"))
+                .roles("KONSERWATOR")
+                .build()
 
         return InMemoryUserDetailsManager(zarzadca, mieszkaniec, konserwator)
     }
@@ -60,7 +71,5 @@ class SecurityConfig {
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     @Bean
-    fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager {
-        return config.authenticationManager
-    }
+    fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager = config.authenticationManager
 }

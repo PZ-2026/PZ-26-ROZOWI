@@ -36,16 +36,20 @@ import pl.edu.ur.blokur.ui.theme.SuccessGreen
 private data class TransactionPresentation(
     val label: String,
     val color: Color,
-    val icon: ImageVector
+    val icon: ImageVector,
 )
 
-private fun transactionPresentation(type: TransactionType) = when (type) {
-    TransactionType.WPLATA -> TransactionPresentation("Wpłata", SuccessGreen, Icons.Rounded.ArrowDownward)
-    TransactionType.NALICZENIE -> TransactionPresentation("Naliczenie", ErrorRed, Icons.Rounded.ArrowUpward)
-    TransactionType.KOREKTA -> TransactionPresentation("Korekta", InfoBlue, Icons.Rounded.SwapVert)
-}
+private fun transactionPresentation(type: TransactionType) =
+    when (type) {
+        TransactionType.WPLATA -> TransactionPresentation("Wpłata", SuccessGreen, Icons.Rounded.ArrowDownward)
+        TransactionType.NALICZENIE -> TransactionPresentation("Naliczenie", ErrorRed, Icons.Rounded.ArrowUpward)
+        TransactionType.KOREKTA -> TransactionPresentation("Korekta", InfoBlue, Icons.Rounded.SwapVert)
+    }
 
-private fun formatAmount(amount: Double, currency: String): String {
+private fun formatAmount(
+    amount: Double,
+    currency: String,
+): String {
     val prefix = if (amount >= 0) "+" else ""
     return "$prefix${"%.2f".format(amount)} $currency"
 }
@@ -69,19 +73,20 @@ fun TransactionItem(transaction: FinancialTransactionDto) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .background(presentation.color.copy(alpha = 0.12f), CircleShape),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(46.dp)
+                        .background(presentation.color.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = presentation.icon,
                     contentDescription = null,
                     tint = presentation.color,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(22.dp),
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -91,18 +96,18 @@ fun TransactionItem(transaction: FinancialTransactionDto) {
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     BlokurStatusBadge(text = presentation.label, dotColor = presentation.color)
                     Text(
                         text = formatDate(transaction.transactionDate),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -110,7 +115,7 @@ fun TransactionItem(transaction: FinancialTransactionDto) {
                 text = amountText,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = amountColor
+                color = amountColor,
             )
         }
     }

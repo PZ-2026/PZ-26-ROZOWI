@@ -30,7 +30,7 @@ import pl.edu.ur.blokur.ui.theme.ErrorRed
 @Composable
 fun ManagerRejectSheet(
     onDismissRequest: () -> Unit,
-    onSubmit: (String) -> Unit
+    onSubmit: (String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var reason by remember { mutableStateOf("") }
@@ -39,45 +39,48 @@ fun ManagerRejectSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        dragHandle = { BottomSheetDefaults.DragHandle() },
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
                 text = "Odrzucenie zgłoszenia",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = ErrorRed
+                color = ErrorRed,
             )
             Text(
                 text = "Podaj powód odrzucenia zgłoszenia. Ta wiadomość będzie widoczna dla zgłaszającego.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            
+
             OutlinedTextField(
                 value = reason,
                 onValueChange = { reason = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
                 placeholder = { Text("Np. Usterka wewnątrz lokalu leży po stronie właściciela...") },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = { onSubmit(reason) },
                 colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = reason.isNotBlank()
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                enabled = reason.isNotBlank(),
             ) {
                 Text("Odrzuć zgłoszenie", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             }

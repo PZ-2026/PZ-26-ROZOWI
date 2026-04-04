@@ -11,21 +11,20 @@ import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BlokurTopBar(
-    title: String
-) {
+fun BlokurTopBar(title: String) {
     TopAppBar(
         title = {
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             )
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            titleContentColor = MaterialTheme.colorScheme.onBackground
-        )
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+            ),
     )
 }
 

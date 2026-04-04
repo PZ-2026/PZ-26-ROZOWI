@@ -22,18 +22,18 @@ import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 @Composable
 fun BlokurTagBadge(
     text: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.secondaryContainer
+        color = MaterialTheme.colorScheme.secondaryContainer,
     ) {
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
             color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
         )
     }
 }
@@ -42,28 +42,29 @@ fun BlokurTagBadge(
 fun BlokurStatusBadge(
     text: String,
     dotColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(dotColor, CircleShape)
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .background(dotColor, CircleShape),
             )
 
             Text(
                 text = text,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
     }
@@ -75,7 +76,7 @@ private fun BlokurBadgePreview() {
     BlokurPreviewTheme {
         Row(
             modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             BlokurTagBadge(text = "Nowe")
             BlokurStatusBadge(text = "Aktywne", dotColor = Color(0xFF059669))
