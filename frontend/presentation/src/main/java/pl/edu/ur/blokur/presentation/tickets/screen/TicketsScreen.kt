@@ -94,8 +94,7 @@ fun TicketsScreen(
                         )
                     }
 
-                    // Karta ze statusami — legenda dla użytkownika
-                    NormalCard(modifier = Modifier.fillMaxWidth()) {
+                    NormalCard {
                         Text(
                             text = "Statusy zgłoszeń",
                             style = MaterialTheme.typography.titleLarge,

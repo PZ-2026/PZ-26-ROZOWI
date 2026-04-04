@@ -6,7 +6,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import pl.edu.ur.blokur.presentation.announcements.AnnouncementsRoutes
 import pl.edu.ur.blokur.presentation.announcements.announcementsGraph
-import pl.edu.ur.blokur.presentation.auth.Auth
 import pl.edu.ur.blokur.presentation.auth.AuthRoutes
 import pl.edu.ur.blokur.presentation.auth.authGraph
 import pl.edu.ur.blokur.presentation.common.AppRoute
