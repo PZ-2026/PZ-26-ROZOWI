@@ -24,7 +24,7 @@ fun BlokurPrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     Button(
         onClick = onClick,
@@ -32,15 +32,16 @@ fun BlokurPrimaryButton(
         enabled = enabled,
         shape = RoundedCornerShape(18.dp),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            disabledElevation = 0.dp
-        )
+        elevation =
+            ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp,
+                disabledElevation = 0.dp,
+            ),
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
         )
     }
 }
@@ -50,7 +51,7 @@ fun BlokurSecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -58,13 +59,14 @@ fun BlokurSecondaryButton(
         enabled = enabled,
         shape = RoundedCornerShape(18.dp),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary,
+            ),
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
         )
     }
 }
@@ -73,7 +75,7 @@ fun BlokurSecondaryButton(
 fun BlokurFab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    text: String = "+"
+    text: String = "+",
 ) {
     FloatingActionButton(
         onClick = onClick,
@@ -81,14 +83,15 @@ fun BlokurFab(
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = RoundedCornerShape(18.dp),
-        elevation = FloatingActionButtonDefaults.elevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 6.dp
-        )
+        elevation =
+            FloatingActionButtonDefaults.elevation(
+                defaultElevation = 4.dp,
+                pressedElevation = 6.dp,
+            ),
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
         )
     }
 }
@@ -101,14 +104,15 @@ private fun BlokurButtonsPreview() {
             BlokurPrimaryButton(
                 text = "Zapisz",
                 onClick = {},
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             BlokurSecondaryButton(
                 text = "Anuluj",
                 onClick = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
             )
         }
     }

@@ -14,9 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
 @Composable
-fun BlokurSnackbarHost(
-    hostState: SnackbarHostState
-) {
+fun BlokurSnackbarHost(hostState: SnackbarHostState) {
     SnackbarHost(
         hostState = hostState,
         snackbar = { snackbarData: SnackbarData ->
@@ -25,9 +23,9 @@ fun BlokurSnackbarHost(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 actionColor = MaterialTheme.colorScheme.primary,
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             )
-        }
+        },
     )
 }
 
@@ -38,34 +36,34 @@ fun BlokurAlertDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     confirmText: String = "OK",
-    dismissText: String = "Anuluj"
+    dismissText: String = "Anuluj",
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
             )
         },
         text = {
             Text(
                 text = message,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
             )
         },
         confirmButton = {
             BlokurPrimaryButton(
                 text = confirmText,
-                onClick = onConfirm
+                onClick = onConfirm,
             )
         },
         dismissButton = {
             BlokurSecondaryButton(
                 text = dismissText,
-                onClick = onDismiss
+                onClick = onDismiss,
             )
-        }
+        },
     )
 }
 
@@ -77,7 +75,7 @@ private fun BlokurDialogPreview() {
             title = "Potwierdzenie",
             message = "Czy na pewno chcesz zapisać zmiany?",
             onConfirm = {},
-            onDismiss = {}
+            onDismiss = {},
         )
     }
 }

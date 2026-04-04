@@ -33,7 +33,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.theme.BlokurPreviewTheme
 
-
 @Composable
 fun BlokurTicketItem(
     title: String,
@@ -43,85 +42,91 @@ fun BlokurTicketItem(
     statusColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Rounded.Build
+    icon: ImageVector = Icons.Rounded.Build,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 2.dp,
-                shape = RoundedCornerShape(5.dp),
-                ambientColor = Color(0x14000000),
-                spotColor = Color(0x1A4F46E5)
-            )
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 2.dp,
+                    shape = RoundedCornerShape(5.dp),
+                    ambientColor = Color(0x14000000),
+                    spotColor = Color(0x1A4F46E5),
+                )
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             // Lewa kolorowa belka statusu
             Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(90.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            listOf(statusColor, statusColor.copy(alpha = 0.3f))
+                modifier =
+                    Modifier
+                        .width(4.dp)
+                        .height(90.dp)
+                        .background(
+                            brush =
+                                Brush.verticalGradient(
+                                    listOf(statusColor, statusColor.copy(alpha = 0.3f)),
+                                ),
+                            shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp),
                         ),
-                        shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
-                    )
             )
 
             Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = 14.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 // Ikona w tinted circle
                 Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(46.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = CircleShape,
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(22.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
 
                 // Tekst
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = date,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .horizontalScroll(androidx.compose.foundation.rememberScrollState())
+                        modifier =
+                            Modifier
+                                .padding(top = 4.dp)
+                                .horizontalScroll(androidx.compose.foundation.rememberScrollState()),
                     ) {
                         BlokurTagBadge(text = categoryText)
                         BlokurStatusBadge(text = statusText, dotColor = statusColor)
@@ -130,19 +135,20 @@ fun BlokurTicketItem(
 
                 // Strzałka
                 Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(32.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = CircleShape,
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronRight,
                         contentDescription = "Szczegóły",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
@@ -156,7 +162,7 @@ private fun BlokurTicketItemPreview() {
     BlokurPreviewTheme {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             BlokurTicketItem(
                 title = "Przeciek pod umywalką w łazience",
@@ -164,7 +170,7 @@ private fun BlokurTicketItemPreview() {
                 categoryText = "Hydraulika",
                 statusText = "W realizacji",
                 statusColor = Color(0xFFD97706),
-                onClick = {}
+                onClick = {},
             )
             BlokurTicketItem(
                 title = "Awaria windy na 3 piętrze",
@@ -172,7 +178,7 @@ private fun BlokurTicketItemPreview() {
                 categoryText = "Mechanika",
                 statusText = "Zakończone",
                 statusColor = Color(0xFF059669),
-                onClick = {}
+                onClick = {},
             )
         }
     }

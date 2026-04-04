@@ -38,21 +38,22 @@ import pl.edu.ur.blokur.ui.theme.WarningOrange
 private data class DocumentPresentation(
     val label: String,
     val color: Color,
-    val icon: ImageVector
+    val icon: ImageVector,
 )
 
-private fun documentPresentation(type: DocumentType) = when (type) {
-    DocumentType.NALICZENIE -> DocumentPresentation("Naliczenie", InfoBlue, Icons.Rounded.Receipt)
-    DocumentType.ROZLICZENIE -> DocumentPresentation("Rozliczenie", SuccessGreen, Icons.Rounded.BarChart)
-    DocumentType.ZAWIADOMIENIE -> DocumentPresentation("Zawiadomienie", WarningOrange, Icons.Rounded.Campaign)
-    DocumentType.FAKTURA -> DocumentPresentation("Faktura", ErrorRed, Icons.Rounded.Receipt)
-    DocumentType.INNE -> DocumentPresentation("Inne", InfoBlue, Icons.Rounded.Description)
-}
+private fun documentPresentation(type: DocumentType) =
+    when (type) {
+        DocumentType.NALICZENIE -> DocumentPresentation("Naliczenie", InfoBlue, Icons.Rounded.Receipt)
+        DocumentType.ROZLICZENIE -> DocumentPresentation("Rozliczenie", SuccessGreen, Icons.Rounded.BarChart)
+        DocumentType.ZAWIADOMIENIE -> DocumentPresentation("Zawiadomienie", WarningOrange, Icons.Rounded.Campaign)
+        DocumentType.FAKTURA -> DocumentPresentation("Faktura", ErrorRed, Icons.Rounded.Receipt)
+        DocumentType.INNE -> DocumentPresentation("Inne", InfoBlue, Icons.Rounded.Description)
+    }
 
 @Composable
 fun DocumentItem(
     document: FinancialDocumentDto,
-    onDownload: () -> Unit
+    onDownload: () -> Unit,
 ) {
     val presentation = documentPresentation(document.type)
 
@@ -60,24 +61,25 @@ fun DocumentItem(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .background(presentation.color.copy(alpha = 0.12f), CircleShape),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(46.dp)
+                        .background(presentation.color.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = presentation.icon,
                     contentDescription = null,
                     tint = presentation.color,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(22.dp),
                 )
             }
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = document.title,
@@ -85,17 +87,17 @@ fun DocumentItem(
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     BlokurTagBadge(text = presentation.label)
                     Text(
                         text = "${document.issueYear}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -103,7 +105,7 @@ fun DocumentItem(
                 Icon(
                     imageVector = Icons.Rounded.Download,
                     contentDescription = "Pobierz PDF",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
