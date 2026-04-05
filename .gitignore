@@ -26,7 +26,7 @@ bin/
 
 ### VS Code ###
 .vscode/
-
+.claude/
 ### NetBeans ###
 nbproject/private/
 nbbuild/

@@ -20,7 +20,7 @@ CREATE TABLE apartments (
     current_balance DECIMAL(12,2) DEFAULT 0.00
 );
 
-CREATE TABLE meter_readings (
+    CREATE TABLE meter_readings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     apartment_id UUID NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
     meter_type VARCHAR(100) NOT NULL,
