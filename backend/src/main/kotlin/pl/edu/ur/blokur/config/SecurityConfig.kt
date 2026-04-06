@@ -13,10 +13,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import pl.edu.ur.blokur.security.JwtAuthenticationFilter
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig {
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+class SecurityConfig(
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+) {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
@@ -34,6 +39,8 @@ class SecurityConfig {
                     .anyRequest()
                     .authenticated()
             }
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }
