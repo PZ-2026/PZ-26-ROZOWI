@@ -38,7 +38,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.android.R
+import pl.edu.ur.blokur.R
 import pl.edu.ur.blokur.ui.components.BlokurCard
 import pl.edu.ur.blokur.ui.components.BlokurPrimaryButton
 import pl.edu.ur.blokur.ui.components.BlokurTextField

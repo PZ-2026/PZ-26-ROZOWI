@@ -1,4 +1,4 @@
-package pl.edu.ur.blockur
+package pl.edu.ur.blokur
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

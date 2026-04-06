@@ -1,4 +1,4 @@
-package pl.edu.ur.blockur
+package pl.edu.ur.blokur
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController

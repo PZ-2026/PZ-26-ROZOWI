@@ -1,4 +1,4 @@
-package pl.edu.ur.blockur
+package pl.edu.ur.blokur
 
 import android.app.Application
 import android.util.Log
