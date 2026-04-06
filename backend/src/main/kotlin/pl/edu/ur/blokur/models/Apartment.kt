@@ -25,5 +25,4 @@ open class Apartment {
     @ColumnDefault("0.00")
     @Column(name = "current_balance", precision = 12, scale = 2)
     open var currentBalance: BigDecimal? = null
-
 }

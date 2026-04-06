@@ -59,9 +59,11 @@ class MeterReadingService(
     }
 
     fun getById(id: UUID): MeterReadingResponse =
-        meterReadingRepository.findByIdAndIsDeletedFalse(id).orElseThrow {
-            NotFoundException("Odczyt licznika o ID $id nie istnieje")
-        }.toResponse()
+        meterReadingRepository
+            .findByIdAndIsDeletedFalse(id)
+            .orElseThrow {
+                NotFoundException("Odczyt licznika o ID $id nie istnieje")
+            }.toResponse()
 
     fun update(
         id: UUID,

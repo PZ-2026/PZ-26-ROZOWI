@@ -24,10 +24,10 @@ import java.util.UUID
 class MeterReadingController(
     private val meterReadingService: MeterReadingService,
 ) {
-    @PostMapping("/apartments/{apartmentId}/meter-readings")
-    @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR')")
     // TODO: Zgodnie z Modułem 7, należy zweryfikować czy konserwator jest upoważniony
     // do obsługi tego konkretnego lokalu (np. posiada przypisane zgłoszenie).
+    @PostMapping("/apartments/{apartmentId}/meter-readings")
+    @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR')")
     fun create(
         @PathVariable apartmentId: UUID,
         @Valid @RequestBody request: MeterReadingRequest,
@@ -36,11 +36,11 @@ class MeterReadingController(
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
-    @GetMapping("/apartments/{apartmentId}/meter-readings")
-    @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR', 'MIESZKANIEC')")
     // TODO: Krytyczny brak weryfikacji - Mieszkaniec może pobrać odczyty DOWOLNEGO lokalu,
     // jeśli zna jego apartmentId. Należy dodać sprawdzenie czy zalogowany użytkownik
     // jest właścicielem/najemcą tego lokalu.
+    @GetMapping("/apartments/{apartmentId}/meter-readings")
+    @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR', 'MIESZKANIEC')")
     fun getAllByApartment(
         @PathVariable apartmentId: UUID,
         @RequestParam(defaultValue = "0") page: Int,
