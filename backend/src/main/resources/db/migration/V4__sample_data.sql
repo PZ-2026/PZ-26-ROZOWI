@@ -1,20 +1,17 @@
 -- ==========================================
 -- UŻYTKOWNICY (Hasło dla wszystkich: haslo123)
 -- ==========================================
--- BCrypt hash dla 'haslo123'
--- $2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f
-
 INSERT INTO users (email, password_hash, first_name, last_name, role, is_active) VALUES
-('admin1@blokur.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Andrzej', 'Zarządczy', 'ZARZADCA', true),
-('admin2@blokur.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Beata', 'Wspólnotowa', 'ZARZADCA', true),
-('hydraulik@blokur.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Marian', 'Rura', 'KONSERWATOR', true),
-('elektryk@blokur.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Zenon', 'Kabel', 'KONSERWATOR', true),
-('serwis@blokur.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Adam', 'Złota-Rączka', 'KONSERWATOR', true),
-('jan.kowalski@gmail.com', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Jan', 'Kowalski', 'MIESZKANIEC', true),
-('anna.nowak@poczta.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Anna', 'Nowak', 'MIESZKANIEC', true),
-('piotr.wisniewski@wp.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Piotr', 'Wiśniewski', 'MIESZKANIEC', true),
-('maria.dabrowska@onet.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Maria', 'Dąbrowska', 'MIESZKANIEC', true),
-('krzysztof.lewandowski@interia.pl', '$2a$10$vK6F/3lWlytZ/8j/T.oR.O7UvI0H/F9F9f/F9F9f/F9F9f/F9F9f', 'Krzysztof', 'Lewandowski', 'MIESZKANIEC', true);
+('admin1@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Andrzej', 'Zarządczy', 'ZARZADCA', true),
+('admin2@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Beata', 'Wspólnotowa', 'ZARZADCA', true),
+('hydraulik@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Marian', 'Rura', 'KONSERWATOR', true),
+('elektryk@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Zenon', 'Kabel', 'KONSERWATOR', true),
+('serwis@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Adam', 'Złota-Rączka', 'KONSERWATOR', true),
+('jan.kowalski@gmail.com', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Jan', 'Kowalski', 'MIESZKANIEC', true),
+('anna.nowak@poczta.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Anna', 'Nowak', 'MIESZKANIEC', true),
+('piotr.wisniewski@wp.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Piotr', 'Wiśniewski', 'MIESZKANIEC', true),
+('maria.dabrowska@onet.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Maria', 'Dąbrowska', 'MIESZKANIEC', true),
+('krzysztof.lewandowski@interia.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Krzysztof', 'Lewandowski', 'MIESZKANIEC', true);
 
 -- ==========================================
 -- KATEGORIE ZGŁOSZEŃ
