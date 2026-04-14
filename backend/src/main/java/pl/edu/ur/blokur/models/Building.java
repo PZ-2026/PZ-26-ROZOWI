@@ -6,10 +6,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Encja reprezentująca budynek przypisany do wspólnoty/osiedla.
@@ -38,6 +42,9 @@ public class Building {
 
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
+
+    @OneToMany(mappedBy = "building", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Staircase> staircases = new ArrayList<>();
 
     public UUID getId() {
         return id;
@@ -85,5 +92,13 @@ public class Building {
 
     public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
+    }
+
+    public List<Staircase> getStaircases() {
+        return staircases;
+    }
+
+    public void setStaircases(List<Staircase> staircases) {
+        this.staircases = staircases;
     }
 }
