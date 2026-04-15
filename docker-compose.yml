@@ -27,6 +27,9 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/project
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_FLYWAY_URL=jdbc:postgresql://db:5432/project
+      - SPRING_FLYWAY_USER=admin
+      - SPRING_FLYWAY_PASSWORD=admin
 
 
 volumes:

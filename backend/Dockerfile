@@ -5,10 +5,14 @@ COPY gradlew .
 COPY gradle gradle
 COPY build.gradle* .
 COPY settings.gradle* .
-COPY src src
+#COPY src src
 
 RUN sed -i 's/\r$//' gradlew
 RUN chmod +x ./gradlew
+
+RUN ./gradlew dependencies --no-daemon
+
+COPY src src
 
 RUN ./gradlew clean bootJar -x test
 
