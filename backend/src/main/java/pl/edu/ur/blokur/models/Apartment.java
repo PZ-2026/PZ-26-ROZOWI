@@ -5,11 +5,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Table;
+import jakarta.persistence.FetchType;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Encja reprezentująca lokal mieszkalny lub użytkowy w budynku.
@@ -30,6 +37,13 @@ public class Apartment {
     @ColumnDefault("0.00")
     @Column(name = "current_balance", precision = 12, scale = 2)
     private BigDecimal currentBalance;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "staircase_id", nullable = false)
+    private Staircase staircase;
+
+    @OneToMany(mappedBy = "apartment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserApartment> userApartments = new ArrayList<>();
 
     public UUID getId() {
         return id;
@@ -53,5 +67,21 @@ public class Apartment {
 
     public void setCurrentBalance(BigDecimal currentBalance) {
         this.currentBalance = currentBalance;
+    }
+
+    public Staircase getStaircase() {
+        return staircase;
+    }
+
+    public void setStaircase(Staircase staircase) {
+        this.staircase = staircase;
+    }
+
+    public List<UserApartment> getUserApartments() {
+        return userApartments;
+    }
+
+    public void setUserApartments(List<UserApartment> userApartments) {
+        this.userApartments = userApartments;
     }
 }
