@@ -10,12 +10,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Encja reprezentująca użytkownika systemu.
+ * Encja reprezentująca użytkownika systemu Blokur.
  */
 @Entity
 @Table(name = "users")
@@ -27,7 +28,7 @@ public class User {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @Column(name = "password_hash", nullable = false)
@@ -39,15 +40,23 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "role", nullable = false)
+    @Column(name = "role", nullable = false, length = 50)
     private String role;
 
-    @Column(name = "is_active")
     @ColumnDefault("true")
-    private Boolean isActive = true;
+    @Column(name = "is_active")
+    private boolean active = true;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserApartment> userApartments = new ArrayList<>();
+
+    public User() {
+    }
+
+    // --- Gettery i settery ---
 
     public UUID getId() {
         return id;
@@ -97,12 +106,20 @@ public class User {
         this.role = role;
     }
 
-    public Boolean getIsActive() {
-        return isActive;
+    public boolean isActive() {
+        return active;
     }
 
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public List<UserApartment> getUserApartments() {

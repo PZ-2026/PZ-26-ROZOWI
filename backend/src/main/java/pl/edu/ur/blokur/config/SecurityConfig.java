@@ -8,18 +8,15 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import pl.edu.ur.blokur.security.JwtAuthenticationFilter;
 
 /**
  * Konfiguracja zabezpieczeń aplikacji Spring Security.
- * Definiuje reguły autoryzacji, filtry JWT oraz zarządzanie użytkownikami w pamięci.
+ * Definiuje reguły autoryzacji, filtry JWT oraz enkoder haseł BCrypt.
  */
 @Configuration
 @EnableWebSecurity
@@ -58,37 +55,9 @@ public class SecurityConfig {
     }
 
     /**
-     * Tworzy serwis użytkowników w pamięci z trzema predefiniowanymi rolami:
-     * ZARZADCA, MIESZKANIEC, KONSERWATOR.
-     *
-     * @param passwordEncoder enkoder haseł
-     * @return {@link UserDetailsService} z użytkownikami w pamięci
-     */
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        var zarzadca = User.builder()
-            .username("zarzadca")
-            .password(passwordEncoder.encode("haslo123"))
-            .roles("ZARZADCA")
-            .build();
-
-        var mieszkaniec = User.builder()
-            .username("mieszkaniec")
-            .password(passwordEncoder.encode("haslo123"))
-            .roles("MIESZKANIEC")
-            .build();
-
-        var konserwator = User.builder()
-            .username("konserwator")
-            .password(passwordEncoder.encode("haslo123"))
-            .roles("KONSERWATOR")
-            .build();
-
-        return new InMemoryUserDetailsManager(zarzadca, mieszkaniec, konserwator);
-    }
-
-    /**
      * Tworzy enkoder haseł oparty na algorytmie BCrypt.
+     * Używany zarówno do weryfikacji haseł przy logowaniu,
+     * jak i do hashowania nowych haseł.
      *
      * @return {@link PasswordEncoder} BCrypt
      */
