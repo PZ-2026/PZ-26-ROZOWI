@@ -1,5 +1,6 @@
 package pl.edu.ur.blokur.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.AuthResponse;
+import pl.edu.ur.blokur.dto.ForgotPasswordRequest;
 import pl.edu.ur.blokur.dto.LoginRequest;
+import pl.edu.ur.blokur.dto.ResetPasswordRequest;
 import pl.edu.ur.blokur.security.JwtService;
 import pl.edu.ur.blokur.service.LoginAttemptService;
+import pl.edu.ur.blokur.service.PasswordResetService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,15 +36,18 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final LoginAttemptService loginAttemptService;
+    private final PasswordResetService passwordResetService;
 
     public AuthController(
         AuthenticationManager authenticationManager,
         JwtService jwtService,
-        LoginAttemptService loginAttemptService
+        LoginAttemptService loginAttemptService,
+        PasswordResetService passwordResetService
     ) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.loginAttemptService = loginAttemptService;
+        this.passwordResetService = passwordResetService;
     }
 
     /**
@@ -95,6 +102,22 @@ public class AuthController {
         } catch (Exception e) {
             System.out.println("UNHANDLED EXCEPTION:" + e.getMessage());
             return null;
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "Jeśli podany adres e-mail istnieje w systemie, wysłaliśmy link do resetowania hasła."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok(Map.of("message", "Hasło zostało zmienione. Możesz się teraz zalogować."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
 }
