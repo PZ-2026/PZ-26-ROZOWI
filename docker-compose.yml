@@ -23,6 +23,8 @@ services:
       - "8080:8080"
     depends_on:
       - db
+    env_file:
+      - ./backend/.env
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/project
       - SPRING_DATASOURCE_USERNAME=admin
