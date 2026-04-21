@@ -2,8 +2,8 @@
 -- UŻYTKOWNICY (Hasło dla wszystkich: haslo123)
 -- ==========================================
 INSERT INTO users (email, password_hash, first_name, last_name, role, is_active) VALUES
-('admin1@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Andrzej', 'Zarządczy', 'ZARZADCA', true),
-('admin2@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Beata', 'Wspólnotowa', 'ZARZADCA', true),
+('admin1@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Andrzej', 'Zarządczy', 'ZARZADCA', true), -- Hasło: haslo123
+('admin2@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Beata', 'Wspólnotowa', 'ZARZADCA', true), -- Hasło: haslo123
 ('hydraulik@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Marian', 'Rura', 'KONSERWATOR', true),
 ('elektryk@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Zenon', 'Kabel', 'KONSERWATOR', true),
 ('serwis@blokur.pl', '$2a$10$ffFK5FwOKhBnpBxPABlcve3hrARlA/vaPnn2O9Zr6UktfbdI2101e', 'Adam', 'Złota-Rączka', 'KONSERWATOR', true),
