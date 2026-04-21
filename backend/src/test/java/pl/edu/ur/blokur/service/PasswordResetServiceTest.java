@@ -186,4 +186,102 @@ class PasswordResetServiceTest {
             assertThat(testUser.getPasswordHash()).isNotEqualTo("staryHash");
         }
     }
+
+    // -------------------------------------------------------
+    // inviteUser
+    // -------------------------------------------------------
+
+    @Nested
+    @DisplayName("inviteUser — zaproszenie nowego użytkownika")
+    class InviteUser {
+
+        @Test
+        @DisplayName("Zapisuje token zaproszenia z ważnością 72 godzin")
+        void shouldSaveTokenWithSeventyTwoHourExpiry() {
+            testUser.setFirstName("Jan");
+
+            passwordResetService.inviteUser(testUser);
+
+            ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            verify(tokenRepository).save(captor.capture());
+
+            PasswordResetToken saved = captor.getValue();
+            assertThat(saved.getExpiryDate()).isAfter(LocalDateTime.now().plusHours(71));
+            assertThat(saved.getExpiryDate()).isBefore(LocalDateTime.now().plusHours(73));
+        }
+
+        @Test
+        @DisplayName("Zapisuje token przypisany do właściwego użytkownika")
+        void shouldSaveTokenForCorrectUser() {
+            testUser.setFirstName("Jan");
+
+            passwordResetService.inviteUser(testUser);
+
+            ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            verify(tokenRepository).save(captor.capture());
+
+            assertThat(captor.getValue().getUser()).isEqualTo(testUser);
+        }
+
+        @Test
+        @DisplayName("Wysyła e-mail powitalny na adres użytkownika")
+        void shouldSendWelcomeEmailToUser() {
+            testUser.setFirstName("Jan");
+
+            passwordResetService.inviteUser(testUser);
+
+            ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            verify(mailSender).send(captor.capture());
+
+            assertThat(captor.getValue().getTo()).contains("jan@blokur.pl");
+        }
+
+        @Test
+        @DisplayName("E-mail powitalny zawiera link z tokenem")
+        void shouldIncludeTokenLinkInEmail() {
+            testUser.setFirstName("Jan");
+
+            passwordResetService.inviteUser(testUser);
+
+            ArgumentCaptor<SimpleMailMessage> mailCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            verify(mailSender).send(mailCaptor.capture());
+            verify(tokenRepository).save(tokenCaptor.capture());
+
+            String token = tokenCaptor.getValue().getToken();
+            assertThat(mailCaptor.getValue().getText()).contains("https://blokur.pl/reset?token=" + token);
+        }
+
+        @Test
+        @DisplayName("E-mail powitalny zawiera imię użytkownika")
+        void shouldIncludeFirstNameInEmail() {
+            testUser.setFirstName("Katarzyna");
+
+            passwordResetService.inviteUser(testUser);
+
+            ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            verify(mailSender).send(captor.capture());
+
+            assertThat(captor.getValue().getText()).contains("Katarzyna");
+        }
+
+        @Test
+        @DisplayName("Każde zaproszenie generuje unikalny token")
+        void shouldGenerateUniqueTokenEachTime() {
+            testUser.setFirstName("Jan");
+            User secondUser = new User();
+            secondUser.setEmail("anna@blokur.pl");
+            secondUser.setFirstName("Anna");
+
+            passwordResetService.inviteUser(testUser);
+            passwordResetService.inviteUser(secondUser);
+
+            ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            verify(tokenRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+
+            String token1 = captor.getAllValues().get(0).getToken();
+            String token2 = captor.getAllValues().get(1).getToken();
+            assertThat(token1).isNotEqualTo(token2);
+        }
+    }
 }

@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "users")
+@SQLDelete(sql = "UPDATE users SET deleted = true WHERE id = ?")
+@SQLRestriction("deleted = false")
 public class User {
 
     @Id
@@ -49,6 +53,10 @@ public class User {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @ColumnDefault("false")
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserApartment> userApartments = new ArrayList<>();
@@ -120,6 +128,14 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     public List<UserApartment> getUserApartments() {
