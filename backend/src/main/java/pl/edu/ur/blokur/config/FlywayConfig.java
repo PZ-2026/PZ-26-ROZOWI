@@ -21,11 +21,10 @@ public class FlywayConfig {
     @Bean(initMethod = "migrate")
     public Flyway flyway(DataSource dataSource) {
         Flyway flyway = Flyway.configure()
-                .dataSource(dataSource)
-                .locations(locations)
-                .baselineOnMigrate(true)
-                .load();
-        flyway.repair();
+            .dataSource(dataSource)
+            .locations(locations)
+            .baselineOnMigrate(true)
+            .load();
         return flyway;
     }
 }
