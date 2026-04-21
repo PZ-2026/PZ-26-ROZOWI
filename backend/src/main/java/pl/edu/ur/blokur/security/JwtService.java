@@ -7,6 +7,9 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Date;
 
 /**
@@ -18,8 +21,10 @@ public class JwtService {
 
     private static final String SECRET_KEY = "ToJestBardzoTajnyKluczDoGenerowaniaTokenowJwT!123";
     private static final long EXPIRATION_TIME = 86400000L;
+    private static final int REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 
     private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    private final SecureRandom secureRandom = new SecureRandom();
 
     /**
      * Generuje token JWT dla podanego użytkownika i roli.
@@ -76,6 +81,26 @@ public class JwtService {
         } catch (JwtException e) {
             return null;
         }
+    }
+
+    /**
+     * Generuje kryptograficznie bezpieczny token odświeżania (256 bitów, Base64 URL-safe).
+     *
+     * @return wartość refresh tokena do zapisania w bazie
+     */
+    public String generateRefreshTokenValue() {
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    /**
+     * Zwraca datę wygaśnięcia nowego refresh tokena.
+     *
+     * @return LocalDateTime za {@value REFRESH_TOKEN_EXPIRATION_DAYS} dni
+     */
+    public LocalDateTime getRefreshTokenExpiry() {
+        return LocalDateTime.now().plusDays(REFRESH_TOKEN_EXPIRATION_DAYS);
     }
 
     /**

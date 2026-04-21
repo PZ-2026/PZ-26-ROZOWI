@@ -16,10 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.AuthResponse;
 import pl.edu.ur.blokur.dto.ForgotPasswordRequest;
 import pl.edu.ur.blokur.dto.LoginRequest;
+import pl.edu.ur.blokur.dto.RefreshTokenRequest;
 import pl.edu.ur.blokur.dto.ResetPasswordRequest;
+import pl.edu.ur.blokur.models.User;
+import pl.edu.ur.blokur.repository.UserRepository;
 import pl.edu.ur.blokur.security.JwtService;
 import pl.edu.ur.blokur.service.LoginAttemptService;
 import pl.edu.ur.blokur.service.PasswordResetService;
+import pl.edu.ur.blokur.service.RefreshTokenService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,17 +41,23 @@ public class AuthController {
     private final JwtService jwtService;
     private final LoginAttemptService loginAttemptService;
     private final PasswordResetService passwordResetService;
+    private final RefreshTokenService refreshTokenService;
+    private final UserRepository userRepository;
 
     public AuthController(
         AuthenticationManager authenticationManager,
         JwtService jwtService,
         LoginAttemptService loginAttemptService,
-        PasswordResetService passwordResetService
+        PasswordResetService passwordResetService,
+        RefreshTokenService refreshTokenService,
+        UserRepository userRepository
     ) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.loginAttemptService = loginAttemptService;
         this.passwordResetService = passwordResetService;
+        this.refreshTokenService = refreshTokenService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -81,7 +91,11 @@ public class AuthController {
 
             String token = jwtService.generateToken(authentication.getName(), role);
 
-            return ResponseEntity.ok(new AuthResponse(token, role));
+            User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new IllegalStateException("Użytkownik nie istnieje"));
+            String refreshToken = refreshTokenService.createRefreshToken(user).getToken();
+
+            return ResponseEntity.ok(new AuthResponse(token, refreshToken, role));
 
         } catch (LockedException e) {
             LocalDateTime lockedUntil = loginAttemptService.getLockedUntil(email);
@@ -102,6 +116,16 @@ public class AuthController {
         } catch (Exception e) {
             System.out.println("UNHANDLED EXCEPTION:" + e.getMessage());
             return null;
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
+        try {
+            RefreshTokenService.TokenPair pair = refreshTokenService.exchange(request.getRefreshToken());
+            return ResponseEntity.ok(new AuthResponse(pair.accessToken(), pair.refreshToken(), pair.role()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
         }
     }
 
