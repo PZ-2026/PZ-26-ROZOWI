@@ -71,6 +71,13 @@ public class PasswordResetService {
         tokenRepository.delete(resetToken);
     }
 
+    public void inviteUser(User user) {
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiry = LocalDateTime.now().plusHours(72);
+        tokenRepository.save(new PasswordResetToken(user, token, expiry));
+        sendInvitationEmail(user.getEmail(), user.getFirstName(), token);
+    }
+
     @Async
     protected void sendResetEmail(String email, String token) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -82,6 +89,22 @@ public class PasswordResetService {
             "Kliknij poniższy link, aby ustawić nowe hasło (ważny przez 1 godzinę):\n" +
             resetBaseUrl + "?token=" + token + "\n\n" +
             "Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość."
+        );
+        mailSender.send(message);
+    }
+
+    @Async
+    protected void sendInvitationEmail(String email, String firstName, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(email);
+        message.setSubject("Blokur – witamy w systemie!");
+        message.setText(
+            "Cześć " + firstName + "!\n\n" +
+            "Administrator utworzył dla Ciebie konto w aplikacji Blokur.\n\n" +
+            "Kliknij poniższy link, aby ustawić swoje hasło (link ważny przez 72 godziny):\n" +
+            resetBaseUrl + "?token=" + token + "\n\n" +
+            "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z administratorem."
         );
         mailSender.send(message);
     }
