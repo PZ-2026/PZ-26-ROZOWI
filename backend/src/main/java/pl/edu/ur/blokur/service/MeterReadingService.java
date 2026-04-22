@@ -9,9 +9,11 @@ import pl.edu.ur.blokur.dto.MeterReadingResponse;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.Apartment;
+import pl.edu.ur.blokur.models.Meter;
 import pl.edu.ur.blokur.models.MeterReading;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.MeterReadingRepository;
+import pl.edu.ur.blokur.repository.MeterRepository;
 
 import java.util.UUID;
 
@@ -24,35 +26,48 @@ public class MeterReadingService {
 
     private final MeterReadingRepository meterReadingRepository;
     private final ApartmentRepository apartmentRepository;
+    private final MeterRepository meterRepository;
 
     public MeterReadingService(
         MeterReadingRepository meterReadingRepository,
-        ApartmentRepository apartmentRepository
+        ApartmentRepository apartmentRepository,
+        MeterRepository meterRepository
     ) {
         this.meterReadingRepository = meterReadingRepository;
         this.apartmentRepository = apartmentRepository;
+        this.meterRepository = meterRepository;
     }
 
     /**
-     * Tworzy nowy odczyt licznika dla wskazanego lokalu.
-     * Sprawdza duplikaty oraz regresję wartości.
+     * Tworzy nowy odczyt dla wskazanego licznika w danym lokalu.
+     * Sprawdza duplikaty, regresję wartości oraz to, czy licznik jest aktywny
+     * i rzeczywiście przypisany do wskazanego lokalu.
      *
      * @param apartmentId identyfikator lokalu
      * @param request dane nowego odczytu
      * @return DTO z zapisanym odczytem
-     * @throws NotFoundException jeśli lokal nie istnieje
-     * @throws BusinessValidationException jeśli odczyt jest duplikatem lub wartość się cofa
+     * @throws NotFoundException jeśli lokal lub licznik nie istnieje
+     * @throws BusinessValidationException jeśli odczyt jest duplikatem, wartość się cofa
+     *         lub licznik nie należy do lokalu / jest nieaktywny
      */
     public MeterReadingResponse create(UUID apartmentId, MeterReadingRequest request) {
         Apartment apartment = apartmentRepository.findById(apartmentId)
             .orElseThrow(() -> new NotFoundException("Lokal o ID " + apartmentId + " nie istnieje"));
 
-        checkDuplicateOnCreate(apartmentId, request);
-        checkRegressionOnCreate(apartmentId, request);
+        Meter meter = resolveMeterForApartment(request.getMeterId(), apartmentId);
+
+        if (!meter.isActive()) {
+            throw new BusinessValidationException(
+                "Licznik o ID " + meter.getId() + " jest nieaktywny — nie można dodać odczytu"
+            );
+        }
+
+        checkDuplicateOnCreate(request);
+        checkRegressionOnCreate(request);
 
         MeterReading reading = new MeterReading();
         reading.setApartment(apartment);
-        reading.setMeterType(request.getMeterType());
+        reading.setMeter(meter);
         reading.setValue(request.getValue());
         reading.setReadingDate(request.getReadingDate());
 
@@ -102,7 +117,7 @@ public class MeterReadingService {
      * @param id identyfikator odczytu do aktualizacji
      * @param request nowe dane odczytu
      * @return DTO ze zaktualizowanym odczytem
-     * @throws NotFoundException jeśli odczyt nie istnieje
+     * @throws NotFoundException jeśli odczyt lub licznik nie istnieje
      * @throws BusinessValidationException jeśli nowe dane naruszają reguły biznesowe
      */
     public MeterReadingResponse update(UUID id, MeterReadingRequest request) {
@@ -110,10 +125,12 @@ public class MeterReadingService {
             .orElseThrow(() -> new NotFoundException("Odczyt licznika o ID " + id + " nie istnieje"));
 
         UUID apartmentId = reading.getApartment().getId();
-        checkDuplicateOnUpdate(apartmentId, request, id);
-        checkRegressionOnUpdate(apartmentId, request, id);
+        Meter meter = resolveMeterForApartment(request.getMeterId(), apartmentId);
 
-        reading.setMeterType(request.getMeterType());
+        checkDuplicateOnUpdate(request, id);
+        checkRegressionOnUpdate(request, id);
+
+        reading.setMeter(meter);
         reading.setValue(request.getValue());
         reading.setReadingDate(request.getReadingDate());
 
@@ -133,33 +150,43 @@ public class MeterReadingService {
         meterReadingRepository.save(reading);
     }
 
-    private void checkDuplicateOnCreate(UUID apartmentId, MeterReadingRequest request) {
-        if (meterReadingRepository.existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-            apartmentId, request.getMeterType(), request.getReadingDate()
+    private Meter resolveMeterForApartment(UUID meterId, UUID apartmentId) {
+        Meter meter = meterRepository.findById(meterId)
+            .orElseThrow(() -> new NotFoundException("Licznik o ID " + meterId + " nie istnieje"));
+
+        if (!meter.getApartment().getId().equals(apartmentId)) {
+            throw new BusinessValidationException(
+                "Licznik o ID " + meterId + " nie jest przypisany do lokalu " + apartmentId
+            );
+        }
+        return meter;
+    }
+
+    private void checkDuplicateOnCreate(MeterReadingRequest request) {
+        if (meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
+            request.getMeterId(), request.getReadingDate()
         )) {
             throw new BusinessValidationException(
-                "Odczyt licznika typu '" + request.getMeterType() + "' dla tego lokalu z datą "
+                "Odczyt dla licznika " + request.getMeterId() + " z datą "
                     + request.getReadingDate() + " już istnieje"
             );
         }
     }
 
-    private void checkDuplicateOnUpdate(UUID apartmentId, MeterReadingRequest request, UUID currentId) {
-        if (meterReadingRepository.existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
-            apartmentId, request.getMeterType(), request.getReadingDate(), currentId
+    private void checkDuplicateOnUpdate(MeterReadingRequest request, UUID currentId) {
+        if (meterReadingRepository.existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
+            request.getMeterId(), request.getReadingDate(), currentId
         )) {
             throw new BusinessValidationException(
-                "Odczyt licznika typu '" + request.getMeterType() + "' dla tego lokalu z datą "
+                "Odczyt dla licznika " + request.getMeterId() + " z datą "
                     + request.getReadingDate() + " już istnieje"
             );
         }
     }
 
-    private void checkRegressionOnCreate(UUID apartmentId, MeterReadingRequest request) {
+    private void checkRegressionOnCreate(MeterReadingRequest request) {
         MeterReading latest = meterReadingRepository
-            .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                apartmentId, request.getMeterType()
-            );
+            .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(request.getMeterId());
 
         if (latest == null) {
             return;
@@ -173,11 +200,9 @@ public class MeterReadingService {
         }
     }
 
-    private void checkRegressionOnUpdate(UUID apartmentId, MeterReadingRequest request, UUID currentId) {
+    private void checkRegressionOnUpdate(MeterReadingRequest request, UUID currentId) {
         MeterReading latest = meterReadingRepository
-            .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                apartmentId, request.getMeterType()
-            );
+            .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(request.getMeterId());
 
         if (latest == null) {
             return;
@@ -192,10 +217,13 @@ public class MeterReadingService {
     }
 
     private MeterReadingResponse toResponse(MeterReading reading) {
+        Meter meter = reading.getMeter();
         return new MeterReadingResponse(
             reading.getId(),
             reading.getApartment().getId(),
-            reading.getMeterType(),
+            meter.getId(),
+            meter.getSerialNumber(),
+            meter.getMediumType(),
             reading.getValue(),
             reading.getReadingDate(),
             reading.getCreatedAt(),

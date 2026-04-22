@@ -16,9 +16,12 @@ import pl.edu.ur.blokur.dto.MeterReadingResponse;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.Apartment;
+import pl.edu.ur.blokur.models.MediumType;
+import pl.edu.ur.blokur.models.Meter;
 import pl.edu.ur.blokur.models.MeterReading;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.MeterReadingRepository;
+import pl.edu.ur.blokur.repository.MeterRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -38,7 +41,8 @@ import static org.mockito.Mockito.when;
 /**
  * Testy jednostkowe dla {@link MeterReadingService}.
  * Weryfikują logikę biznesową odczytów liczników: tworzenie, pobieranie,
- * aktualizację, usuwanie oraz walidację duplikatów i regresji wartości.
+ * aktualizację, usuwanie oraz walidację duplikatów i regresji wartości
+ * po przejściu na referencję do encji {@link Meter}.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MeterReadingService — serwis odczytów liczników")
@@ -50,35 +54,49 @@ class MeterReadingServiceTest {
     @Mock
     private ApartmentRepository apartmentRepository;
 
+    @Mock
+    private MeterRepository meterRepository;
+
     @InjectMocks
     private MeterReadingService meterReadingService;
 
     private UUID apartmentId;
+    private UUID meterId;
     private UUID readingId;
     private Apartment apartment;
+    private Meter meter;
     private MeterReading existingReading;
     private MeterReadingRequest validRequest;
 
     @BeforeEach
     void setUp() {
         apartmentId = UUID.randomUUID();
-        readingId   = UUID.randomUUID();
+        meterId = UUID.randomUUID();
+        readingId = UUID.randomUUID();
 
         apartment = new Apartment();
         apartment.setId(apartmentId);
         apartment.setNumber("1");
 
+        meter = new Meter();
+        meter.setId(meterId);
+        meter.setApartment(apartment);
+        meter.setSerialNumber("SN-100");
+        meter.setMediumType(MediumType.CIEPLA_WODA);
+        meter.setInstallationDate(LocalDate.of(2025, 1, 1));
+        meter.setActive(true);
+
         existingReading = new MeterReading();
         existingReading.setId(readingId);
         existingReading.setApartment(apartment);
-        existingReading.setMeterType("CIEPLA_WODA");
+        existingReading.setMeter(meter);
         existingReading.setValue(new BigDecimal("100.0000"));
         existingReading.setReadingDate(LocalDate.of(2026, 3, 1));
         existingReading.setCreatedAt(LocalDateTime.now());
         existingReading.setUpdatedAt(LocalDateTime.now());
 
         validRequest = new MeterReadingRequest(
-            "CIEPLA_WODA",
+            meterId,
             new BigDecimal("150.0000"),
             LocalDate.of(2026, 4, 1)
         );
@@ -98,26 +116,28 @@ class MeterReadingServiceTest {
             MeterReading saved = new MeterReading();
             saved.setId(UUID.randomUUID());
             saved.setApartment(apartment);
-            saved.setMeterType(validRequest.getMeterType());
+            saved.setMeter(meter);
             saved.setValue(validRequest.getValue());
             saved.setReadingDate(validRequest.getReadingDate());
             saved.setCreatedAt(LocalDateTime.now());
             saved.setUpdatedAt(LocalDateTime.now());
 
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-            when(meterReadingRepository.existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                eq(apartmentId), eq("CIEPLA_WODA"), eq(LocalDate.of(2026, 4, 1))
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+            when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
+                eq(meterId), eq(LocalDate.of(2026, 4, 1))
             )).thenReturn(false);
             when(meterReadingRepository
-                .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                    eq(apartmentId), eq("CIEPLA_WODA")
-                )).thenReturn(null);
+                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
+                .thenReturn(null);
             when(meterReadingRepository.save(any(MeterReading.class))).thenReturn(saved);
 
             MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest);
 
             assertThat(response).isNotNull();
-            assertThat(response.getMeterType()).isEqualTo("CIEPLA_WODA");
+            assertThat(response.getMeterId()).isEqualTo(meterId);
+            assertThat(response.getMediumType()).isEqualTo(MediumType.CIEPLA_WODA);
+            assertThat(response.getMeterSerialNumber()).isEqualTo("SN-100");
             assertThat(response.getValue()).isEqualByComparingTo("150.0000");
             assertThat(response.getApartmentId()).isEqualTo(apartmentId);
             verify(meterReadingRepository).save(any(MeterReading.class));
@@ -136,16 +156,62 @@ class MeterReadingServiceTest {
         }
 
         @Test
-        @DisplayName("Duplikat (ten sam typ i data) — rzuca BusinessValidationException")
+        @DisplayName("Nieistniejący licznik — rzuca NotFoundException")
+        void shouldThrowNotFoundWhenMeterDoesNotExist() {
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(meterRepository.findById(meterId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining(meterId.toString());
+
+            verify(meterReadingRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Licznik należy do innego lokalu — rzuca BusinessValidationException")
+        void shouldThrowWhenMeterBelongsToAnotherApartment() {
+            Apartment otherApartment = new Apartment();
+            otherApartment.setId(UUID.randomUUID());
+            meter.setApartment(otherApartment);
+
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+                .isInstanceOf(BusinessValidationException.class)
+                .hasMessageContaining("nie jest przypisany");
+
+            verify(meterReadingRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Nieaktywny licznik — rzuca BusinessValidationException")
+        void shouldThrowWhenMeterIsInactive() {
+            meter.setActive(false);
+
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+                .isInstanceOf(BusinessValidationException.class)
+                .hasMessageContaining("nieaktywny");
+
+            verify(meterReadingRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Duplikat (ten sam licznik i data) — rzuca BusinessValidationException")
         void shouldThrowWhenDuplicateReadingOnCreate() {
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-            when(meterReadingRepository.existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                eq(apartmentId), eq("CIEPLA_WODA"), eq(LocalDate.of(2026, 4, 1))
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+            when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
+                eq(meterId), eq(LocalDate.of(2026, 4, 1))
             )).thenReturn(true);
 
             assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
                 .isInstanceOf(BusinessValidationException.class)
-                .hasMessageContaining("CIEPLA_WODA");
+                .hasMessageContaining(meterId.toString());
 
             verify(meterReadingRepository, never()).save(any());
         }
@@ -154,19 +220,18 @@ class MeterReadingServiceTest {
         @DisplayName("Wartość niższa niż ostatni odczyt — rzuca BusinessValidationException")
         void shouldThrowWhenNewValueIsLowerThanLastReading() {
             MeterReadingRequest regression = new MeterReadingRequest(
-                "CIEPLA_WODA",
-                new BigDecimal("50.0000"),   // mniejsza niż 100 w existingReading
+                meterId,
+                new BigDecimal("50.0000"),
                 LocalDate.of(2026, 4, 1)
             );
 
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-            when(meterReadingRepository.existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                any(), any(), any()
-            )).thenReturn(false);
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+            when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(any(), any()))
+                .thenReturn(false);
             when(meterReadingRepository
-                .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                    eq(apartmentId), eq("CIEPLA_WODA")
-                )).thenReturn(existingReading);
+                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
+                .thenReturn(existingReading);
 
             assertThatThrownBy(() -> meterReadingService.create(apartmentId, regression))
                 .isInstanceOf(BusinessValidationException.class)
@@ -181,20 +246,19 @@ class MeterReadingServiceTest {
             MeterReading saved = new MeterReading();
             saved.setId(UUID.randomUUID());
             saved.setApartment(apartment);
-            saved.setMeterType(validRequest.getMeterType());
+            saved.setMeter(meter);
             saved.setValue(validRequest.getValue());
             saved.setReadingDate(validRequest.getReadingDate());
             saved.setCreatedAt(LocalDateTime.now());
             saved.setUpdatedAt(LocalDateTime.now());
 
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-            when(meterReadingRepository.existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                any(), any(), any()
-            )).thenReturn(false);
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+            when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(any(), any()))
+                .thenReturn(false);
             when(meterReadingRepository
-                .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                    any(), any()
-                )).thenReturn(null);
+                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(any()))
+                .thenReturn(null);
             when(meterReadingRepository.save(any())).thenReturn(saved);
 
             MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest);
@@ -220,7 +284,8 @@ class MeterReadingServiceTest {
             MeterReadingResponse response = meterReadingService.getById(readingId);
 
             assertThat(response.getId()).isEqualTo(readingId);
-            assertThat(response.getMeterType()).isEqualTo("CIEPLA_WODA");
+            assertThat(response.getMeterId()).isEqualTo(meterId);
+            assertThat(response.getMediumType()).isEqualTo(MediumType.CIEPLA_WODA);
         }
 
         @Test
@@ -256,7 +321,8 @@ class MeterReadingServiceTest {
                 meterReadingService.getAllByApartment(apartmentId, 0, 10);
 
             assertThat(result.getTotalElements()).isEqualTo(1);
-            assertThat(result.getContent().get(0).getMeterType()).isEqualTo("CIEPLA_WODA");
+            assertThat(result.getContent().get(0).getMediumType()).isEqualTo(MediumType.CIEPLA_WODA);
+            assertThat(result.getContent().get(0).getMeterId()).isEqualTo(meterId);
         }
 
         @Test
@@ -282,7 +348,7 @@ class MeterReadingServiceTest {
         @DisplayName("Poprawne dane — zwraca zaktualizowane DTO")
         void shouldUpdateReadingSuccessfully() {
             MeterReadingRequest updateRequest = new MeterReadingRequest(
-                "CIEPLA_WODA",
+                meterId,
                 new BigDecimal("200.0000"),
                 LocalDate.of(2026, 5, 1)
             );
@@ -290,7 +356,7 @@ class MeterReadingServiceTest {
             MeterReading updated = new MeterReading();
             updated.setId(readingId);
             updated.setApartment(apartment);
-            updated.setMeterType("CIEPLA_WODA");
+            updated.setMeter(meter);
             updated.setValue(new BigDecimal("200.0000"));
             updated.setReadingDate(LocalDate.of(2026, 5, 1));
             updated.setCreatedAt(LocalDateTime.now());
@@ -298,14 +364,14 @@ class MeterReadingServiceTest {
 
             when(meterReadingRepository.findByIdAndDeletedFalse(readingId))
                 .thenReturn(Optional.of(existingReading));
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository
-                .existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
-                    eq(apartmentId), eq("CIEPLA_WODA"), eq(LocalDate.of(2026, 5, 1)), eq(readingId)
+                .existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
+                    eq(meterId), eq(LocalDate.of(2026, 5, 1)), eq(readingId)
                 )).thenReturn(false);
             when(meterReadingRepository
-                .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                    eq(apartmentId), eq("CIEPLA_WODA")
-                )).thenReturn(existingReading);
+                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
+                .thenReturn(existingReading);
             when(meterReadingRepository.save(any())).thenReturn(updated);
 
             MeterReadingResponse response = meterReadingService.update(readingId, updateRequest);
@@ -327,17 +393,17 @@ class MeterReadingServiceTest {
         @DisplayName("Duplikat podczas aktualizacji — rzuca BusinessValidationException")
         void shouldThrowWhenDuplicateOnUpdate() {
             MeterReadingRequest updateRequest = new MeterReadingRequest(
-                "CIEPLA_WODA",
+                meterId,
                 new BigDecimal("200.0000"),
                 LocalDate.of(2026, 4, 1)
             );
 
             when(meterReadingRepository.findByIdAndDeletedFalse(readingId))
                 .thenReturn(Optional.of(existingReading));
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository
-                .existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
-                    any(), any(), any(), any()
-                )).thenReturn(true);
+                .existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(any(), any(), any()))
+                .thenReturn(true);
 
             assertThatThrownBy(() -> meterReadingService.update(readingId, updateRequest))
                 .isInstanceOf(BusinessValidationException.class);
