@@ -84,4 +84,19 @@ public class Apartment {
     public void setUserApartments(List<UserApartment> userApartments) {
         this.userApartments = userApartments;
     }
+
+    /**
+     * Aktualizuje saldo lokalu poprzez dodanie podanej kwoty.
+     * Dodatnia kwota zwiększa saldo (wpłata), ujemna zmniejsza (naliczenie).
+     *
+     * @param amount kwota do dodania do salda
+     */
+    public void updateBalance(BigDecimal amount) {
+        if (amount != null) {
+            if (this.currentBalance == null) {
+                this.currentBalance = BigDecimal.ZERO;
+            }
+            this.currentBalance = this.currentBalance.add(amount);
+        }
+    }
 }
