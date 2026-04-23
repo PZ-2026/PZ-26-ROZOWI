@@ -1,5 +1,7 @@
 package pl.edu.ur.blokur.dto;
 
+import pl.edu.ur.blokur.models.MediumType;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,7 +14,9 @@ public class MeterReadingResponse {
 
     private UUID id;
     private UUID apartmentId;
-    private String meterType;
+    private UUID meterId;
+    private String meterSerialNumber;
+    private MediumType mediumType;
     private BigDecimal value;
     private LocalDate readingDate;
     private LocalDateTime createdAt;
@@ -22,7 +26,9 @@ public class MeterReadingResponse {
     public MeterReadingResponse(
         UUID id,
         UUID apartmentId,
-        String meterType,
+        UUID meterId,
+        String meterSerialNumber,
+        MediumType mediumType,
         BigDecimal value,
         LocalDate readingDate,
         LocalDateTime createdAt,
@@ -31,7 +37,9 @@ public class MeterReadingResponse {
     ) {
         this.id = id;
         this.apartmentId = apartmentId;
-        this.meterType = meterType;
+        this.meterId = meterId;
+        this.meterSerialNumber = meterSerialNumber;
+        this.mediumType = mediumType;
         this.value = value;
         this.readingDate = readingDate;
         this.createdAt = createdAt;
@@ -55,12 +63,28 @@ public class MeterReadingResponse {
         this.apartmentId = apartmentId;
     }
 
-    public String getMeterType() {
-        return meterType;
+    public UUID getMeterId() {
+        return meterId;
     }
 
-    public void setMeterType(String meterType) {
-        this.meterType = meterType;
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
+    }
+
+    public String getMeterSerialNumber() {
+        return meterSerialNumber;
+    }
+
+    public void setMeterSerialNumber(String meterSerialNumber) {
+        this.meterSerialNumber = meterSerialNumber;
+    }
+
+    public MediumType getMediumType() {
+        return mediumType;
+    }
+
+    public void setMediumType(MediumType mediumType) {
+        this.mediumType = mediumType;
     }
 
     public BigDecimal getValue() {

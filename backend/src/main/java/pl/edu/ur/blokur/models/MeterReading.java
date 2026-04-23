@@ -25,10 +25,7 @@ import java.util.UUID;
 
 /**
  * Encja reprezentująca odczyt licznika dla danego lokalu.
- *
- * <p>TODO: Zgodnie z Modułem 4 specyfikacji, liczniki powinny być osobnymi encjami (Meter)
- * posiadającymi numer seryjny, datę montażu i typ medium. Obecna implementacja
- * używa jedynie prostego pola meterType, co jest niezgodne z "cyfrowym bliźniakiem".</p>
+ * Odczyt jest powiązany z konkretnym licznikiem ({@link Meter}) — a przez niego z lokalem.
  */
 @Entity
 @Table(name = "meter_readings")
@@ -46,8 +43,10 @@ public class MeterReading {
     @JoinColumn(name = "apartment_id", nullable = false)
     private Apartment apartment;
 
-    @Column(name = "meter_type", nullable = false, length = 100)
-    private String meterType;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "meter_id", nullable = false)
+    private Meter meter;
 
     @Column(name = "value", nullable = false, precision = 12, scale = 4)
     private BigDecimal value;
@@ -87,12 +86,12 @@ public class MeterReading {
         this.apartment = apartment;
     }
 
-    public String getMeterType() {
-        return meterType;
+    public Meter getMeter() {
+        return meter;
     }
 
-    public void setMeterType(String meterType) {
-        this.meterType = meterType;
+    public void setMeter(Meter meter) {
+        this.meter = meter;
     }
 
     public BigDecimal getValue() {

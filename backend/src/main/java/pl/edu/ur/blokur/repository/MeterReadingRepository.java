@@ -16,7 +16,7 @@ import java.util.UUID;
 public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID> {
 
     /**
-     * Pobiera stronicowaną listę nieusunietych odczytów dla danego lokalu.
+     * Pobiera stronicowaną listę nieusuniętych odczytów dla danego lokalu.
      *
      * @param apartmentId identyfikator lokalu
      * @param pageable parametry stronicowania
@@ -33,44 +33,33 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID
     Optional<MeterReading> findByIdAndDeletedFalse(UUID id);
 
     /**
-     * Zwraca ostatni (najnowszy) nieusunięty odczyt danego typu licznika dla lokalu.
+     * Zwraca ostatni (najnowszy) nieusunięty odczyt dla wskazanego licznika.
      *
-     * @param apartmentId identyfikator lokalu
-     * @param meterType typ licznika
+     * @param meterId identyfikator licznika
      * @return ostatni odczyt lub null jeśli brak
      */
-    MeterReading findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-        UUID apartmentId,
-        String meterType
-    );
+    MeterReading findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(UUID meterId);
 
     /**
-     * Sprawdza czy istnieje nieusunięty odczyt dla danego lokalu, typu licznika i daty.
+     * Sprawdza czy istnieje nieusunięty odczyt dla danego licznika i daty.
      *
-     * @param apartmentId identyfikator lokalu
-     * @param meterType typ licznika
+     * @param meterId identyfikator licznika
      * @param readingDate data odczytu
      * @return true jeśli duplikat istnieje
      */
-    boolean existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-        UUID apartmentId,
-        String meterType,
-        LocalDate readingDate
-    );
+    boolean existsByMeterIdAndReadingDateAndDeletedFalse(UUID meterId, LocalDate readingDate);
 
     /**
-     * Sprawdza czy istnieje nieusunięty odczyt dla danego lokalu, typu i daty, inny niż wskazany.
+     * Sprawdza czy istnieje nieusunięty odczyt dla danego licznika i daty, inny niż wskazany.
      * Używane przy aktualizacji do wykrycia duplikatów.
      *
-     * @param apartmentId identyfikator lokalu
-     * @param meterType typ licznika
+     * @param meterId identyfikator licznika
      * @param readingDate data odczytu
      * @param id identyfikator wykluczanego odczytu
      * @return true jeśli duplikat istnieje
      */
-    boolean existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
-        UUID apartmentId,
-        String meterType,
+    boolean existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
+        UUID meterId,
         LocalDate readingDate,
         UUID id
     );
