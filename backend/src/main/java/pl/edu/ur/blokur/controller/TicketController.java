@@ -19,42 +19,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.TicketAssignRequest;
+import pl.edu.ur.blokur.dto.TicketCompletionRequest;
 import pl.edu.ur.blokur.dto.TicketDetailDto;
 import pl.edu.ur.blokur.dto.TicketFilterParams;
 import pl.edu.ur.blokur.dto.TicketRejectRequest;
 import pl.edu.ur.blokur.dto.TicketRequest;
 import pl.edu.ur.blokur.dto.TicketStatusChangeRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
+import pl.edu.ur.blokur.dto.TicketSuspendRequest;
 import pl.edu.ur.blokur.service.TicketService;
 
-/**
- * Kontroler obsługujący żądania HTTP dla modułu zgłoszeń. Tworzenie zgłoszeń dostępne wyłącznie dla
- * roli MIESZKANIEC. Odczyt dostępny dla wszystkich uwierzytelnionych użytkowników — wyniki
- * filtrowane według roli (ZARZADCA widzi wszystkie, KONSERWATOR swoje, MIESZKANIEC lokalu).
- */
 @RestController
 @RequestMapping("/api/tickets")
 public class TicketController {
 
     private final TicketService ticketService;
 
-    /**
-     * Tworzy instancję kontrolera z wymaganym serwisem.
-     *
-     * @param ticketService serwis logiki biznesowej zgłoszeń
-     */
     public TicketController(TicketService ticketService) {
         this.ticketService = ticketService;
     }
 
-    /**
-     * Tworzy nowe zgłoszenie. Lokal jest pobierany automatycznie z konta zalogowanego mieszkańca.
-     * Dostępne wyłącznie dla roli MIESZKANIEC.
-     *
-     * @param request dane nowego zgłoszenia (tytuł, opis, kategoria)
-     * @return utworzone zgłoszenie z kodem 201, lub 400 przy błędzie walidacji, 404 gdy brak
-     *     kategorii, 422 gdy mieszkaniec nie ma lokalu
-     */
     @PostMapping
     @PreAuthorize("hasRole('MIESZKANIEC')")
     public ResponseEntity<TicketDetailDto> create(@Valid @RequestBody TicketRequest request) {
@@ -63,21 +47,6 @@ public class TicketController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Zwraca listę zgłoszeń filtrowaną według roli zalogowanego użytkownika i podanych parametrów.
-     * ZARZADCA widzi wszystkie; KONSERWATOR widzi tylko przypisane do siebie; MIESZKANIEC widzi
-     * tylko zgłoszenia swojego lokalu, klatki i budynku.
-     *
-     * @param status filtr statusu, np. NOWE
-     * @param categoryId filtr kategorii (UUID)
-     * @param buildingId filtr budynku (UUID)
-     * @param staircaseId filtr klatki schodowej (UUID)
-     * @param assignedTo filtr konserwatora (UUID)
-     * @param dateFrom dolna granica daty utworzenia (ISO format)
-     * @param dateTo górna granica daty utworzenia (ISO format)
-     * @param search fraza fulltext przeszukiwana w numerze, tytule i opisie
-     * @return lista zgłoszeń z kodem 200, lub 403 gdy brak uwierzytelnienia
-     */
     @GetMapping
     public ResponseEntity<List<TicketSummaryDto>> getAll(
             @RequestParam(required = false) String status,
@@ -108,13 +77,6 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.getAll(auth.getName(), filters));
     }
 
-    /**
-     * Zwraca szczegóły zgłoszenia z kontrolą uprawnień. MIESZKANIEC nie widzi notatki wewnętrznej.
-     * Konserwator może zobaczyć tylko zgłoszenia przypisane do siebie.
-     *
-     * @param id identyfikator zgłoszenia (UUID)
-     * @return szczegóły zgłoszenia z kodem 200, lub 404 gdy nie istnieje, 422 przy braku uprawnień
-     */
     @GetMapping("/{id}")
     public ResponseEntity<TicketDetailDto> getById(@PathVariable UUID id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -156,6 +118,29 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.rejectTicket(id, request, auth.getName()));
     }
 
+    @PatchMapping("/{id}/start")
+    @PreAuthorize("hasRole('KONSERWATOR')")
+    public ResponseEntity<TicketDetailDto> startWork(@PathVariable UUID id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.startWork(id, auth.getName()));
+    }
+
+    @PatchMapping("/{id}/suspend")
+    @PreAuthorize("hasRole('KONSERWATOR')")
+    public ResponseEntity<TicketDetailDto> suspendWork(
+            @PathVariable UUID id, @Valid @RequestBody TicketSuspendRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.suspendWork(id, request, auth.getName()));
+    }
+
+    @PostMapping("/{id}/completion")
+    @PreAuthorize("hasRole('KONSERWATOR')")
+    public ResponseEntity<TicketDetailDto> completeWork(
+            @PathVariable UUID id, @Valid @RequestBody TicketCompletionRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.completeWork(id, request, auth.getName()));
+    }
+
     /**
      * Zmienia status zgłoszenia z walidacją state-machine. Dostępne dla KONSERWATORA (własne
      * zgłoszenia: W_REALIZACJI, WSTRZYMANO, ZAKONCZONE_DO_WERYFIKACJI) i ZARZĄDCY.
@@ -165,7 +150,7 @@ public class TicketController {
      * @return zaktualizowane zgłoszenie z kodem 200
      */
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR')")
+    @PreAuthorize("hasRole('ZARZADCA') or hasRole('KONSERWATOR')")
     public ResponseEntity<TicketDetailDto> changeStatus(
             @PathVariable UUID id, @Valid @RequestBody TicketStatusChangeRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

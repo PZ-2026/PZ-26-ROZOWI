@@ -78,6 +78,9 @@ public class Ticket {
     @Column(name = "internal_note", columnDefinition = "TEXT")
     private String internalNote;
 
+    @Column(name = "work_description", columnDefinition = "TEXT", length = 1000)
+    private String workDescription;
+
     @ColumnDefault("false")
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
@@ -332,6 +335,24 @@ public class Ticket {
      */
     public void setInternalNote(String internalNote) {
         this.internalNote = internalNote;
+    }
+
+    /**
+     * Zwraca opis wykonanych prac dodany przez konserwatora po zakończeniu zgłoszenia.
+     *
+     * @return opis wykonanych prac (maks. 1000 znaków) lub {@code null}
+     */
+    public String getWorkDescription() {
+        return workDescription;
+    }
+
+    /**
+     * Ustawia opis wykonanych prac dodany przez konserwatora.
+     *
+     * @param workDescription opis wykonanych prac
+     */
+    public void setWorkDescription(String workDescription) {
+        this.workDescription = workDescription;
     }
 
     /**

@@ -12,12 +12,14 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.TicketAssignRequest;
+import pl.edu.ur.blokur.dto.TicketCompletionRequest;
 import pl.edu.ur.blokur.dto.TicketDetailDto;
 import pl.edu.ur.blokur.dto.TicketFilterParams;
 import pl.edu.ur.blokur.dto.TicketRejectRequest;
 import pl.edu.ur.blokur.dto.TicketRequest;
 import pl.edu.ur.blokur.dto.TicketStatusChangeRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
+import pl.edu.ur.blokur.dto.TicketSuspendRequest;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
@@ -35,10 +37,6 @@ import pl.edu.ur.blokur.repository.TicketHistoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
-/**
- * Serwis dostarczający logikę biznesową modułu zgłoszeń. Obsługuje tworzenie zgłoszeń przez
- * mieszkańców, pobieranie listy z filtrowaniem oraz pobieranie szczegółów z kontrolą uprawnień.
- */
 @Service
 public class TicketService {
 
@@ -51,17 +49,6 @@ public class TicketService {
     private final PdfGeneratorService pdfGeneratorService;
     private final TicketStateMachine ticketStateMachine;
 
-    /**
-     * Tworzy instancję serwisu z wymaganymi zależnościami.
-     *
-     * @param ticketRepository repozytorium zgłoszeń
-     * @param userRepository repozytorium użytkowników
-     * @param ticketCategoryRepository repozytorium kategorii zgłoszeń
-     * @param ticketNumberGenerator generator numerów zgłoszeń
-     * @param ticketHistoryRepository repozytorium historii zgłoszeń
-     * @param documentRepository repozytorium dokumentów
-     * @param pdfGeneratorService serwis generujący PDF
-     */
     public TicketService(
             TicketRepository ticketRepository,
             UserRepository userRepository,
@@ -81,10 +68,6 @@ public class TicketService {
         this.ticketStateMachine = ticketStateMachine;
     }
 
-    /**
-     * Inicjalizuje generator numerów zgłoszeń na podstawie ostatniego zapisanego numeru w bazie.
-     * Wywoływana automatycznie po starcie kontenera Spring.
-     */
     @PostConstruct
     public void initTicketNumberGenerator() {
         int year = LocalDate.now().getYear();
@@ -92,16 +75,6 @@ public class TicketService {
         ticketNumberGenerator.initYear(year, lastSeq);
     }
 
-    /**
-     * Tworzy nowe zgłoszenie. Dostępne wyłącznie dla roli MIESZKANIEC. Lokal jest pobierany
-     * automatycznie z pierwszego powiązania zalogowanego użytkownika.
-     *
-     * @param request dane nowego zgłoszenia
-     * @param username email zalogowanego mieszkańca
-     * @return DTO szczegółów utworzonego zgłoszenia
-     * @throws NotFoundException gdy użytkownik lub kategoria nie istnieje
-     * @throws BusinessValidationException gdy mieszkaniec nie ma przypisanego lokalu
-     */
     @Transactional
     public TicketDetailDto create(TicketRequest request, String username) {
         User author =
@@ -139,19 +112,6 @@ public class TicketService {
         return mapToDetail(ticketRepository.save(ticket));
     }
 
-    /**
-     * Pobiera listę zgłoszeń z filtrowaniem uwzględniając rolę zalogowanego użytkownika.
-     *
-     * <ul>
-     *   <li>ZARZADCA — widzi wszystkie zgłoszenia, obsługuje pełny zakres filtrów
-     *   <li>KONSERWATOR — widzi wyłącznie zgłoszenia do niego przypisane
-     *   <li>MIESZKANIEC — widzi wyłącznie zgłoszenia swojego lokalu, klatki i budynku
-     * </ul>
-     *
-     * @param username email zalogowanego użytkownika
-     * @param filters parametry filtrowania
-     * @return lista zgłoszeń jako DTO
-     */
     @Transactional(readOnly = true)
     public List<TicketSummaryDto> getAll(String username, TicketFilterParams filters) {
         User user =
@@ -191,7 +151,6 @@ public class TicketService {
                     .collect(Collectors.toList());
         }
 
-        // MIESZKANIEC — widzi zgłoszenia swojego lokalu/klatki/budynku
         if (user.getUserApartments().isEmpty()) {
             return List.of();
         }
@@ -227,21 +186,6 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Pobiera szczegóły zgłoszenia z kontrolą uprawnień.
-     *
-     * <ul>
-     *   <li>ZARZADCA — może zobaczyć dowolne zgłoszenie, w tym notatkę wewnętrzną
-     *   <li>KONSERWATOR — widzi tylko przypisane do siebie, w tym notatkę wewnętrzną
-     *   <li>MIESZKANIEC — widzi tylko zgłoszenia swojego lokalu/klatki/budynku, bez notatki
-     * </ul>
-     *
-     * @param ticketId identyfikator zgłoszenia
-     * @param username email zalogowanego użytkownika
-     * @return DTO szczegółów zgłoszenia
-     * @throws NotFoundException gdy zgłoszenie nie istnieje
-     * @throws BusinessValidationException gdy użytkownik nie ma dostępu do zgłoszenia
-     */
     @Transactional(readOnly = true)
     public TicketDetailDto getById(UUID ticketId, String username) {
         Ticket ticket =
@@ -272,7 +216,6 @@ public class TicketService {
             return mapToDetail(ticket);
         }
 
-        // MIESZKANIEC — sprawdź czy zgłoszenie dotyczy jego lokalu/klatki/budynku
         if (user.getUserApartments().isEmpty()) {
             throw new BusinessValidationException(
                     "Brak dostępu do zgłoszenia — mieszkaniec nie ma przypisanego lokalu");
@@ -341,7 +284,14 @@ public class TicketService {
         ticket.setAssignedTo(conservator);
         ticket.setPlannedVisitAt(request.getPlannedVisitAt());
         ticket.setInternalNote(request.getInternalNote());
-        recordStatusChange(ticket, TicketStatus.ZAPLANOWANO, manager, null);
+        ticket.setStatus(TicketStatus.ZAPLANOWANO);
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("ZAPLANOWANO");
+        history.setChangedBy(manager);
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
 
         return mapToDetail(ticketRepository.save(ticket));
     }
@@ -370,7 +320,11 @@ public class TicketService {
                     "Brak uprawnień. Tylko zarządca może zamknąć zgłoszenie.");
         }
 
-        // walidacja przejścia ZAKONCZONE_DO_WERYFIKACJI → ZAMKNIETE odbywa się w recordStatusChange
+        if (ticket.getStatus() != TicketStatus.ZAKONCZONE_DO_WERYFIKACJI) {
+            throw new BusinessValidationException(
+                    "Zgłoszenie musi mieć status ZAKONCZONE_DO_WERYFIKACJI, aby mogło zostać"
+                            + " zamknięte.");
+        }
 
         // Generowanie PDF
         String conservatorName =
@@ -379,7 +333,10 @@ public class TicketService {
                                 + " "
                                 + ticket.getAssignedTo().getLastName()
                         : "Nieznany";
-        String descriptionToPdf = ticket.getDescription();
+        String descriptionToPdf =
+                ticket.getWorkDescription() != null
+                        ? ticket.getWorkDescription()
+                        : ticket.getDescription();
         List<String> beforeImages =
                 ticket.getImages().stream()
                         .filter(
@@ -431,20 +388,19 @@ public class TicketService {
             throw new RuntimeException("Błąd podczas generowania i zapisu pliku PDF", e);
         }
 
-        recordStatusChange(ticket, TicketStatus.ZAMKNIETE, manager, null);
+        ticket.setStatus(TicketStatus.ZAMKNIETE);
+        ticket.setClosedAt(LocalDateTime.now());
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("ZAMKNIETE");
+        history.setChangedBy(manager);
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
 
         return mapToDetail(ticketRepository.save(ticket));
     }
 
-    /**
-     * Odrzuca zgłoszenie podając powód, który trafia do historii statusów i notatki wewnętrznej.
-     * Operacja dostępna tylko dla zarządcy.
-     *
-     * @param ticketId identyfikator zgłoszenia
-     * @param request powód odrzucenia
-     * @param username email zalogowanego użytkownika
-     * @return zaktualizowane DTO zgłoszenia
-     */
     @Transactional
     public TicketDetailDto rejectTicket(
             UUID ticketId, TicketRejectRequest request, String username) {
@@ -465,20 +421,145 @@ public class TicketService {
         String currentNote =
                 ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
         ticket.setInternalNote(currentNote + "Powód odrzucenia: " + request.getReason());
-        recordStatusChange(ticket, TicketStatus.ODRZUCONE, manager, request.getReason());
+
+        ticket.setStatus(TicketStatus.ODRZUCONE);
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("ODRZUCONE");
+        history.setChangedBy(manager);
+        history.setComment(request.getReason());
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
 
         return mapToDetail(ticketRepository.save(ticket));
     }
 
-    /**
-     * Zmienia status zgłoszenia z walidacją state-machine i zapisem do historii. Dostępna dla
-     * KONSERWATORA (W_REALIZACJI, WSTRZYMANO, ZAKONCZONE_DO_WERYFIKACJI) i ZARZĄDCY.
-     *
-     * @param ticketId identyfikator zgłoszenia
-     * @param request nowy status i opcjonalny komentarz
-     * @param username email zalogowanego użytkownika
-     * @return zaktualizowane DTO zgłoszenia
-     */
+    @Transactional
+    public TicketDetailDto startWork(UUID ticketId, String username) {
+        Ticket ticket =
+                ticketRepository
+                        .findById(ticketId)
+                        .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
+        User conservator =
+                userRepository
+                        .findByEmail(username)
+                        .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if (!"KONSERWATOR".equals(conservator.getRole())) {
+            throw new BusinessValidationException(
+                    "Brak uprawnień. Tylko konserwator może rozpocząć prace.");
+        }
+
+        if (ticket.getAssignedTo() == null
+                || !ticket.getAssignedTo().getId().equals(conservator.getId())) {
+            throw new BusinessValidationException(
+                    "Zgłoszenie nie jest przypisane do tego konserwatora.");
+        }
+
+        if (ticket.getStatus() != TicketStatus.ZAPLANOWANO) {
+            throw new BusinessValidationException(
+                    "Zgłoszenie musi mieć status ZAPLANOWANO, aby można było rozpocząć prace.");
+        }
+
+        ticket.setStatus(TicketStatus.W_REALIZACJI);
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("W_REALIZACJI");
+        history.setChangedBy(conservator);
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
+
+        return mapToDetail(ticketRepository.save(ticket));
+    }
+
+    @Transactional
+    public TicketDetailDto suspendWork(
+            UUID ticketId, TicketSuspendRequest request, String username) {
+        Ticket ticket =
+                ticketRepository
+                        .findById(ticketId)
+                        .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
+        User conservator =
+                userRepository
+                        .findByEmail(username)
+                        .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if (!"KONSERWATOR".equals(conservator.getRole())) {
+            throw new BusinessValidationException(
+                    "Brak uprawnień. Tylko konserwator może wstrzymać prace.");
+        }
+
+        if (ticket.getAssignedTo() == null
+                || !ticket.getAssignedTo().getId().equals(conservator.getId())) {
+            throw new BusinessValidationException(
+                    "Zgłoszenie nie jest przypisane do tego konserwatora.");
+        }
+
+        if (ticket.getStatus() != TicketStatus.W_REALIZACJI) {
+            throw new BusinessValidationException(
+                    "Zgłoszenie musi mieć status W_REALIZACJI, aby można było je wstrzymać.");
+        }
+
+        ticket.setStatus(TicketStatus.WSTRZYMANO);
+
+        String currentNote =
+                ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
+        ticket.setInternalNote(currentNote + "Wstrzymano prace: " + request.getReason());
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("WSTRZYMANO");
+        history.setChangedBy(conservator);
+        history.setComment(request.getReason());
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
+
+        return mapToDetail(ticketRepository.save(ticket));
+    }
+
+    @Transactional
+    public TicketDetailDto completeWork(
+            UUID ticketId, TicketCompletionRequest request, String username) {
+        Ticket ticket =
+                ticketRepository
+                        .findById(ticketId)
+                        .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
+        User conservator =
+                userRepository
+                        .findByEmail(username)
+                        .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if (!"KONSERWATOR".equals(conservator.getRole())) {
+            throw new BusinessValidationException(
+                    "Brak uprawnień. Tylko konserwator może zakończyć prace.");
+        }
+
+        if (ticket.getAssignedTo() == null
+                || !ticket.getAssignedTo().getId().equals(conservator.getId())) {
+            throw new BusinessValidationException(
+                    "Zgłoszenie nie jest przypisane do tego konserwatora.");
+        }
+
+        if (ticket.getStatus() != TicketStatus.W_REALIZACJI) {
+            throw new BusinessValidationException(
+                    "Zgłoszenie musi mieć status W_REALIZACJI, aby można było je zakończyć.");
+        }
+
+        ticket.setStatus(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
+        ticket.setWorkDescription(request.getWorkDescription());
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("ZAKONCZONE_DO_WERYFIKACJI");
+        history.setChangedBy(conservator);
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
+
+        return mapToDetail(ticketRepository.save(ticket));
+    }
+
     @Transactional
     public TicketDetailDto changeStatus(
             UUID ticketId, TicketStatusChangeRequest request, String username) {
@@ -501,24 +582,17 @@ public class TicketService {
             throw new BusinessValidationException("Brak uprawnień do zmiany statusu zgłoszenia");
         }
 
-        recordStatusChange(ticket, request.getStatus(), user, request.getComment());
+        TicketStatus newStatus = request.getStatus();
+        ticketStateMachine.validateTransition(ticket.getStatus(), newStatus);
+
+        recordStatusChange(ticket, newStatus, user, request.getComment());
+
         return mapToDetail(ticketRepository.save(ticket));
     }
 
-    /**
-     * Waliduje przejście statusu przez state-machine, ustawia nowy status i zapisuje wpis do
-     * ticket_history z changedBy = przekazany użytkownik.
-     *
-     * @param ticket encja zgłoszenia
-     * @param newStatus docelowy status
-     * @param changedBy użytkownik dokonujący zmiany
-     * @param comment opcjonalny komentarz
-     */
     private void recordStatusChange(
             Ticket ticket, TicketStatus newStatus, User changedBy, String comment) {
-        ticketStateMachine.validateTransition(ticket.getStatus(), newStatus);
         ticket.setStatus(newStatus);
-        ticket.setUpdatedAt(LocalDateTime.now());
         if (newStatus == TicketStatus.ZAMKNIETE) {
             ticket.setClosedAt(LocalDateTime.now());
         }
@@ -532,16 +606,6 @@ public class TicketService {
         ticketHistoryRepository.save(history);
     }
 
-    /**
-     * Sprawdza, czy dane zgłoszenie jest widoczne dla mieszkańca na podstawie jego hierarchii
-     * lokalu.
-     *
-     * @param ticket zgłoszenie do sprawdzenia
-     * @param apartmentId UUID lokalu mieszkańca
-     * @param staircaseId UUID klatki mieszkańca
-     * @param buildingId UUID budynku mieszkańca
-     * @return {@code true} gdy zgłoszenie dotyczy lokalu, klatki lub budynku mieszkańca
-     */
     private boolean isTicketVisibleForResident(
             Ticket ticket, UUID apartmentId, UUID staircaseId, UUID buildingId) {
         if (apartmentId != null
@@ -559,12 +623,6 @@ public class TicketService {
                 && buildingId.equals(ticket.getBuilding().getId());
     }
 
-    /**
-     * Mapuje encję {@link Ticket} na {@link TicketDetailDto}.
-     *
-     * @param ticket encja zgłoszenia
-     * @return DTO ze szczegółami zgłoszenia
-     */
     private TicketDetailDto mapToDetail(Ticket ticket) {
         TicketDetailDto dto = new TicketDetailDto();
         dto.setId(ticket.getId());
@@ -605,16 +663,6 @@ public class TicketService {
         return dto;
     }
 
-    /**
-     * Mapuje surowy wiersz z natywnego zapytania SQL na {@link TicketSummaryDto}.
-     *
-     * <p>Kolejność kolumn wynika ze struktury zapytań w {@link
-     * pl.edu.ur.blokur.repository.TicketRepository}: id, ticket_number, title, status,
-     * category_name, author_name, assigned_to_name, location_label, created_at, closed_at.
-     *
-     * @param row tablica obiektów z wynikiem zapytania natywnego
-     * @return DTO podsumowania zgłoszenia
-     */
     private TicketSummaryDto mapRawToSummary(Object[] row) {
         TicketSummaryDto dto = new TicketSummaryDto();
         dto.setId(row[0] != null ? UUID.fromString(row[0].toString()) : null);
