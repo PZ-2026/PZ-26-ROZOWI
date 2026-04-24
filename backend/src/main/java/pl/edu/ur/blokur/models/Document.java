@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.hibernate.annotations.ColumnDefault;
 
-/** Encja reprezentująca dokument przechowywany w systemie. */
+/** Encja reprezentująca dokument przechowywany w systemie (np. wygenerowany protokół PDF). */
 @Entity
 @Table(name = "documents")
 public class Document {
@@ -50,7 +50,7 @@ public class Document {
     private Resolution resolution;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     /**
      * Zwraca identyfikator dokumentu.

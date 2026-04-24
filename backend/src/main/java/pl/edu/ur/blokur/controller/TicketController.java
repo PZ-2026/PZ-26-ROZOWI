@@ -21,7 +21,10 @@ import pl.edu.ur.blokur.dto.TicketDetailDto;
 import pl.edu.ur.blokur.dto.TicketFilterParams;
 import pl.edu.ur.blokur.dto.TicketRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
+import pl.edu.ur.blokur.dto.TicketAssignRequest;
+import pl.edu.ur.blokur.dto.TicketRejectRequest;
 import pl.edu.ur.blokur.service.TicketService;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 /**
  * Kontroler obsługujący żądania HTTP dla modułu zgłoszeń. Tworzenie zgłoszeń dostępne wyłącznie dla
@@ -118,5 +121,40 @@ public class TicketController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(ticketService.getById(id, auth.getName()));
+    }
+
+    /**
+     * Przypisuje konserwatora do zgłoszenia. Zmienia status na ZAPLANOWANO.
+     * Dostępne tylko dla roli ZARZADCA.
+     */
+    @PatchMapping("/{id}/assign")
+    @PreAuthorize("hasRole('ZARZADCA')")
+    public ResponseEntity<TicketDetailDto> assignTicket(
+            @PathVariable UUID id, @Valid @RequestBody TicketAssignRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.assignTicket(id, request, auth.getName()));
+    }
+
+    /**
+     * Zamyka zgłoszenie i generuje protokół PDF.
+     * Dostępne tylko dla roli ZARZADCA.
+     */
+    @PatchMapping("/{id}/close")
+    @PreAuthorize("hasRole('ZARZADCA')")
+    public ResponseEntity<TicketDetailDto> closeTicket(@PathVariable UUID id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.closeTicket(id, auth.getName()));
+    }
+
+    /**
+     * Odrzuca zgłoszenie z podaniem powodu. Zmienia status na ODRZUCONE.
+     * Dostępne tylko dla roli ZARZADCA.
+     */
+    @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ZARZADCA')")
+    public ResponseEntity<TicketDetailDto> rejectTicket(
+            @PathVariable UUID id, @Valid @RequestBody TicketRejectRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.rejectTicket(id, request, auth.getName()));
     }
 }

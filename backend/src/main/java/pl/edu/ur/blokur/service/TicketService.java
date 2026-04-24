@@ -23,6 +23,16 @@ import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
+import pl.edu.ur.blokur.repository.TicketHistoryRepository;
+import pl.edu.ur.blokur.repository.DocumentRepository;
+import pl.edu.ur.blokur.dto.TicketAssignRequest;
+import pl.edu.ur.blokur.dto.TicketRejectRequest;
+import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
+import pl.edu.ur.blokur.models.TicketHistory;
+import pl.edu.ur.blokur.models.Document;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Serwis dostarczający logikę biznesową modułu zgłoszeń. Obsługuje tworzenie zgłoszeń przez
@@ -35,6 +45,9 @@ public class TicketService {
     private final UserRepository userRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketNumberGenerator ticketNumberGenerator;
+    private final TicketHistoryRepository ticketHistoryRepository;
+    private final DocumentRepository documentRepository;
+    private final PdfGeneratorService pdfGeneratorService;
 
     /**
      * Tworzy instancję serwisu z wymaganymi zależnościami.
@@ -43,16 +56,25 @@ public class TicketService {
      * @param userRepository repozytorium użytkowników
      * @param ticketCategoryRepository repozytorium kategorii zgłoszeń
      * @param ticketNumberGenerator generator numerów zgłoszeń
+     * @param ticketHistoryRepository repozytorium historii zgłoszeń
+     * @param documentRepository repozytorium dokumentów
+     * @param pdfGeneratorService serwis generujący PDF
      */
     public TicketService(
             TicketRepository ticketRepository,
             UserRepository userRepository,
             TicketCategoryRepository ticketCategoryRepository,
-            TicketNumberGenerator ticketNumberGenerator) {
+            TicketNumberGenerator ticketNumberGenerator,
+            TicketHistoryRepository ticketHistoryRepository,
+            DocumentRepository documentRepository,
+            PdfGeneratorService pdfGeneratorService) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketNumberGenerator = ticketNumberGenerator;
+        this.ticketHistoryRepository = ticketHistoryRepository;
+        this.documentRepository = documentRepository;
+        this.pdfGeneratorService = pdfGeneratorService;
     }
 
     /**
@@ -275,6 +297,150 @@ public class TicketService {
         TicketDetailDto dto = mapToDetail(ticket);
         dto.setInternalNote(null);
         return dto;
+    }
+
+    /**
+     * Przypisuje zgłoszenie do konserwatora, ustawiając planowaną datę wizyty i notatkę.
+     * Operacja dostępna tylko dla zarządcy.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request dane z żądania (id konserwatora, data, notatka)
+     * @param username email zalogowanego użytkownika
+     * @return zaktualizowane DTO zgłoszenia
+     */
+    @Transactional
+    public TicketDetailDto assignTicket(UUID ticketId, TicketAssignRequest request, String username) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
+        User manager = userRepository.findByEmail(username)
+                .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+        
+        if (!"ZARZADCA".equals(manager.getRole())) {
+            throw new BusinessValidationException("Brak uprawnień. Tylko zarządca może przypisać konserwatora.");
+        }
+
+        User conservator = userRepository.findById(request.getAssignedTo())
+                .orElseThrow(() -> new NotFoundException("Konserwator nie istnieje"));
+        
+        if (!"KONSERWATOR".equals(conservator.getRole())) {
+            throw new BusinessValidationException("Wybrany użytkownik nie jest konserwatorem.");
+        }
+
+        ticket.setAssignedTo(conservator);
+        ticket.setPlannedVisitAt(request.getPlannedVisitAt());
+        ticket.setInternalNote(request.getInternalNote());
+        ticket.setStatus(pl.edu.ur.blokur.models.TicketStatus.ZAPLANOWANO);
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("ZAPLANOWANO");
+        history.setChangedBy(manager);
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
+
+        return mapToDetail(ticketRepository.save(ticket));
+    }
+
+    /**
+     * Zamyka zgłoszenie będące w stanie ZAKONCZONE_DO_WERYFIKACJI.
+     * Generuje protokół PDF i zapisuje jako nowy Document.
+     * Operacja dostępna tylko dla zarządcy.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param username email zalogowanego użytkownika
+     * @return zaktualizowane DTO zgłoszenia
+     */
+    @Transactional
+    public TicketDetailDto closeTicket(UUID ticketId, String username) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
+        User manager = userRepository.findByEmail(username)
+                .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if (!"ZARZADCA".equals(manager.getRole())) {
+            throw new BusinessValidationException("Brak uprawnień. Tylko zarządca może zamknąć zgłoszenie.");
+        }
+
+        if (ticket.getStatus() != pl.edu.ur.blokur.models.TicketStatus.ZAKONCZONE_DO_WERYFIKACJI) {
+            throw new BusinessValidationException("Zgłoszenie musi mieć status ZAKONCZONE_DO_WERYFIKACJI, aby mogło zostać zamknięte.");
+        }
+
+        ticket.setStatus(pl.edu.ur.blokur.models.TicketStatus.ZAMKNIETE);
+        ticket.setClosedAt(LocalDateTime.now());
+
+        // Generowanie PDF
+        String conservatorName = ticket.getAssignedTo() != null ? ticket.getAssignedTo().getFirstName() + " " + ticket.getAssignedTo().getLastName() : "Nieznany";
+        WorkAcceptanceProtocolRequest pdfRequest = new WorkAcceptanceProtocolRequest(
+                ticket.getTicketNumber(),
+                ticket.getDescription(),
+                conservatorName
+        );
+
+        try {
+            byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(pdfRequest);
+            Path dirPath = Paths.get("uploads/documents");
+            if (!Files.exists(dirPath)) {
+                Files.createDirectories(dirPath);
+            }
+            String fileName = "protokol-" + ticket.getTicketNumber() + "-" + System.currentTimeMillis() + ".pdf";
+            Path filePath = dirPath.resolve(fileName);
+            Files.write(filePath, pdfBytes);
+
+            Document document = new Document();
+            document.setType("PROTOKOL");
+            document.setTitle("Protokół odbioru - " + ticket.getTicketNumber());
+            document.setFileUrl(filePath.toString());
+            document.setTicket(ticket);
+            document.setOwnerUser(manager);
+            documentRepository.save(document);
+        } catch (Exception e) {
+            throw new RuntimeException("Błąd podczas generowania i zapisu pliku PDF", e);
+        }
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("ZAMKNIETE");
+        history.setChangedBy(manager);
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
+
+        return mapToDetail(ticketRepository.save(ticket));
+    }
+
+    /**
+     * Odrzuca zgłoszenie podając powód, który trafia do historii statusów i notatki wewnętrznej.
+     * Operacja dostępna tylko dla zarządcy.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request powód odrzucenia
+     * @param username email zalogowanego użytkownika
+     * @return zaktualizowane DTO zgłoszenia
+     */
+    @Transactional
+    public TicketDetailDto rejectTicket(UUID ticketId, TicketRejectRequest request, String username) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
+        User manager = userRepository.findByEmail(username)
+                .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if (!"ZARZADCA".equals(manager.getRole())) {
+            throw new BusinessValidationException("Brak uprawnień. Tylko zarządca może odrzucić zgłoszenie.");
+        }
+
+        ticket.setStatus(pl.edu.ur.blokur.models.TicketStatus.ODRZUCONE);
+        
+        String currentNote = ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
+        ticket.setInternalNote(currentNote + "Powód odrzucenia: " + request.getReason());
+
+        TicketHistory history = new TicketHistory();
+        history.setTicket(ticket);
+        history.setStatus("ODRZUCONE");
+        history.setChangedBy(manager);
+        history.setComment(request.getReason());
+        history.setCreatedAt(LocalDateTime.now());
+        ticketHistoryRepository.save(history);
+
+        return mapToDetail(ticketRepository.save(ticket));
     }
 
     /**
