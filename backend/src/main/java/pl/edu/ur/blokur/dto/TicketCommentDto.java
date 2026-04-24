@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * DTO reprezentujące komentarz do zgłoszenia — zawiera pola ze złączenia
- * tabel ticket_comments oraz users (autor komentarza).
+ * DTO reprezentujące komentarz do zgłoszenia — zawiera pola ze złączenia tabel ticket_comments oraz
+ * users (autor komentarza).
  */
 public class TicketCommentDto {
 
@@ -15,23 +15,20 @@ public class TicketCommentDto {
     private String content;
     private LocalDateTime createdAt;
 
-    /**
-     * Konstruktor bezargumentowy wymagany przez mechanizmy serializacji.
-     */
-    public TicketCommentDto() {
-    }
+    /** Konstruktor bezargumentowy wymagany przez mechanizmy serializacji. */
+    public TicketCommentDto() {}
 
     /**
      * Konstruktor parametryczny tworzący kompletne DTO komentarza.
      *
-     * @param id         identyfikator komentarza
-     * @param ticketId   identyfikator zgłoszenia
+     * @param id identyfikator komentarza
+     * @param ticketId identyfikator zgłoszenia
      * @param authorName imię i nazwisko autora komentarza
-     * @param content    treść komentarza
-     * @param createdAt  data i czas dodania komentarza
+     * @param content treść komentarza
+     * @param createdAt data i czas dodania komentarza
      */
-    public TicketCommentDto(UUID id, UUID ticketId, String authorName,
-            String content, LocalDateTime createdAt) {
+    public TicketCommentDto(
+            UUID id, UUID ticketId, String authorName, String content, LocalDateTime createdAt) {
         this.id = id;
         this.ticketId = ticketId;
         this.authorName = authorName;

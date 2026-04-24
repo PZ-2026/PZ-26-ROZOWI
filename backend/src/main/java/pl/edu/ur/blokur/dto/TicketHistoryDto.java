@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * DTO reprezentujące wpis w historii zgłoszenia — zawiera pola ze złączenia
- * tabel ticket_history oraz users (użytkownik zmieniający status).
+ * DTO reprezentujące wpis w historii zgłoszenia — zawiera pola ze złączenia tabel ticket_history
+ * oraz users (użytkownik zmieniający status).
  */
 public class TicketHistoryDto {
 
@@ -16,24 +16,26 @@ public class TicketHistoryDto {
     private String comment;
     private LocalDateTime createdAt;
 
-    /**
-     * Konstruktor bezargumentowy wymagany przez mechanizmy serializacji.
-     */
-    public TicketHistoryDto() {
-    }
+    /** Konstruktor bezargumentowy wymagany przez mechanizmy serializacji. */
+    public TicketHistoryDto() {}
 
     /**
      * Konstruktor parametryczny tworzący kompletne DTO wpisu historii.
      *
-     * @param id            identyfikator wpisu historii
-     * @param ticketId      identyfikator zgłoszenia
-     * @param status        status zapisany w tym wpisie
+     * @param id identyfikator wpisu historii
+     * @param ticketId identyfikator zgłoszenia
+     * @param status status zapisany w tym wpisie
      * @param changedByName imię i nazwisko osoby zmieniającej status
-     * @param comment       komentarz do zmiany statusu lub null
-     * @param createdAt     data i czas zmiany statusu
+     * @param comment komentarz do zmiany statusu lub null
+     * @param createdAt data i czas zmiany statusu
      */
-    public TicketHistoryDto(UUID id, UUID ticketId, String status,
-            String changedByName, String comment, LocalDateTime createdAt) {
+    public TicketHistoryDto(
+            UUID id,
+            UUID ticketId,
+            String status,
+            String changedByName,
+            String comment,
+            LocalDateTime createdAt) {
         this.id = id;
         this.ticketId = ticketId;
         this.status = status;

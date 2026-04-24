@@ -171,22 +171,16 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      */
     @Query(
             value =
-                    "SELECT t.id, t.ticket_number, t.title, t.status, "
-                            + "tc.name AS category_name, "
-                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
-                            + "CASE WHEN ass.id IS NOT NULL "
-                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
-                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
-                            + "t.created_at, t.closed_at "
-                            + "FROM tickets t "
-                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
-                            + "JOIN users a ON t.author_id = a.id "
-                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
-                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
-                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
-                            + "LEFT JOIN buildings b ON t.building_id = b.id "
-                            + "WHERE t.is_deleted = false "
-                            + "ORDER BY t.created_at DESC",
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at FROM tickets t JOIN"
+                        + " ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.is_deleted = false ORDER BY t.created_at DESC",
             nativeQuery = true)
     List<Object[]> findAllSummariesRaw();
 
@@ -200,21 +194,16 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      */
     @Query(
             value =
-                    "SELECT t.id, t.ticket_number, t.title, t.status, "
-                            + "tc.name AS category_name, "
-                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
-                            + "CASE WHEN ass.id IS NOT NULL "
-                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
-                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
-                            + "t.created_at, t.closed_at "
-                            + "FROM tickets t "
-                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
-                            + "JOIN users a ON t.author_id = a.id "
-                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
-                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
-                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
-                            + "LEFT JOIN buildings b ON t.building_id = b.id "
-                            + "WHERE t.id = :ticketId AND t.is_deleted = false",
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at FROM tickets t JOIN"
+                        + " ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.id = :ticketId AND t.is_deleted = false",
             nativeQuery = true)
     Optional<Object[]> findSummaryByIdRaw(@Param("ticketId") UUID ticketId);
 
@@ -256,25 +245,18 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      */
     @Query(
             value =
-                    "SELECT t.id, t.ticket_number, t.title, t.status, "
-                            + "tc.name AS category_name, "
-                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
-                            + "CASE WHEN ass.id IS NOT NULL "
-                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
-                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
-                            + "t.created_at, t.closed_at "
-                            + "FROM tickets t "
-                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
-                            + "JOIN users a ON t.author_id = a.id "
-                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
-                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
-                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
-                            + "LEFT JOIN buildings b ON t.building_id = b.id "
-                            + "WHERE t.is_deleted = false "
-                            + "AND (t.apartment_id = :apartmentId "
-                            + "OR t.staircase_id = :staircaseId "
-                            + "OR t.building_id = :buildingId) "
-                            + "ORDER BY t.created_at DESC",
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at FROM tickets t JOIN"
+                        + " ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.is_deleted = false AND (t.apartment_id = :apartmentId OR"
+                        + " t.staircase_id = :staircaseId OR t.building_id = :buildingId) ORDER BY"
+                        + " t.created_at DESC",
             nativeQuery = true)
     List<Object[]> findForResidentRaw(
             @Param("apartmentId") UUID apartmentId,

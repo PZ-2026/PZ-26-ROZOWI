@@ -60,8 +60,8 @@ public class StaircaseController {
     }
 
     /**
-     * Usuwa lokal. Historyczne zgłoszenia powiązane z lokalem pozostają nienaruszone.
-     * Dostęp: ZARZADCA.
+     * Usuwa lokal. Historyczne zgłoszenia powiązane z lokalem pozostają nienaruszone. Dostęp:
+     * ZARZADCA.
      *
      * @param id identyfikator klatki schodowej
      * @param aptId identyfikator lokalu

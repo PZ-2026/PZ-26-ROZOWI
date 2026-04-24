@@ -11,5 +11,21 @@ import pl.edu.ur.blokur.models.ResolutionVote;
  */
 @Repository
 public interface ResolutionVoteRepository extends JpaRepository<ResolutionVote, UUID> {
-    // Standardowe metody odziedziczone po JpaRepository
+
+    /**
+     * Zlicza liczbę głosów oddanych na daną opcję.
+     *
+     * @param optionId identyfikator opcji
+     * @return liczba głosów
+     */
+    long countByOptionId(UUID optionId);
+
+    /**
+     * Sprawdza, czy użytkownik o podanym ID zagłosował w wybranej uchwale.
+     *
+     * @param resolutionId identyfikator uchwały
+     * @param voterId identyfikator użytkownika
+     * @return true jeśli zagłosował, false w przeciwnym wypadku
+     */
+    boolean existsByResolutionIdAndVoterId(UUID resolutionId, UUID voterId);
 }
