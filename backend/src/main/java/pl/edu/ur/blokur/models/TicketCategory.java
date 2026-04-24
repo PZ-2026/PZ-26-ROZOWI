@@ -8,15 +8,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.ColumnDefault;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.annotations.ColumnDefault;
 
-/**
- * Encja reprezentująca kategorię zgłoszenia (np. awaria, usterka, inne).
- */
+/** Encja reprezentująca kategorię zgłoszenia (np. awaria, usterka, inne). */
 @Entity
 @Table(name = "ticket_categories")
 public class TicketCategory {
@@ -30,11 +27,15 @@ public class TicketCategory {
     @Column(name = "name", unique = true, nullable = false, length = 255)
     private String name;
 
+    @Column(name = "is_active", nullable = false)
+    @ColumnDefault("true")
+    private boolean isActive = true;
+
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
 
     /**
-     * Zwraca identyfikator kategorii.
+     * Zwraca unikalny identyfikator kategorii.
      *
      * @return identyfikator UUID
      */
@@ -43,7 +44,7 @@ public class TicketCategory {
     }
 
     /**
-     * Ustawia identyfikator kategorii.
+     * Ustawia unikalny identyfikator kategorii.
      *
      * @param id identyfikator UUID
      */
@@ -67,6 +68,24 @@ public class TicketCategory {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    /**
+     * Informuje, czy kategoria jest aktywna (widoczna dla użytkowników).
+     *
+     * @return {@code true} jeśli kategoria jest aktywna
+     */
+    public boolean isActive() {
+        return isActive;
+    }
+
+    /**
+     * Ustawia flagę aktywności kategorii (soft delete gdy {@code false}).
+     *
+     * @param active {@code false} aby ukryć kategorię przed użytkownikami
+     */
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     /**

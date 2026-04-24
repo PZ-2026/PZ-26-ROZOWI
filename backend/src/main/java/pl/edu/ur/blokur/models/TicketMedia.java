@@ -9,14 +9,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.ColumnDefault;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.ColumnDefault;
 
-/**
- * Encja reprezentująca plik multimedialny (zdjęcie, film) dołączony do zgłoszenia.
- */
+/** Encja reprezentująca plik multimedialny (zdjęcie, film) dołączony do zgłoszenia. */
 @Entity
 @Table(name = "ticket_media")
 public class TicketMedia {

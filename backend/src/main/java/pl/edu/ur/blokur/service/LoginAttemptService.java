@@ -1,13 +1,12 @@
 package pl.edu.ur.blokur.service;
 
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Service;
 
 /**
- * Serwis zapobiegający atakom brute-force.
- * Śledzi nieudane próby logowania w pamięci podręcznej (RAM).
+ * Serwis zapobiegający atakom brute-force. Śledzi nieudane próby logowania w pamięci podręcznej
+ * (RAM).
  */
 @Service
 public class LoginAttemptService {
@@ -18,7 +17,9 @@ public class LoginAttemptService {
     private final ConcurrentHashMap<String, AttemptInfo> attemptsCache = new ConcurrentHashMap<>();
 
     /**
-     * Rejestruje nieudane logowanie i ewentualnie blokuje konto.
+     * Rejestruje nieudane logowanie i ewentualnie blokuje konto po przekroczeniu limitu prób.
+     *
+     * @param email adres e-mail, którym próbowano się zalogować
      */
     public void registerFailedAttempt(String email) {
         AttemptInfo info = attemptsCache.getOrDefault(email, new AttemptInfo());
@@ -33,14 +34,20 @@ public class LoginAttemptService {
     }
 
     /**
-     * Resetuje licznik po udanym logowaniu.
+     * Resetuje licznik nieudanych prób po udanym logowaniu.
+     *
+     * @param email adres e-mail użytkownika, który się zalogował
      */
     public void resetFailedAttempts(String email) {
         attemptsCache.remove(email);
     }
 
     /**
-     * Sprawdza, czy konto jest obecnie zablokowane.
+     * Sprawdza, czy konto jest obecnie zablokowane (blokada automatycznie wygasa po upływie
+     * ustalonego czasu).
+     *
+     * @param email adres e-mail konta
+     * @return {@code true} jeśli konto jest zablokowane
      */
     public boolean isAccountLocked(String email) {
         AttemptInfo info = attemptsCache.get(email);
@@ -58,7 +65,10 @@ public class LoginAttemptService {
     }
 
     /**
-     * Zwraca czas, do którego konto jest zablokowane.
+     * Zwraca czas, do którego konto pozostaje zablokowane.
+     *
+     * @param email adres e-mail konta
+     * @return moment wygaśnięcia blokady lub {@code null}, jeśli konto nie jest zablokowane
      */
     public LocalDateTime getLockedUntil(String email) {
         AttemptInfo info = attemptsCache.get(email);

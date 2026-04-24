@@ -4,17 +4,16 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Service;
-
 import java.security.Key;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
+import org.springframework.stereotype.Service;
 
 /**
- * Serwis do generowania i walidacji tokenów JWT.
- * Tokeny są podpisywane algorytmem HMAC-SHA256 i ważne przez 24 godziny.
+ * Serwis do generowania i walidacji tokenów JWT. Tokeny są podpisywane algorytmem HMAC-SHA256 i
+ * ważne przez 24 godziny.
  */
 @Service
 public class JwtService {
@@ -37,12 +36,12 @@ public class JwtService {
         long now = System.currentTimeMillis();
 
         return Jwts.builder()
-            .setSubject(username)
-            .claim("role", role)
-            .setIssuedAt(new Date(now))
-            .setExpiration(new Date(now + EXPIRATION_TIME))
-            .signWith(key, SignatureAlgorithm.HS256)
-            .compact();
+                .setSubject(username)
+                .claim("role", role)
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(now + EXPIRATION_TIME))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
     /**
@@ -54,11 +53,11 @@ public class JwtService {
     public String extractUsername(String token) {
         try {
             return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
         } catch (JwtException e) {
             return null;
         }
@@ -73,11 +72,11 @@ public class JwtService {
     public String extractRole(String token) {
         try {
             return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("role", String.class);
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .get("role", String.class);
         } catch (JwtException e) {
             return null;
         }
@@ -111,10 +110,7 @@ public class JwtService {
      */
     public boolean isTokenValid(String token) {
         try {
-            Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (JwtException e) {
             return false;

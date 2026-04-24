@@ -1,53 +1,90 @@
 package pl.edu.ur.blokur.dto;
 
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
-/**
- * DTO z danymi odczytu licznika przesyłanymi przez klienta.
- */
+/** DTO z danymi odczytu licznika przesyłanymi przez klienta. */
 public class MeterReadingRequest {
 
-    @NotBlank
-    private String meterType;
+    @NotNull(message = "Identyfikator licznika jest wymagany")
+    private UUID meterId;
 
+    @NotNull(message = "Wartość odczytu jest wymagana")
     @DecimalMin(value = "0.0", inclusive = true, message = "Wartość odczytu nie może być ujemna")
     private BigDecimal value;
 
+    @NotNull(message = "Data odczytu jest wymagana")
     private LocalDate readingDate;
 
-    public MeterReadingRequest() {
-    }
+    /** Konstruktor bezargumentowy wymagany przez deserializację Jacksona. */
+    public MeterReadingRequest() {}
 
-    public MeterReadingRequest(String meterType, BigDecimal value, LocalDate readingDate) {
-        this.meterType = meterType;
+    /**
+     * Tworzy żądanie odczytu licznika z podanymi danymi.
+     *
+     * @param meterId identyfikator licznika, z którego pochodzi odczyt
+     * @param value wartość odczytu
+     * @param readingDate data odczytu
+     */
+    public MeterReadingRequest(UUID meterId, BigDecimal value, LocalDate readingDate) {
+        this.meterId = meterId;
         this.value = value;
         this.readingDate = readingDate;
     }
 
-    public String getMeterType() {
-        return meterType;
+    /**
+     * Zwraca identyfikator licznika, z którego pochodzi odczyt.
+     *
+     * @return identyfikator UUID licznika
+     */
+    public UUID getMeterId() {
+        return meterId;
     }
 
-    public void setMeterType(String meterType) {
-        this.meterType = meterType;
+    /**
+     * Ustawia identyfikator licznika, z którego pochodzi odczyt.
+     *
+     * @param meterId identyfikator UUID licznika
+     */
+    public void setMeterId(UUID meterId) {
+        this.meterId = meterId;
     }
 
+    /**
+     * Zwraca wartość odczytu.
+     *
+     * @return wartość odczytu
+     */
     public BigDecimal getValue() {
         return value;
     }
 
+    /**
+     * Ustawia wartość odczytu.
+     *
+     * @param value wartość odczytu
+     */
     public void setValue(BigDecimal value) {
         this.value = value;
     }
 
+    /**
+     * Zwraca datę odczytu licznika.
+     *
+     * @return data odczytu
+     */
     public LocalDate getReadingDate() {
         return readingDate;
     }
 
+    /**
+     * Ustawia datę odczytu licznika.
+     *
+     * @param readingDate data odczytu
+     */
     public void setReadingDate(LocalDate readingDate) {
         this.readingDate = readingDate;
     }

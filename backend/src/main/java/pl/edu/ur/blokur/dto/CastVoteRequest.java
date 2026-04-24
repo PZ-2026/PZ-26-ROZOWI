@@ -3,19 +3,16 @@ package pl.edu.ur.blokur.dto;
 import java.util.UUID;
 
 /**
- * Obiekt transferu danych (DTO) reprezentujący żądanie oddania głosu
- * przez zalogowanego użytkownika. Identyfikator głosującego pobierany jest
- * z kontekstu bezpieczeństwa (Principal), nie z ciała żądania.
+ * Obiekt transferu danych (DTO) reprezentujący żądanie oddania głosu przez zalogowanego
+ * użytkownika. Identyfikator głosującego pobierany jest z kontekstu bezpieczeństwa (Principal), nie
+ * z ciała żądania.
  */
 public class CastVoteRequest {
 
     private UUID optionId;
 
-    /**
-     * Tworzy instancję żądania bez argumentów (wymagane przez deserializator JSON).
-     */
-    public CastVoteRequest() {
-    }
+    /** Tworzy instancję żądania bez argumentów (wymagane przez deserializator JSON). */
+    public CastVoteRequest() {}
 
     /**
      * Tworzy instancję żądania z podanym identyfikatorem opcji.

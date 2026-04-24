@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 import pl.edu.ur.blokur.service.PdfGeneratorService;
 
-/**
- * Kontroler REST do generowania dokumentów PDF.
- */
+/** Kontroler REST do generowania dokumentów PDF. */
 @RestController
 @RequestMapping("/api/pdf")
 public class PdfController {
@@ -32,20 +30,14 @@ public class PdfController {
      */
     @PostMapping("/work-acceptance-protocol")
     public ResponseEntity<byte[]> generateWorkAcceptanceProtocol(
-        @RequestBody WorkAcceptanceProtocolRequest request
-    ) {
+            @RequestBody WorkAcceptanceProtocolRequest request) {
         byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(request);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
-            ContentDisposition.inline()
-                .filename("protokol-odbioru-prac.pdf")
-                .build()
-        );
+                ContentDisposition.inline().filename("protokol-odbioru-prac.pdf").build());
 
-        return ResponseEntity.ok()
-            .headers(headers)
-            .body(pdfBytes);
+        return ResponseEntity.ok().headers(headers).body(pdfBytes);
     }
 }

@@ -1,5 +1,6 @@
 package pl.edu.ur.blokur.controller;
 
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -7,11 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.BuildingTreeDto;
 import pl.edu.ur.blokur.service.BuildingService;
 
-import java.util.List;
-
-/**
- * Kontroler zarządzający API dla budynków i hierarchii osiedla.
- */
+/** Kontroler zarządzający API dla budynków i hierarchii osiedla. */
 @RestController
 @RequestMapping("/api/buildings")
 public class BuildingController {

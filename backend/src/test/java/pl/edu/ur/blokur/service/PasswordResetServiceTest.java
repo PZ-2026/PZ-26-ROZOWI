@@ -1,5 +1,12 @@
 package pl.edu.ur.blokur.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,40 +25,27 @@ import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.repository.PasswordResetTokenRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PasswordResetService — reset hasła przez e-mail")
 class PasswordResetServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
 
-    @Mock
-    private PasswordResetTokenRepository tokenRepository;
+    @Mock private PasswordResetTokenRepository tokenRepository;
 
-    @Mock
-    private JavaMailSender mailSender;
+    @Mock private JavaMailSender mailSender;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    @Mock private PasswordEncoder passwordEncoder;
 
-    @InjectMocks
-    private PasswordResetService passwordResetService;
+    @InjectMocks private PasswordResetService passwordResetService;
 
     private User testUser;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(passwordResetService, "fromAddress", "noreply@blokur.pl");
-        ReflectionTestUtils.setField(passwordResetService, "resetBaseUrl", "https://blokur.pl/reset");
+        ReflectionTestUtils.setField(
+                passwordResetService, "resetBaseUrl", "https://blokur.pl/reset");
 
         testUser = new User();
         testUser.setEmail("jan@blokur.pl");
@@ -84,7 +78,8 @@ class PasswordResetServiceTest {
 
             passwordResetService.requestPasswordReset("jan@blokur.pl");
 
-            ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            ArgumentCaptor<PasswordResetToken> captor =
+                    ArgumentCaptor.forClass(PasswordResetToken.class);
             verify(tokenRepository).save(captor.capture());
 
             PasswordResetToken saved = captor.getValue();
@@ -101,7 +96,8 @@ class PasswordResetServiceTest {
 
             passwordResetService.requestPasswordReset("jan@blokur.pl");
 
-            ArgumentCaptor<SimpleMailMessage> mailCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            ArgumentCaptor<SimpleMailMessage> mailCaptor =
+                    ArgumentCaptor.forClass(SimpleMailMessage.class);
             verify(mailSender).send(mailCaptor.capture());
 
             SimpleMailMessage mail = mailCaptor.getValue();
@@ -123,22 +119,22 @@ class PasswordResetServiceTest {
         void shouldThrowWhenTokenNotFound() {
             when(tokenRepository.findByToken("nieistniejacy")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> passwordResetService.resetPassword("nieistniejacy", "NoweHaslo1"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Nieprawidłowy token");
+            assertThatThrownBy(
+                            () -> passwordResetService.resetPassword("nieistniejacy", "NoweHaslo1"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Nieprawidłowy token");
         }
 
         @Test
         @DisplayName("Wygasły token — rzuca IllegalArgumentException i usuwa token z bazy")
         void shouldThrowAndDeleteExpiredToken() {
-            PasswordResetToken expiredToken = new PasswordResetToken(
-                testUser, "wygasly", LocalDateTime.now().minusHours(1)
-            );
+            PasswordResetToken expiredToken =
+                    new PasswordResetToken(testUser, "wygasly", LocalDateTime.now().minusHours(1));
             when(tokenRepository.findByToken("wygasly")).thenReturn(Optional.of(expiredToken));
 
             assertThatThrownBy(() -> passwordResetService.resetPassword("wygasly", "NoweHaslo1"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("wygasł");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("wygasł");
 
             verify(tokenRepository).delete(expiredToken);
         }
@@ -146,9 +142,9 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("Prawidłowy token — hashuje nowe hasło i zapisuje użytkownika")
         void shouldHashAndSaveNewPassword() {
-            PasswordResetToken validToken = new PasswordResetToken(
-                testUser, "dobryToken", LocalDateTime.now().plusHours(1)
-            );
+            PasswordResetToken validToken =
+                    new PasswordResetToken(
+                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 
@@ -161,9 +157,9 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("Prawidłowy token — usuwa token po zmianie hasła")
         void shouldDeleteTokenAfterSuccessfulReset() {
-            PasswordResetToken validToken = new PasswordResetToken(
-                testUser, "dobryToken", LocalDateTime.now().plusHours(1)
-            );
+            PasswordResetToken validToken =
+                    new PasswordResetToken(
+                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode(any())).thenReturn("hash");
 
@@ -175,9 +171,9 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("Prawidłowy token — stare hasło nie pozostaje w bazie")
         void shouldNotKeepOldPassword() {
-            PasswordResetToken validToken = new PasswordResetToken(
-                testUser, "dobryToken", LocalDateTime.now().plusHours(1)
-            );
+            PasswordResetToken validToken =
+                    new PasswordResetToken(
+                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 
@@ -202,7 +198,8 @@ class PasswordResetServiceTest {
 
             passwordResetService.inviteUser(testUser);
 
-            ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            ArgumentCaptor<PasswordResetToken> captor =
+                    ArgumentCaptor.forClass(PasswordResetToken.class);
             verify(tokenRepository).save(captor.capture());
 
             PasswordResetToken saved = captor.getValue();
@@ -217,7 +214,8 @@ class PasswordResetServiceTest {
 
             passwordResetService.inviteUser(testUser);
 
-            ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            ArgumentCaptor<PasswordResetToken> captor =
+                    ArgumentCaptor.forClass(PasswordResetToken.class);
             verify(tokenRepository).save(captor.capture());
 
             assertThat(captor.getValue().getUser()).isEqualTo(testUser);
@@ -230,7 +228,8 @@ class PasswordResetServiceTest {
 
             passwordResetService.inviteUser(testUser);
 
-            ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            ArgumentCaptor<SimpleMailMessage> captor =
+                    ArgumentCaptor.forClass(SimpleMailMessage.class);
             verify(mailSender).send(captor.capture());
 
             assertThat(captor.getValue().getTo()).contains("jan@blokur.pl");
@@ -243,13 +242,16 @@ class PasswordResetServiceTest {
 
             passwordResetService.inviteUser(testUser);
 
-            ArgumentCaptor<SimpleMailMessage> mailCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-            ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            ArgumentCaptor<SimpleMailMessage> mailCaptor =
+                    ArgumentCaptor.forClass(SimpleMailMessage.class);
+            ArgumentCaptor<PasswordResetToken> tokenCaptor =
+                    ArgumentCaptor.forClass(PasswordResetToken.class);
             verify(mailSender).send(mailCaptor.capture());
             verify(tokenRepository).save(tokenCaptor.capture());
 
             String token = tokenCaptor.getValue().getToken();
-            assertThat(mailCaptor.getValue().getText()).contains("https://blokur.pl/reset?token=" + token);
+            assertThat(mailCaptor.getValue().getText())
+                    .contains("https://blokur.pl/reset?token=" + token);
         }
 
         @Test
@@ -259,7 +261,8 @@ class PasswordResetServiceTest {
 
             passwordResetService.inviteUser(testUser);
 
-            ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            ArgumentCaptor<SimpleMailMessage> captor =
+                    ArgumentCaptor.forClass(SimpleMailMessage.class);
             verify(mailSender).send(captor.capture());
 
             assertThat(captor.getValue().getText()).contains("Katarzyna");
@@ -276,7 +279,8 @@ class PasswordResetServiceTest {
             passwordResetService.inviteUser(testUser);
             passwordResetService.inviteUser(secondUser);
 
-            ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
+            ArgumentCaptor<PasswordResetToken> captor =
+                    ArgumentCaptor.forClass(PasswordResetToken.class);
             verify(tokenRepository, org.mockito.Mockito.times(2)).save(captor.capture());
 
             String token1 = captor.getAllValues().get(0).getToken();

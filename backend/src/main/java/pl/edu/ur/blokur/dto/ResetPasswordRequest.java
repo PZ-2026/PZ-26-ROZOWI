@@ -3,18 +3,48 @@ package pl.edu.ur.blokur.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/** DTO żądania ustawienia nowego hasła przy użyciu tokenu resetującego. */
 public class ResetPasswordRequest {
 
-    @NotBlank
-    private String token;
+    @NotBlank private String token;
 
     @NotBlank
     @Size(min = 8, message = "Hasło musi mieć co najmniej 8 znaków")
     private String newPassword;
 
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
+    /**
+     * Zwraca wartość tokenu resetującego hasło.
+     *
+     * @return wartość tokenu
+     */
+    public String getToken() {
+        return token;
+    }
 
-    public String getNewPassword() { return newPassword; }
-    public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    /**
+     * Ustawia wartość tokenu resetującego hasło.
+     *
+     * @param token wartość tokenu
+     */
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    /**
+     * Zwraca nowe hasło podane przez użytkownika.
+     *
+     * @return nowe hasło (przed hashowaniem)
+     */
+    public String getNewPassword() {
+        return newPassword;
+    }
+
+    /**
+     * Ustawia nowe hasło podane przez użytkownika.
+     *
+     * @param newPassword nowe hasło (przed hashowaniem)
+     */
+    public void setNewPassword(String newPassword) {
+        this.newPassword = newPassword;
+    }
 }

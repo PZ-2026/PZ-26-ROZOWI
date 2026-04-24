@@ -11,18 +11,15 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
-/**
- * Encja reprezentująca zgłoszenie usterki lub awarii w systemie Blokur.
- */
+/** Encja reprezentująca zgłoszenie usterki lub awarii w systemie Blokur. */
 @Entity
 @Table(name = "tickets")
 @SQLDelete(sql = "UPDATE tickets SET is_deleted = true WHERE id = ?")

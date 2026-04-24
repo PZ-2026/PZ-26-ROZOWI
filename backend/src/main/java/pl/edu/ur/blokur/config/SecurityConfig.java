@@ -15,8 +15,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import pl.edu.ur.blokur.security.JwtAuthenticationFilter;
 
 /**
- * Konfiguracja zabezpieczeń aplikacji Spring Security.
- * Definiuje reguły autoryzacji, filtry JWT oraz enkoder haseł BCrypt.
+ * Konfiguracja zabezpieczeń aplikacji Spring Security. Definiuje reguły autoryzacji, filtry JWT
+ * oraz enkoder haseł BCrypt.
  */
 @Configuration
 @EnableWebSecurity
@@ -30,8 +30,8 @@ public class SecurityConfig {
     }
 
     /**
-     * Konfiguruje łańcuch filtrów bezpieczeństwa HTTP.
-     * Sesje są bezstanowe (JWT), CSRF wyłączone dla API REST.
+     * Konfiguruje łańcuch filtrów bezpieczeństwa HTTP. Sesje są bezstanowe (JWT), CSRF wyłączone
+     * dla API REST.
      *
      * @param http obiekt konfiguracji HTTP
      * @return skonfigurowany {@link SecurityFilterChain}
@@ -39,15 +39,24 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/pdf/**", "/error").permitAll()
-                .anyRequest().authenticated()
-            );
+        http.csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(
+                                                "/api/auth/login",
+                                                "/api/auth/refresh",
+                                                "/api/auth/forgot-password",
+                                                "/api/auth/reset-password",
+                                                "/api/pdf/**",
+                                                "/api/categories",
+                                                "/error")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated());
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -55,9 +64,8 @@ public class SecurityConfig {
     }
 
     /**
-     * Tworzy enkoder haseł oparty na algorytmie BCrypt.
-     * Używany zarówno do weryfikacji haseł przy logowaniu,
-     * jak i do hashowania nowych haseł.
+     * Tworzy enkoder haseł oparty na algorytmie BCrypt. Używany zarówno do weryfikacji haseł przy
+     * logowaniu, jak i do hashowania nowych haseł.
      *
      * @return {@link PasswordEncoder} BCrypt
      */
@@ -74,7 +82,8 @@ public class SecurityConfig {
      * @throws Exception w przypadku błędu konfiguracji
      */
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+            throws Exception {
         return config.getAuthenticationManager();
     }
 }

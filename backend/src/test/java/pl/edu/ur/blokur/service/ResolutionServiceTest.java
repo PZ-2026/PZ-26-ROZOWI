@@ -1,29 +1,5 @@
 package pl.edu.ur.blokur.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.web.server.ResponseStatusException;
-
-import pl.edu.ur.blokur.dto.CastVoteRequest;
-import pl.edu.ur.blokur.models.Resolution;
-import pl.edu.ur.blokur.models.ResolutionOption;
-import pl.edu.ur.blokur.models.ResolutionVote;
-import pl.edu.ur.blokur.models.User;
-import pl.edu.ur.blokur.repository.ResolutionOptionRepository;
-import pl.edu.ur.blokur.repository.ResolutionRepository;
-import pl.edu.ur.blokur.repository.ResolutionVoteRepository;
-import pl.edu.ur.blokur.repository.UserRepository;
-
-import java.util.Optional;
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,30 +10,46 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.server.ResponseStatusException;
+import pl.edu.ur.blokur.dto.CastVoteRequest;
+import pl.edu.ur.blokur.models.Resolution;
+import pl.edu.ur.blokur.models.ResolutionOption;
+import pl.edu.ur.blokur.models.ResolutionVote;
+import pl.edu.ur.blokur.models.User;
+import pl.edu.ur.blokur.repository.ResolutionOptionRepository;
+import pl.edu.ur.blokur.repository.ResolutionRepository;
+import pl.edu.ur.blokur.repository.ResolutionVoteRepository;
+import pl.edu.ur.blokur.repository.UserRepository;
+
 /**
- * Testy jednostkowe dla {@link ResolutionService}.
- * Weryfikują logikę oddawania głosów w uchwałach, w tym zabezpieczenie
- * przed podwójnym głosowaniem za pomocą przechwytywania
- * {@link DataIntegrityViolationException}.
+ * Testy jednostkowe dla {@link ResolutionService}. Weryfikują logikę oddawania głosów w uchwałach,
+ * w tym zabezpieczenie przed podwójnym głosowaniem za pomocą przechwytywania {@link
+ * DataIntegrityViolationException}.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ResolutionService — serwis uchwał i głosowań")
 class ResolutionServiceTest {
 
-    @Mock
-    private ResolutionRepository resolutionRepository;
+    @Mock private ResolutionRepository resolutionRepository;
 
-    @Mock
-    private ResolutionOptionRepository resolutionOptionRepository;
+    @Mock private ResolutionOptionRepository resolutionOptionRepository;
 
-    @Mock
-    private ResolutionVoteRepository resolutionVoteRepository;
+    @Mock private ResolutionVoteRepository resolutionVoteRepository;
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
 
-    @InjectMocks
-    private ResolutionService resolutionService;
+    @InjectMocks private ResolutionService resolutionService;
 
     private static final String EMAIL = "lokator@blokur.pl";
 
@@ -103,12 +95,9 @@ class ResolutionServiceTest {
         @Test
         @DisplayName("Zapisuje nowy rekord głosu w repozytorium")
         void shouldSaveVoteWhenAllDataIsValid() {
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId))
-                    .thenReturn(Optional.of(option));
-            when(userRepository.findByEmail(EMAIL))
-                    .thenReturn(Optional.of(voter));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
 
             resolutionService.castVote(resolutionId, request, EMAIL);
 
@@ -118,12 +107,9 @@ class ResolutionServiceTest {
         @Test
         @DisplayName("Głos zapisywany jest z poprawnymi danymi uchwały, opcji i głosującego")
         void shouldSaveVoteWithCorrectEntities() {
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId))
-                    .thenReturn(Optional.of(option));
-            when(userRepository.findByEmail(EMAIL))
-                    .thenReturn(Optional.of(voter));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
 
             resolutionService.castVote(resolutionId, request, EMAIL);
 
@@ -143,41 +129,37 @@ class ResolutionServiceTest {
     class DuplicateVoteTests {
 
         @Test
-        @DisplayName("Rzuca ResponseStatusException z HTTP 409 gdy użytkownik głosował już wcześniej")
+        @DisplayName(
+                "Rzuca ResponseStatusException z HTTP 409 gdy użytkownik głosował już wcześniej")
         void shouldThrow409WhenUserAlreadyVoted() {
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId))
-                    .thenReturn(Optional.of(option));
-            when(userRepository.findByEmail(EMAIL))
-                    .thenReturn(Optional.of(voter));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
             when(resolutionVoteRepository.save(any(ResolutionVote.class)))
-                    .thenThrow(new DataIntegrityViolationException(
-                            "unique constraint violation: resolution_votes_resolution_id_voter_id_key"));
+                    .thenThrow(
+                            new DataIntegrityViolationException(
+                                    "unique constraint violation:"
+                                            + " resolution_votes_resolution_id_voter_id_key"));
 
-            assertThatThrownBy(
-                    () -> resolutionService.castVote(resolutionId, request, EMAIL))
+            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
                     .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(ex -> {
-                        ResponseStatusException rse = (ResponseStatusException) ex;
-                        assertThat(rse.getStatusCode()).isEqualTo(CONFLICT);
-                    });
+                    .satisfies(
+                            ex -> {
+                                ResponseStatusException rse = (ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode()).isEqualTo(CONFLICT);
+                            });
         }
 
         @Test
         @DisplayName("Komunikat błędu 409 informuje o wcześniejszym oddaniu głosu")
         void shouldIncludeInformativeMessageIn409Response() {
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId))
-                    .thenReturn(Optional.of(option));
-            when(userRepository.findByEmail(EMAIL))
-                    .thenReturn(Optional.of(voter));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
             when(resolutionVoteRepository.save(any(ResolutionVote.class)))
                     .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-            assertThatThrownBy(
-                    () -> resolutionService.castVote(resolutionId, request, EMAIL))
+            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
                     .isInstanceOf(ResponseStatusException.class)
                     .hasMessageContaining("Użytkownik oddał już głos w tej uchwale");
         }
@@ -194,16 +176,15 @@ class ResolutionServiceTest {
         @Test
         @DisplayName("Rzuca ResponseStatusException z HTTP 404 gdy uchwała nie istnieje")
         void shouldThrow404WhenResolutionNotFound() {
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.empty());
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(
-                    () -> resolutionService.castVote(resolutionId, request, EMAIL))
+            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
                     .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(ex -> {
-                        ResponseStatusException rse = (ResponseStatusException) ex;
-                        assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
-                    });
+                    .satisfies(
+                            ex -> {
+                                ResponseStatusException rse = (ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
+                            });
 
             verify(resolutionVoteRepository, never()).save(any());
         }
@@ -211,18 +192,16 @@ class ResolutionServiceTest {
         @Test
         @DisplayName("Rzuca ResponseStatusException z HTTP 404 gdy opcja głosowania nie istnieje")
         void shouldThrow404WhenOptionNotFound() {
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId))
-                    .thenReturn(Optional.empty());
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(
-                    () -> resolutionService.castVote(resolutionId, request, EMAIL))
+            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
                     .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(ex -> {
-                        ResponseStatusException rse = (ResponseStatusException) ex;
-                        assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
-                    });
+                    .satisfies(
+                            ex -> {
+                                ResponseStatusException rse = (ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
+                            });
 
             verify(resolutionVoteRepository, never()).save(any());
         }
@@ -230,20 +209,17 @@ class ResolutionServiceTest {
         @Test
         @DisplayName("Rzuca ResponseStatusException z HTTP 404 gdy użytkownik nie istnieje")
         void shouldThrow404WhenVoterNotFound() {
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId))
-                    .thenReturn(Optional.of(option));
-            when(userRepository.findByEmail(EMAIL))
-                    .thenReturn(Optional.empty());
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(
-                    () -> resolutionService.castVote(resolutionId, request, EMAIL))
+            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
                     .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(ex -> {
-                        ResponseStatusException rse = (ResponseStatusException) ex;
-                        assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
-                    });
+                    .satisfies(
+                            ex -> {
+                                ResponseStatusException rse = (ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
+                            });
 
             verify(resolutionVoteRepository, never()).save(any());
         }
@@ -266,18 +242,16 @@ class ResolutionServiceTest {
 
             option.setResolution(otherResolution);
 
-            when(resolutionRepository.findById(resolutionId))
-                    .thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId))
-                    .thenReturn(Optional.of(option));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
 
-            assertThatThrownBy(
-                    () -> resolutionService.castVote(resolutionId, request, EMAIL))
+            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
                     .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(ex -> {
-                        ResponseStatusException rse = (ResponseStatusException) ex;
-                        assertThat(rse.getStatusCode()).isEqualTo(BAD_REQUEST);
-                    });
+                    .satisfies(
+                            ex -> {
+                                ResponseStatusException rse = (ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode()).isEqualTo(BAD_REQUEST);
+                            });
 
             verify(resolutionVoteRepository, never()).save(any());
         }

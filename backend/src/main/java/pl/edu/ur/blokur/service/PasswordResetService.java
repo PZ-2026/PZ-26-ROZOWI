@@ -1,5 +1,8 @@
 package pl.edu.ur.blokur.service;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,10 +14,10 @@ import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.repository.PasswordResetTokenRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
+/**
+ * Serwis obsługujący reset hasła użytkownika oraz wysyłanie zaproszeń dla nowo utworzonych kont.
+ * Generuje jednorazowe tokeny i wysyła wiadomości e-mail z linkiem do ustawienia hasła.
+ */
 @Service
 public class PasswordResetService {
 
@@ -29,6 +32,14 @@ public class PasswordResetService {
     @Value("${app.reset-password.base-url:https://blokur.pl/reset}")
     private String resetBaseUrl;
 
+    /**
+     * Tworzy serwis z wymaganymi zależnościami.
+     *
+     * @param userRepository repozytorium użytkowników
+     * @param tokenRepository repozytorium tokenów resetu hasła
+     * @param mailSender klient SMTP do wysyłki e-maili
+     * @param passwordEncoder enkoder haseł (BCrypt)
+     */
     public PasswordResetService(
             UserRepository userRepository,
             PasswordResetTokenRepository tokenRepository,
@@ -40,6 +51,12 @@ public class PasswordResetService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Rozpoczyna procedurę resetu hasła dla użytkownika o podanym adresie e-mail. Ze względów
+     * bezpieczeństwa metoda nie ujawnia, czy email istnieje w bazie.
+     *
+     * @param email adres e-mail, na który ma zostać wysłany link resetujący
+     */
     public void requestPasswordReset(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         // Zawsze zwracamy sukces — nie ujawniamy czy email istnieje w bazie
@@ -55,9 +72,21 @@ public class PasswordResetService {
         sendResetEmail(email, token);
     }
 
+    /**
+     * Ustawia nowe hasło użytkownika na podstawie ważnego tokenu resetującego.
+     *
+     * @param token wartość tokenu resetującego
+     * @param newPassword nowe hasło (zostanie zahashowane)
+     * @throws IllegalArgumentException gdy token nie istnieje lub wygasł
+     */
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(token)
-            .orElseThrow(() -> new IllegalArgumentException("Nieprawidłowy token resetowania hasła"));
+        PasswordResetToken resetToken =
+                tokenRepository
+                        .findByToken(token)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Nieprawidłowy token resetowania hasła"));
 
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             tokenRepository.delete(resetToken);
@@ -71,6 +100,12 @@ public class PasswordResetService {
         tokenRepository.delete(resetToken);
     }
 
+    /**
+     * Wysyła nowo utworzonemu użytkownikowi wiadomość powitalną z linkiem do ustawienia hasła
+     * (ważny 72h).
+     *
+     * @param user użytkownik do zaproszenia
+     */
     public void inviteUser(User user) {
         String token = UUID.randomUUID().toString();
         LocalDateTime expiry = LocalDateTime.now().plusHours(72);
@@ -85,11 +120,13 @@ public class PasswordResetService {
         message.setTo(email);
         message.setSubject("Blokur – reset hasła");
         message.setText(
-            "Otrzymaliśmy prośbę o reset hasła do Twojego konta w aplikacji Blokur.\n\n" +
-            "Kliknij poniższy link, aby ustawić nowe hasło (ważny przez 1 godzinę):\n" +
-            resetBaseUrl + "?token=" + token + "\n\n" +
-            "Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość."
-        );
+                "Otrzymaliśmy prośbę o reset hasła do Twojego konta w aplikacji Blokur.\n\n"
+                        + "Kliknij poniższy link, aby ustawić nowe hasło (ważny przez 1 godzinę):\n"
+                        + resetBaseUrl
+                        + "?token="
+                        + token
+                        + "\n\n"
+                        + "Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość.");
         mailSender.send(message);
     }
 
@@ -100,12 +137,18 @@ public class PasswordResetService {
         message.setTo(email);
         message.setSubject("Blokur – witamy w systemie!");
         message.setText(
-            "Cześć " + firstName + "!\n\n" +
-            "Administrator utworzył dla Ciebie konto w aplikacji Blokur.\n\n" +
-            "Kliknij poniższy link, aby ustawić swoje hasło (link ważny przez 72 godziny):\n" +
-            resetBaseUrl + "?token=" + token + "\n\n" +
-            "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z administratorem."
-        );
+                "Cześć "
+                        + firstName
+                        + "!\n\n"
+                        + "Administrator utworzył dla Ciebie konto w aplikacji Blokur.\n\n"
+                        + "Kliknij poniższy link, aby ustawić swoje hasło (link ważny przez 72"
+                        + " godziny):\n"
+                        + resetBaseUrl
+                        + "?token="
+                        + token
+                        + "\n\n"
+                        + "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z"
+                        + " administratorem.");
         mailSender.send(message);
     }
 }

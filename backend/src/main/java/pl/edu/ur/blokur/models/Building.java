@@ -1,22 +1,25 @@
 package pl.edu.ur.blokur.models;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.math.BigDecimal;
-import java.util.UUID;
-import java.util.List;
-import java.util.ArrayList;
-
 /**
- * Encja reprezentująca budynek przypisany do wspólnoty/osiedla.
+ * Encja reprezentująca budynek przypisany do nieruchomości (wspólnoty mieszkaniowej). Budynek
+ * należy do hierarchii: {@link Property} → Building → Staircase → Apartment.
  */
 @Entity
 @Table(name = "buildings")
@@ -27,6 +30,10 @@ public class Building {
     @ColumnDefault("uuid_generate_v4()")
     @Column(name = "id", nullable = false)
     private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "property_id")
+    private Property property;
 
     @Column(name = "estate_name", nullable = false)
     private String estateName;
@@ -46,58 +53,146 @@ public class Building {
     @OneToMany(mappedBy = "building", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Staircase> staircases = new ArrayList<>();
 
+    /**
+     * Zwraca nieruchomość, do której należy budynek.
+     *
+     * @return nieruchomość nadrzędna lub {@code null} jeśli nie przypisano
+     */
+    public Property getProperty() {
+        return property;
+    }
+
+    /**
+     * Ustawia nieruchomość, do której należy budynek.
+     *
+     * @param property nieruchomość nadrzędna
+     */
+    public void setProperty(Property property) {
+        this.property = property;
+    }
+
+    /**
+     * Zwraca unikalny identyfikator budynku.
+     *
+     * @return identyfikator UUID
+     */
     public UUID getId() {
         return id;
     }
 
+    /**
+     * Ustawia unikalny identyfikator budynku.
+     *
+     * @param id identyfikator UUID
+     */
     public void setId(UUID id) {
         this.id = id;
     }
 
+    /**
+     * Zwraca nazwę osiedla/wspólnoty, do którego należy budynek.
+     *
+     * @return nazwa osiedla
+     */
     public String getEstateName() {
         return estateName;
     }
 
+    /**
+     * Ustawia nazwę osiedla/wspólnoty.
+     *
+     * @param estateName nazwa osiedla
+     */
     public void setEstateName(String estateName) {
         this.estateName = estateName;
     }
 
+    /**
+     * Zwraca nazwę budynku.
+     *
+     * @return nazwa budynku
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Ustawia nazwę budynku.
+     *
+     * @param name nazwa budynku
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * Zwraca adres budynku.
+     *
+     * @return adres budynku
+     */
     public String getAddress() {
         return address;
     }
 
+    /**
+     * Ustawia adres budynku.
+     *
+     * @param address adres budynku
+     */
     public void setAddress(String address) {
         this.address = address;
     }
 
+    /**
+     * Zwraca szerokość geograficzną lokalizacji budynku.
+     *
+     * @return szerokość geograficzna
+     */
     public BigDecimal getLatitude() {
         return latitude;
     }
 
+    /**
+     * Ustawia szerokość geograficzną lokalizacji budynku.
+     *
+     * @param latitude szerokość geograficzna
+     */
     public void setLatitude(BigDecimal latitude) {
         this.latitude = latitude;
     }
 
+    /**
+     * Zwraca długość geograficzną lokalizacji budynku.
+     *
+     * @return długość geograficzna
+     */
     public BigDecimal getLongitude() {
         return longitude;
     }
 
+    /**
+     * Ustawia długość geograficzną lokalizacji budynku.
+     *
+     * @param longitude długość geograficzna
+     */
     public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
     }
 
+    /**
+     * Zwraca listę klatek schodowych należących do budynku.
+     *
+     * @return lista klatek schodowych
+     */
     public List<Staircase> getStaircases() {
         return staircases;
     }
 
+    /**
+     * Ustawia listę klatek schodowych należących do budynku.
+     *
+     * @param staircases lista klatek schodowych
+     */
     public void setStaircases(List<Staircase> staircases) {
         this.staircases = staircases;
     }

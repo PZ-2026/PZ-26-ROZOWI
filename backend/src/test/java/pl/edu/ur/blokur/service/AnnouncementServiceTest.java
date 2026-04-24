@@ -1,5 +1,17 @@
 package pl.edu.ur.blokur.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,36 +30,19 @@ import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.AnnouncementRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 /**
- * Testy jednostkowe dla {@link AnnouncementService}.
- * Weryfikują logikę filtrowania ogłoszeń na podstawie hierarchii lokalizacyjnej
- * zalogowanego użytkownika (budynek → klatka → lokal).
+ * Testy jednostkowe dla {@link AnnouncementService}. Weryfikują logikę filtrowania ogłoszeń na
+ * podstawie hierarchii lokalizacyjnej zalogowanego użytkownika (budynek → klatka → lokal).
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AnnouncementService — serwis ogłoszeń")
 class AnnouncementServiceTest {
 
-    @Mock
-    private AnnouncementRepository announcementRepository;
+    @Mock private AnnouncementRepository announcementRepository;
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
 
-    @InjectMocks
-    private AnnouncementService announcementService;
+    @InjectMocks private AnnouncementService announcementService;
 
     private static final String EMAIL = "mieszkaniec@blokur.pl";
 
@@ -61,7 +56,7 @@ class AnnouncementServiceTest {
 
     @BeforeEach
     void setUp() {
-        buildingId  = UUID.randomUUID();
+        buildingId = UUID.randomUUID();
         staircaseId = UUID.randomUUID();
         apartmentId = UUID.randomUUID();
 
@@ -123,15 +118,15 @@ class AnnouncementServiceTest {
         @Test
         @DisplayName("Zwraca ogłoszenia dopasowane do hierarchii użytkownika")
         void shouldReturnAnnouncementsForUserWithApartment() {
-            List<Announcement> announcements = List.of(
-                buildAnnouncement("Przegląd kominiarski", "Treść ogłoszenia 1"),
-                buildAnnouncement("Przerwa w wodzie",     "Treść ogłoszenia 2")
-            );
+            List<Announcement> announcements =
+                    List.of(
+                            buildAnnouncement("Przegląd kominiarski", "Treść ogłoszenia 1"),
+                            buildAnnouncement("Przerwa w wodzie", "Treść ogłoszenia 2"));
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
             when(announcementRepository.findForUser(
-                eq(buildingId), eq(staircaseId), eq(apartmentId)
-            )).thenReturn(announcements);
+                            eq(buildingId), eq(staircaseId), eq(apartmentId)))
+                    .thenReturn(announcements);
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -145,8 +140,8 @@ class AnnouncementServiceTest {
         void shouldPassCorrectIdsToRepository() {
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
             when(announcementRepository.findForUser(
-                eq(buildingId), eq(staircaseId), eq(apartmentId)
-            )).thenReturn(List.of());
+                            eq(buildingId), eq(staircaseId), eq(apartmentId)))
+                    .thenReturn(List.of());
 
             announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -180,7 +175,7 @@ class AnnouncementServiceTest {
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
             when(announcementRepository.findForUser(isNull(), isNull(), isNull()))
-                .thenReturn(List.of());
+                    .thenReturn(List.of());
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -202,10 +197,10 @@ class AnnouncementServiceTest {
         void shouldPassNullIdsWhenUserNotFound() {
             when(userRepository.findByEmail("nieznany@blokur.pl")).thenReturn(Optional.empty());
             when(announcementRepository.findForUser(isNull(), isNull(), isNull()))
-                .thenReturn(List.of());
+                    .thenReturn(List.of());
 
             List<AnnouncementDto> result =
-                announcementService.getAnnouncementsForUser("nieznany@blokur.pl");
+                    announcementService.getAnnouncementsForUser("nieznany@blokur.pl");
 
             assertThat(result).isEmpty();
             verify(announcementRepository).findForUser(null, null, null);
@@ -227,8 +222,7 @@ class AnnouncementServiceTest {
             ann.setPlannedDate(LocalDateTime.of(2026, 4, 30, 18, 0));
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(any(), any(), any()))
-                .thenReturn(List.of(ann));
+            when(announcementRepository.findForUser(any(), any(), any())).thenReturn(List.of(ann));
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -249,8 +243,7 @@ class AnnouncementServiceTest {
             ann.setAuthor(null);
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(any(), any(), any()))
-                .thenReturn(List.of(ann));
+            when(announcementRepository.findForUser(any(), any(), any())).thenReturn(List.of(ann));
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -264,8 +257,7 @@ class AnnouncementServiceTest {
             ann.setPlannedDate(null);
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(any(), any(), any()))
-                .thenReturn(List.of(ann));
+            when(announcementRepository.findForUser(any(), any(), any())).thenReturn(List.of(ann));
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 

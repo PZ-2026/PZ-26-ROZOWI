@@ -1,6 +1,9 @@
 package pl.edu.ur.blokur.controller;
 
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,13 +28,9 @@ import pl.edu.ur.blokur.service.LoginAttemptService;
 import pl.edu.ur.blokur.service.PasswordResetService;
 import pl.edu.ur.blokur.service.RefreshTokenService;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Map;
-
 /**
- * Kontroler obsługujący uwierzytelnianie użytkowników.
- * Wspiera mechanizm blokady konta po N nieudanych próbach logowania.
+ * Kontroler obsługujący uwierzytelnianie użytkowników. Wspiera mechanizm blokady konta po N
+ * nieudanych próbach logowania.
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -45,13 +44,12 @@ public class AuthController {
     private final UserRepository userRepository;
 
     public AuthController(
-        AuthenticationManager authenticationManager,
-        JwtService jwtService,
-        LoginAttemptService loginAttemptService,
-        PasswordResetService passwordResetService,
-        RefreshTokenService refreshTokenService,
-        UserRepository userRepository
-    ) {
+            AuthenticationManager authenticationManager,
+            JwtService jwtService,
+            LoginAttemptService loginAttemptService,
+            PasswordResetService passwordResetService,
+            RefreshTokenService refreshTokenService,
+            UserRepository userRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.loginAttemptService = loginAttemptService;
@@ -63,56 +61,65 @@ public class AuthController {
     /**
      * Loguje użytkownika i zwraca token JWT wraz z rolą.
      *
-     * <p>Przed próbą uwierzytelnienia sprawdza czy konto nie jest zablokowane.
-     * Po nieudanym logowaniu inkrementuje licznik prób — po 3 błędnych próbach
-     * konto zostaje zablokowane na 15 minut. Po udanym logowaniu licznik jest resetowany.</p>
+     * <p>Przed próbą uwierzytelnienia sprawdza czy konto nie jest zablokowane. Po nieudanym
+     * logowaniu inkrementuje licznik prób — po 3 błędnych próbach konto zostaje zablokowane na 15
+     * minut. Po udanym logowaniu licznik jest resetowany.
      *
      * @param request dane logowania (email i hasło)
-     * @return odpowiedź z tokenem JWT i rolą, 401 przy błędnych danych, lub 423 przy zablokowanym koncie
+     * @return odpowiedź z tokenem JWT i rolą, 401 przy błędnych danych, lub 423 przy zablokowanym
+     *     koncie
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         String email = request.getUsername();
 
         try {
-            //try to login, might throw exception for account locke, wrong password, or wrong username
-            Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, request.getPassword())
-            );
+            // try to login, might throw exception for account locke, wrong password, or wrong
+            // username
+            Authentication authentication =
+                    authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(email, request.getPassword()));
 
-            //if succed reset failed attemps
+            // if succed reset failed attemps
             loginAttemptService.resetFailedAttempts(email);
 
-            String role = authentication.getAuthorities().stream()
-                .findFirst()
-                .map(GrantedAuthority::getAuthority)
-                .map(a -> a.replace("ROLE_", ""))
-                .orElse("USER");
+            String role =
+                    authentication.getAuthorities().stream()
+                            .findFirst()
+                            .map(GrantedAuthority::getAuthority)
+                            .map(a -> a.replace("ROLE_", ""))
+                            .orElse("USER");
 
             String token = jwtService.generateToken(authentication.getName(), role);
 
-            User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new IllegalStateException("Użytkownik nie istnieje"));
+            User user =
+                    userRepository
+                            .findByEmail(authentication.getName())
+                            .orElseThrow(
+                                    () -> new IllegalStateException("Użytkownik nie istnieje"));
             String refreshToken = refreshTokenService.createRefreshToken(user).getToken();
 
             return ResponseEntity.ok(new AuthResponse(token, refreshToken, role));
 
         } catch (LockedException e) {
             LocalDateTime lockedUntil = loginAttemptService.getLockedUntil(email);
-            String formattedTime = lockedUntil != null
-                ? lockedUntil.format(DateTimeFormatter.ofPattern("HH:mm"))
-                : "pozniej";
+            String formattedTime =
+                    lockedUntil != null
+                            ? lockedUntil.format(DateTimeFormatter.ofPattern("HH:mm"))
+                            : "pozniej";
 
-            return ResponseEntity.status(HttpStatus.LOCKED).body(
-                Map.of("message", "Konto jest zablokowane. Spróbuj ponownie po " + formattedTime)
-            );
+            return ResponseEntity.status(HttpStatus.LOCKED)
+                    .body(
+                            Map.of(
+                                    "message",
+                                    "Konto jest zablokowane. Spróbuj ponownie po "
+                                            + formattedTime));
 
         } catch (BadCredentialsException e) {
             loginAttemptService.registerFailedAttempt(email);
 
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                Map.of("message", "Nieprawidłowy email lub hasło")
-            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Nieprawidłowy email lub hasło"));
         } catch (Exception e) {
             System.out.println("UNHANDLED EXCEPTION:" + e.getMessage());
             return null;
@@ -122,27 +129,35 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
         try {
-            RefreshTokenService.TokenPair pair = refreshTokenService.exchange(request.getRefreshToken());
-            return ResponseEntity.ok(new AuthResponse(pair.accessToken(), pair.refreshToken(), pair.role()));
+            RefreshTokenService.TokenPair pair =
+                    refreshTokenService.exchange(request.getRefreshToken());
+            return ResponseEntity.ok(
+                    new AuthResponse(pair.accessToken(), pair.refreshToken(), pair.role()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.requestPasswordReset(request.getEmail());
-        return ResponseEntity.ok(Map.of("message", "Jeśli podany adres e-mail istnieje w systemie, wysłaliśmy link do resetowania hasła."));
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "Jeśli podany adres e-mail istnieje w systemie, wysłaliśmy link do"
+                                + " resetowania hasła."));
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
             passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
-            return ResponseEntity.ok(Map.of("message", "Hasło zostało zmienione. Możesz się teraz zalogować."));
+            return ResponseEntity.ok(
+                    Map.of("message", "Hasło zostało zmienione. Możesz się teraz zalogować."));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 }
-

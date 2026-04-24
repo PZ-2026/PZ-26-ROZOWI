@@ -1,16 +1,15 @@
 package pl.edu.ur.blokur.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Testy jednostkowe dla {@link LoginAttemptService}.
- * Weryfikują mechanizm blokowania konta po błędnych próbach logowania.
+ * Testy jednostkowe dla {@link LoginAttemptService}. Weryfikują mechanizm blokowania konta po
+ * błędnych próbach logowania.
  */
 @DisplayName("LoginAttemptService — blokowanie konta")
 class LoginAttemptServiceTest {
@@ -187,7 +186,6 @@ class LoginAttemptServiceTest {
     @DisplayName("Reset nieistniejącego konta nie rzuca wyjątku")
     void shouldNotThrowWhenResettingNonExistentAccount() {
         org.junit.jupiter.api.Assertions.assertDoesNotThrow(
-            () -> loginAttemptService.resetFailedAttempts("nieistniejacy@blokur.pl")
-        );
+                () -> loginAttemptService.resetFailedAttempts("nieistniejacy@blokur.pl"));
     }
 }
