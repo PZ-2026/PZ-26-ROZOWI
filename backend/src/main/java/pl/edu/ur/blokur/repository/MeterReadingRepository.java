@@ -1,17 +1,16 @@
 package pl.edu.ur.blokur.repository;
 
+import java.time.LocalDate;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import pl.edu.ur.blokur.models.MeterReading;
 
-import java.time.LocalDate;
-import java.util.Optional;
-import java.util.UUID;
-
 /**
- * Repozytorium JPA dla encji {@link MeterReading}.
- * Zawiera metody do filtrowania odczytów z uwzględnieniem miękkiego usunięcia.
+ * Repozytorium JPA dla encji {@link MeterReading}. Zawiera metody do filtrowania odczytów z
+ * uwzględnieniem miękkiego usunięcia.
  */
 public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID> {
 
@@ -38,7 +37,12 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID
      * @param meterId identyfikator licznika
      * @return ostatni odczyt lub null jeśli brak
      */
+<<<<<<< HEAD
     MeterReading findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(UUID meterId);
+=======
+    MeterReading findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
+            UUID apartmentId, String meterType);
+>>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
 
     /**
      * Sprawdza czy istnieje nieusunięty odczyt dla danego licznika i daty.
@@ -47,7 +51,12 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID
      * @param readingDate data odczytu
      * @return true jeśli duplikat istnieje
      */
+<<<<<<< HEAD
     boolean existsByMeterIdAndReadingDateAndDeletedFalse(UUID meterId, LocalDate readingDate);
+=======
+    boolean existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
+            UUID apartmentId, String meterType, LocalDate readingDate);
+>>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
 
     /**
      * Sprawdza czy istnieje nieusunięty odczyt dla danego licznika i daty, inny niż wskazany.
@@ -58,9 +67,14 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID
      * @param id identyfikator wykluczanego odczytu
      * @return true jeśli duplikat istnieje
      */
+<<<<<<< HEAD
     boolean existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
         UUID meterId,
         LocalDate readingDate,
         UUID id
     );
+=======
+    boolean existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
+            UUID apartmentId, String meterType, LocalDate readingDate, UUID id);
+>>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
 }

@@ -3,9 +3,7 @@ package pl.edu.ur.blokur.service;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
-
 import pl.edu.ur.blokur.dto.AnnouncementDto;
 import pl.edu.ur.blokur.models.Announcement;
 import pl.edu.ur.blokur.models.Apartment;
@@ -17,9 +15,8 @@ import pl.edu.ur.blokur.repository.AnnouncementRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
 /**
- * Serwis dostarczający logikę biznesową dla modułu ogłoszeń.
- * Pobiera ogłoszenia właściwe dla zalogowanego użytkownika
- * na podstawie jego powiązania z lokalem, klatką i budynkiem.
+ * Serwis dostarczający logikę biznesową dla modułu ogłoszeń. Pobiera ogłoszenia właściwe dla
+ * zalogowanego użytkownika na podstawie jego powiązania z lokalem, klatką i budynkiem.
  */
 @Service
 public class AnnouncementService {
@@ -31,18 +28,18 @@ public class AnnouncementService {
      * Tworzy instancję serwisu z wymaganymi repozytoriami.
      *
      * @param announcementRepository repozytorium ogłoszeń
-     * @param userRepository         repozytorium użytkowników
+     * @param userRepository repozytorium użytkowników
      */
-    public AnnouncementService(AnnouncementRepository announcementRepository,
-            UserRepository userRepository) {
+    public AnnouncementService(
+            AnnouncementRepository announcementRepository, UserRepository userRepository) {
         this.announcementRepository = announcementRepository;
         this.userRepository = userRepository;
     }
 
     /**
-     * Zwraca listę ogłoszeń dopasowanych do zalogowanego użytkownika.
-     * Uwzględnia ogłoszenia globalne oraz skierowane do budynku,
-     * klatki lub mieszkania, do którego użytkownik jest przypisany.
+     * Zwraca listę ogłoszeń dopasowanych do zalogowanego użytkownika. Uwzględnia ogłoszenia
+     * globalne oraz skierowane do budynku, klatki lub mieszkania, do którego użytkownik jest
+     * przypisany.
      *
      * @param username adres email zalogowanego użytkownika (Subject JWT)
      * @return lista ogłoszeń w formie DTO
@@ -70,8 +67,8 @@ public class AnnouncementService {
             }
         }
 
-        List<Announcement> list = announcementRepository.findForUser(
-                buildingId, staircaseId, apartmentId);
+        List<Announcement> list =
+                announcementRepository.findForUser(buildingId, staircaseId, apartmentId);
 
         return list.stream().map(this::mapToDto).collect(Collectors.toList());
     }
@@ -85,12 +82,16 @@ public class AnnouncementService {
     private AnnouncementDto mapToDto(Announcement a) {
         String authorName = "";
         if (a.getAuthor() != null) {
-            authorName = a.getAuthor().getFirstName() + " "
-                    + a.getAuthor().getLastName();
+            authorName = a.getAuthor().getFirstName() + " " + a.getAuthor().getLastName();
         }
 
         return new AnnouncementDto(
-                a.getId(), a.getType(), a.getTitle(), a.getContent(),
-                authorName, a.getPlannedDate(), a.getCreatedAt());
+                a.getId(),
+                a.getType(),
+                a.getTitle(),
+                a.getContent(),
+                authorName,
+                a.getPlannedDate(),
+                a.getCreatedAt());
     }
 }

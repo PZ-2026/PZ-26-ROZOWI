@@ -1,8 +1,5 @@
 package pl.edu.ur.blokur.models;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,22 +7,22 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
 /**
- * Encja reprezentująca konkretny, faktyczny oddany głos przez danego
- * lokatora (użytkownika) w poszczególnej uchwale na konkretną jej opcję.
+ * Encja reprezentująca konkretny, faktyczny oddany głos przez danego lokatora (użytkownika) w
+ * poszczególnej uchwale na konkretną jej opcję.
  */
 @Entity
-@Table(name = "resolution_votes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"resolution_id", "voter_id"})
-})
+@Table(
+        name = "resolution_votes",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"resolution_id", "voter_id"})})
 public class ResolutionVote {
 
     @Id
@@ -127,7 +124,8 @@ public class ResolutionVote {
     }
 
     /**
-     * Zwraca czas wpłynięcia informacji od Mieszkańca przez API o chęci przydzielenia tego głosu na zasobie relacyjnym.
+     * Zwraca czas wpłynięcia informacji od Mieszkańca przez API o chęci przydzielenia tego głosu na
+     * zasobie relacyjnym.
      *
      * @return LocalDateTime czas dodania
      */

@@ -1,5 +1,14 @@
 package pl.edu.ur.blokur.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,25 +24,13 @@ import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.TicketCategory;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TicketCategoryService — zarządzanie kategoriami zgłoszeń")
 class TicketCategoryServiceTest {
 
-    @Mock
-    private TicketCategoryRepository categoryRepository;
+    @Mock private TicketCategoryRepository categoryRepository;
 
-    @InjectMocks
-    private TicketCategoryService categoryService;
+    @InjectMocks private TicketCategoryService categoryService;
 
     private TicketCategory activeCategory;
     private UUID categoryId;

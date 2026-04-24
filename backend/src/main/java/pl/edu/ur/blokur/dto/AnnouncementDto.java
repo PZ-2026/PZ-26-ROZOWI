@@ -4,9 +4,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Obiekt transferu danych dla ogłoszeń.
- * Służy do zapobiegania wyciekom detali bazy danych i zjawisku
- * niekontrolowanego leniwego czytania podczas serializacji.
+ * Obiekt transferu danych dla ogłoszeń. Służy do zapobiegania wyciekom detali bazy danych i
+ * zjawisku niekontrolowanego leniwego czytania podczas serializacji.
  */
 public class AnnouncementDto {
 
@@ -18,25 +17,27 @@ public class AnnouncementDto {
     private LocalDateTime plannedDate;
     private LocalDateTime createdAt;
 
-    /**
-     * Konstruktor bezargumentowy wymagany przez mechanizmy serializacji.
-     */
-    public AnnouncementDto() {
-    }
+    /** Konstruktor bezargumentowy wymagany przez mechanizmy serializacji. */
+    public AnnouncementDto() {}
 
     /**
      * Konstruktor parametryczny tworzący kompletny obiekt DTO.
      *
-     * @param id          unikalny identyfikator ogłoszenia
-     * @param type        typ ogłoszenia (np. OGLOSZENIE, KOMUNIKAT)
-     * @param title       tytuł ogłoszenia
-     * @param content     treść ogłoszenia
-     * @param authorName  imię i nazwisko autora
+     * @param id unikalny identyfikator ogłoszenia
+     * @param type typ ogłoszenia (np. OGLOSZENIE, KOMUNIKAT)
+     * @param title tytuł ogłoszenia
+     * @param content treść ogłoszenia
+     * @param authorName imię i nazwisko autora
      * @param plannedDate data planowanego opublikowania
-     * @param createdAt   data i czas utworzenia rekordu
+     * @param createdAt data i czas utworzenia rekordu
      */
-    public AnnouncementDto(UUID id, String type, String title, String content,
-            String authorName, LocalDateTime plannedDate,
+    public AnnouncementDto(
+            UUID id,
+            String type,
+            String title,
+            String content,
+            String authorName,
+            LocalDateTime plannedDate,
             LocalDateTime createdAt) {
         this.id = id;
         this.type = type;

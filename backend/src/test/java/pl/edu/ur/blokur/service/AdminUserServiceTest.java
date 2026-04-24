@@ -1,5 +1,15 @@
 package pl.edu.ur.blokur.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,32 +25,17 @@ import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdminUserService — zarządzanie kontami użytkowników")
 class AdminUserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
 
-    @Mock
-    private ApartmentRepository apartmentRepository;
+    @Mock private ApartmentRepository apartmentRepository;
 
-    @Mock
-    private PasswordResetService passwordResetService;
+    @Mock private PasswordResetService passwordResetService;
 
-    @InjectMocks
-    private AdminUserService adminUserService;
+    @InjectMocks private AdminUserService adminUserService;
 
     private CreateUserRequest request;
     private Apartment apartment;
@@ -129,18 +124,18 @@ class AdminUserServiceTest {
         @DisplayName("Email zajęty — rzuca IllegalArgumentException z informacją o emailu")
         void shouldThrowWhenEmailAlreadyExists() {
             when(userRepository.findByEmail(request.getEmail()))
-                .thenReturn(Optional.of(new User()));
+                    .thenReturn(Optional.of(new User()));
 
             assertThatThrownBy(() -> adminUserService.createUser(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("email");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("email");
         }
 
         @Test
         @DisplayName("Email zajęty — nie zapisuje użytkownika")
         void shouldNotSaveUserWhenEmailTaken() {
             when(userRepository.findByEmail(request.getEmail()))
-                .thenReturn(Optional.of(new User()));
+                    .thenReturn(Optional.of(new User()));
 
             assertThatThrownBy(() -> adminUserService.createUser(request));
 
@@ -154,8 +149,8 @@ class AdminUserServiceTest {
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> adminUserService.createUser(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Lokal");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Lokal");
         }
 
         @Test
@@ -209,8 +204,8 @@ class AdminUserServiceTest {
             when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> adminUserService.deleteUser(userId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Użytkownik");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Użytkownik");
         }
 
         @Test

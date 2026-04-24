@@ -1,5 +1,7 @@
 package pl.edu.ur.blokur.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.BuildingTreeDto;
@@ -8,12 +10,7 @@ import pl.edu.ur.blokur.models.Building;
 import pl.edu.ur.blokur.models.Staircase;
 import pl.edu.ur.blokur.repository.BuildingRepository;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-/**
- * Serwis realizujący logikę biznesową dla obiektów struktury budynków.
- */
+/** Serwis realizujący logikę biznesową dla obiektów struktury budynków. */
 @Service
 public class BuildingService {
 
@@ -25,14 +22,13 @@ public class BuildingService {
 
     /**
      * Zwraca pełne drzewo hierarchii budynków.
+     *
      * @return lista przetransformowanych budynków
      */
     @Transactional(readOnly = true)
     public List<BuildingTreeDto> getBuildingTree() {
         List<Building> buildings = buildingRepository.findAll();
-        return buildings.stream()
-            .map(this::mapToBuildingTreeDto)
-            .collect(Collectors.toList());
+        return buildings.stream().map(this::mapToBuildingTreeDto).collect(Collectors.toList());
     }
 
     private BuildingTreeDto mapToBuildingTreeDto(Building building) {
@@ -45,9 +41,10 @@ public class BuildingService {
         dto.setLongitude(building.getLongitude());
 
         if (building.getStaircases() != null) {
-            List<BuildingTreeDto.StaircaseDto> staircases = building.getStaircases().stream()
-                .map(this::mapToStaircaseDto)
-                .collect(Collectors.toList());
+            List<BuildingTreeDto.StaircaseDto> staircases =
+                    building.getStaircases().stream()
+                            .map(this::mapToStaircaseDto)
+                            .collect(Collectors.toList());
             dto.setStaircases(staircases);
         }
 
@@ -60,9 +57,10 @@ public class BuildingService {
         dto.setLabel(staircase.getLabel());
 
         if (staircase.getApartments() != null) {
-            List<BuildingTreeDto.ApartmentDto> apartments = staircase.getApartments().stream()
-                .map(this::mapToApartmentDto)
-                .collect(Collectors.toList());
+            List<BuildingTreeDto.ApartmentDto> apartments =
+                    staircase.getApartments().stream()
+                            .map(this::mapToApartmentDto)
+                            .collect(Collectors.toList());
             dto.setApartments(apartments);
         }
 

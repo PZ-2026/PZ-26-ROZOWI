@@ -1,13 +1,13 @@
 package pl.edu.ur.blokur.config;
 
+import java.util.Properties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
-import java.util.Properties;
-
+/** Konfiguracja wysyłki e-maili przez SMTP (JavaMailSender) w oparciu o właściwości aplikacji. */
 @Configuration
 public class MailConfig {
 
@@ -23,6 +23,11 @@ public class MailConfig {
     @Value("${spring.mail.password}")
     private String password;
 
+    /**
+     * Tworzy bean {@link JavaMailSender} skonfigurowany do wysyłki przez SMTP z STARTTLS.
+     *
+     * @return skonfigurowany klient SMTP
+     */
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();

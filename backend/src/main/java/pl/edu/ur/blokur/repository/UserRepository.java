@@ -1,14 +1,13 @@
 package pl.edu.ur.blokur.repository;
 
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import pl.edu.ur.blokur.models.User;
 
-import java.util.Optional;
-import java.util.UUID;
-
 /**
- * Repozytorium JPA dla encji {@link User}.
- * Udostępnia wyszukiwanie użytkownika po adresie email (login).
+ * Repozytorium JPA dla encji {@link User}. Udostępnia wyszukiwanie użytkownika po adresie email
+ * (login).
  */
 public interface UserRepository extends JpaRepository<User, UUID> {
 

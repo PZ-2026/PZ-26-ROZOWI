@@ -1,7 +1,5 @@
 package pl.edu.ur.blokur.models;
 
-import java.util.UUID;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -12,17 +10,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-
+import java.util.UUID;
 import org.hibernate.annotations.ColumnDefault;
 
-/**
- * Encja reprezentująca konkretną opcję wyboru (np. "Za", "Przeciw")
- * w ramach danej uchwały.
- */
+/** Encja reprezentująca konkretną opcję wyboru (np. "Za", "Przeciw") w ramach danej uchwały. */
 @Entity
-@Table(name = "resolution_options", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"id", "resolution_id"})
-})
+@Table(
+        name = "resolution_options",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"id", "resolution_id"})})
 public class ResolutionOption {
 
     @Id
