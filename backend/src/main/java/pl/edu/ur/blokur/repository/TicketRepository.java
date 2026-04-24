@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -159,4 +160,124 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     @Modifying
     @Query("UPDATE Ticket t SET t.status = :status WHERE t.id = :ticketId")
     void updateStatus(@Param("ticketId") UUID ticketId, @Param("status") String status);
+
+    /**
+     * Pobiera listę zgłoszeń jako DTO ze złączenia tabel tickets, users (autor), users
+     * (konserwator) oraz ticket_categories. Lokalizacja wyznaczana jest na podstawie pierwszej
+     * dostępnej wartości: lokal, klatka lub budynek. Kwerenda natywna SQL — wydajny JOIN przez 4
+     * tabele bez lazy loading.
+     *
+     * @return lista zgłoszeń z pełnymi danymi powiązanymi
+     */
+    @Query(
+            value =
+                    "SELECT t.id, t.ticket_number, t.title, t.status, "
+                            + "tc.name AS category_name, "
+                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
+                            + "CASE WHEN ass.id IS NOT NULL "
+                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
+                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
+                            + "t.created_at, t.closed_at "
+                            + "FROM tickets t "
+                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
+                            + "JOIN users a ON t.author_id = a.id "
+                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
+                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
+                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
+                            + "LEFT JOIN buildings b ON t.building_id = b.id "
+                            + "WHERE t.is_deleted = false "
+                            + "ORDER BY t.created_at DESC",
+            nativeQuery = true)
+    List<Object[]> findAllSummariesRaw();
+
+    /**
+     * Pobiera szczegóły pojedynczego zgłoszenia jako DTO ze złączenia tabel tickets, users (autor),
+     * users (konserwator), ticket_categories oraz apartments/staircases/buildings (lokalizacja).
+     * Kwerenda natywna SQL — wydajny JOIN przez wiele tabel.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @return dane zgłoszenia lub pusty Optional
+     */
+    @Query(
+            value =
+                    "SELECT t.id, t.ticket_number, t.title, t.status, "
+                            + "tc.name AS category_name, "
+                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
+                            + "CASE WHEN ass.id IS NOT NULL "
+                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
+                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
+                            + "t.created_at, t.closed_at "
+                            + "FROM tickets t "
+                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
+                            + "JOIN users a ON t.author_id = a.id "
+                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
+                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
+                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
+                            + "LEFT JOIN buildings b ON t.building_id = b.id "
+                            + "WHERE t.id = :ticketId AND t.is_deleted = false",
+            nativeQuery = true)
+    Optional<Object[]> findSummaryByIdRaw(@Param("ticketId") UUID ticketId);
+
+    /**
+     * Pobiera zgłoszenia przypisane do konserwatora jako DTO ze złączenia tabel tickets, users i
+     * ticket_categories. Kwerenda natywna SQL filtrująca po assigned_to_id.
+     *
+     * @param conservatorId identyfikator konserwatora
+     * @return lista zgłoszeń przypisanych do konserwatora z pełnymi danymi
+     */
+    @Query(
+            value =
+                    "SELECT t.id, t.ticket_number, t.title, t.status, "
+                            + "tc.name AS category_name, "
+                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
+                            + "CONCAT(ass.first_name, ' ', ass.last_name) AS assigned_to_name, "
+                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
+                            + "t.created_at, t.closed_at "
+                            + "FROM tickets t "
+                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
+                            + "JOIN users a ON t.author_id = a.id "
+                            + "JOIN users ass ON t.assigned_to_id = ass.id "
+                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
+                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
+                            + "LEFT JOIN buildings b ON t.building_id = b.id "
+                            + "WHERE ass.id = :conservatorId AND t.is_deleted = false "
+                            + "ORDER BY t.created_at DESC",
+            nativeQuery = true)
+    List<Object[]> findByConservatorRaw(@Param("conservatorId") UUID conservatorId);
+
+    /**
+     * Pobiera zgłoszenia widoczne dla mieszkańca (po lokalu, klatce lub budynku) ze złączenia tabel
+     * tickets, users i ticket_categories. Kwerenda natywna SQL z wielokrotnym LEFT JOIN.
+     *
+     * @param apartmentId identyfikator lokalu mieszkańca
+     * @param staircaseId identyfikator klatki mieszkańca
+     * @param buildingId identyfikator budynku mieszkańca
+     * @return lista zgłoszeń widocznych dla mieszkańca z pełnymi danymi
+     */
+    @Query(
+            value =
+                    "SELECT t.id, t.ticket_number, t.title, t.status, "
+                            + "tc.name AS category_name, "
+                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
+                            + "CASE WHEN ass.id IS NOT NULL "
+                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
+                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
+                            + "t.created_at, t.closed_at "
+                            + "FROM tickets t "
+                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
+                            + "JOIN users a ON t.author_id = a.id "
+                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
+                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
+                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
+                            + "LEFT JOIN buildings b ON t.building_id = b.id "
+                            + "WHERE t.is_deleted = false "
+                            + "AND (t.apartment_id = :apartmentId "
+                            + "OR t.staircase_id = :staircaseId "
+                            + "OR t.building_id = :buildingId) "
+                            + "ORDER BY t.created_at DESC",
+            nativeQuery = true)
+    List<Object[]> findForResidentRaw(
+            @Param("apartmentId") UUID apartmentId,
+            @Param("staircaseId") UUID staircaseId,
+            @Param("buildingId") UUID buildingId);
 }
