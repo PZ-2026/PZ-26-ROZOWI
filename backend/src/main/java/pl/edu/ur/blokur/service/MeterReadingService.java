@@ -27,36 +27,32 @@ public class MeterReadingService {
     private final ApartmentRepository apartmentRepository;
     private final MeterRepository meterRepository;
 
+    /**
+     * Tworzy serwis z wymaganymi zależnościami.
+     *
+     * @param meterReadingRepository repozytorium odczytów liczników
+     * @param apartmentRepository repozytorium lokali
+     * @param meterRepository repozytorium liczników
+     */
     public MeterReadingService(
-<<<<<<< HEAD
-        MeterReadingRepository meterReadingRepository,
-        ApartmentRepository apartmentRepository,
-        MeterRepository meterRepository
-    ) {
-=======
             MeterReadingRepository meterReadingRepository,
-            ApartmentRepository apartmentRepository) {
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+            ApartmentRepository apartmentRepository,
+            MeterRepository meterRepository) {
         this.meterReadingRepository = meterReadingRepository;
         this.apartmentRepository = apartmentRepository;
         this.meterRepository = meterRepository;
     }
 
     /**
-<<<<<<< HEAD
-     * Tworzy nowy odczyt dla wskazanego licznika w danym lokalu.
-     * Sprawdza duplikaty, regresję wartości oraz to, czy licznik jest aktywny
-     * i rzeczywiście przypisany do wskazanego lokalu.
-=======
-     * Tworzy nowy odczyt licznika dla wskazanego lokalu. Sprawdza duplikaty oraz regresję wartości.
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+     * Tworzy nowy odczyt dla wskazanego licznika w danym lokalu. Sprawdza duplikaty, regresję
+     * wartości oraz to, czy licznik jest aktywny i rzeczywiście przypisany do wskazanego lokalu.
      *
      * @param apartmentId identyfikator lokalu
      * @param request dane nowego odczytu
      * @return DTO z zapisanym odczytem
      * @throws NotFoundException jeśli lokal lub licznik nie istnieje
-     * @throws BusinessValidationException jeśli odczyt jest duplikatem, wartość się cofa
-     *         lub licznik nie należy do lokalu / jest nieaktywny
+     * @throws BusinessValidationException jeśli odczyt jest duplikatem, wartość się cofa lub
+     *     licznik nie należy do lokalu / jest nieaktywny
      */
     public MeterReadingResponse create(UUID apartmentId, MeterReadingRequest request) {
         Apartment apartment =
@@ -71,8 +67,7 @@ public class MeterReadingService {
 
         if (!meter.isActive()) {
             throw new BusinessValidationException(
-                "Licznik o ID " + meter.getId() + " jest nieaktywny — nie można dodać odczytu"
-            );
+                    "Licznik o ID " + meter.getId() + " jest nieaktywny — nie można dodać odczytu");
         }
 
         checkDuplicateOnCreate(request);
@@ -97,9 +92,6 @@ public class MeterReadingService {
      * @throws NotFoundException jeśli lokal nie istnieje
      */
     public Page<MeterReadingResponse> getAllByApartment(UUID apartmentId, int page, int size) {
-        // TODO: Implementacja weryfikacji uprawnień (Ownership/Authorization Check):
-        // 1. Jeśli rola to MIESZKANIEC -> sprawdź czy jest przypisany do apartmentId.
-        // 2. Jeśli rola to KONSERWATOR -> sprawdź czy ma aktywne zlecenie dla tego lokalu.
         if (!apartmentRepository.existsById(apartmentId)) {
             throw new NotFoundException("Lokal o ID " + apartmentId + " nie istnieje");
         }
@@ -176,77 +168,50 @@ public class MeterReadingService {
         meterReadingRepository.save(reading);
     }
 
-<<<<<<< HEAD
     private Meter resolveMeterForApartment(UUID meterId, UUID apartmentId) {
-        Meter meter = meterRepository.findById(meterId)
-            .orElseThrow(() -> new NotFoundException("Licznik o ID " + meterId + " nie istnieje"));
+        Meter meter =
+                meterRepository
+                        .findById(meterId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Licznik o ID " + meterId + " nie istnieje"));
 
         if (!meter.getApartment().getId().equals(apartmentId)) {
             throw new BusinessValidationException(
-                "Licznik o ID " + meterId + " nie jest przypisany do lokalu " + apartmentId
-            );
+                    "Licznik o ID " + meterId + " nie jest przypisany do lokalu " + apartmentId);
         }
         return meter;
     }
 
     private void checkDuplicateOnCreate(MeterReadingRequest request) {
         if (meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
-            request.getMeterId(), request.getReadingDate()
-        )) {
+                request.getMeterId(), request.getReadingDate())) {
             throw new BusinessValidationException(
-                "Odczyt dla licznika " + request.getMeterId() + " z datą "
-                    + request.getReadingDate() + " już istnieje"
-            );
+                    "Odczyt dla licznika "
+                            + request.getMeterId()
+                            + " z datą "
+                            + request.getReadingDate()
+                            + " już istnieje");
         }
     }
 
     private void checkDuplicateOnUpdate(MeterReadingRequest request, UUID currentId) {
         if (meterReadingRepository.existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
-            request.getMeterId(), request.getReadingDate(), currentId
-        )) {
+                request.getMeterId(), request.getReadingDate(), currentId)) {
             throw new BusinessValidationException(
-                "Odczyt dla licznika " + request.getMeterId() + " z datą "
-                    + request.getReadingDate() + " już istnieje"
-            );
+                    "Odczyt dla licznika "
+                            + request.getMeterId()
+                            + " z datą "
+                            + request.getReadingDate()
+                            + " już istnieje");
         }
     }
 
     private void checkRegressionOnCreate(MeterReadingRequest request) {
-        MeterReading latest = meterReadingRepository
-            .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(request.getMeterId());
-=======
-    private void checkDuplicateOnCreate(UUID apartmentId, MeterReadingRequest request) {
-        if (meterReadingRepository.existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                apartmentId, request.getMeterType(), request.getReadingDate())) {
-            throw new BusinessValidationException(
-                    "Odczyt licznika typu '"
-                            + request.getMeterType()
-                            + "' dla tego lokalu z datą "
-                            + request.getReadingDate()
-                            + " już istnieje");
-        }
-    }
-
-    private void checkDuplicateOnUpdate(
-            UUID apartmentId, MeterReadingRequest request, UUID currentId) {
-        if (meterReadingRepository
-                .existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
-                        apartmentId, request.getMeterType(), request.getReadingDate(), currentId)) {
-            throw new BusinessValidationException(
-                    "Odczyt licznika typu '"
-                            + request.getMeterType()
-                            + "' dla tego lokalu z datą "
-                            + request.getReadingDate()
-                            + " już istnieje");
-        }
-    }
-
-    private void checkRegressionOnCreate(UUID apartmentId, MeterReadingRequest request) {
         MeterReading latest =
-                meterReadingRepository
-                        .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                                apartmentId, request.getMeterType());
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+                meterReadingRepository.findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(
+                        request.getMeterId());
 
         if (latest == null) {
             return;
@@ -263,18 +228,10 @@ public class MeterReadingService {
         }
     }
 
-<<<<<<< HEAD
     private void checkRegressionOnUpdate(MeterReadingRequest request, UUID currentId) {
-        MeterReading latest = meterReadingRepository
-            .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(request.getMeterId());
-=======
-    private void checkRegressionOnUpdate(
-            UUID apartmentId, MeterReadingRequest request, UUID currentId) {
         MeterReading latest =
-                meterReadingRepository
-                        .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                                apartmentId, request.getMeterType());
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+                meterReadingRepository.findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(
+                        request.getMeterId());
 
         if (latest == null) {
             return;
@@ -295,27 +252,15 @@ public class MeterReadingService {
     private MeterReadingResponse toResponse(MeterReading reading) {
         Meter meter = reading.getMeter();
         return new MeterReadingResponse(
-<<<<<<< HEAD
-            reading.getId(),
-            reading.getApartment().getId(),
-            meter.getId(),
-            meter.getSerialNumber(),
-            meter.getMediumType(),
-            reading.getValue(),
-            reading.getReadingDate(),
-            reading.getCreatedAt(),
-            reading.getUpdatedAt(),
-            reading.getRecordedBy()
-        );
-=======
                 reading.getId(),
                 reading.getApartment().getId(),
-                reading.getMeterType(),
+                meter.getId(),
+                meter.getSerialNumber(),
+                meter.getMediumType(),
                 reading.getValue(),
                 reading.getReadingDate(),
                 reading.getCreatedAt(),
                 reading.getUpdatedAt(),
                 reading.getRecordedBy());
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
     }
 }

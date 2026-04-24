@@ -38,16 +38,9 @@ import pl.edu.ur.blokur.repository.MeterReadingRepository;
 import pl.edu.ur.blokur.repository.MeterRepository;
 
 /**
-<<<<<<< HEAD
- * Testy jednostkowe dla {@link MeterReadingService}.
- * Weryfikują logikę biznesową odczytów liczników: tworzenie, pobieranie,
- * aktualizację, usuwanie oraz walidację duplikatów i regresji wartości
- * po przejściu na referencję do encji {@link Meter}.
-=======
  * Testy jednostkowe dla {@link MeterReadingService}. Weryfikują logikę biznesową odczytów
  * liczników: tworzenie, pobieranie, aktualizację, usuwanie oraz walidację duplikatów i regresji
- * wartości.
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+ * wartości po przejściu na referencję do encji {@link Meter}.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MeterReadingService — serwis odczytów liczników")
@@ -57,15 +50,9 @@ class MeterReadingServiceTest {
 
     @Mock private ApartmentRepository apartmentRepository;
 
-<<<<<<< HEAD
-    @Mock
-    private MeterRepository meterRepository;
+    @Mock private MeterRepository meterRepository;
 
-    @InjectMocks
-    private MeterReadingService meterReadingService;
-=======
     @InjectMocks private MeterReadingService meterReadingService;
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
 
     private UUID apartmentId;
     private UUID meterId;
@@ -78,10 +65,7 @@ class MeterReadingServiceTest {
     @BeforeEach
     void setUp() {
         apartmentId = UUID.randomUUID();
-<<<<<<< HEAD
         meterId = UUID.randomUUID();
-=======
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
         readingId = UUID.randomUUID();
 
         apartment = new Apartment();
@@ -105,17 +89,10 @@ class MeterReadingServiceTest {
         existingReading.setCreatedAt(LocalDateTime.now());
         existingReading.setUpdatedAt(LocalDateTime.now());
 
-<<<<<<< HEAD
         validRequest = new MeterReadingRequest(
-            meterId,
-            new BigDecimal("150.0000"),
-            LocalDate.of(2026, 4, 1)
-        );
-=======
-        validRequest =
-                new MeterReadingRequest(
-                        "CIEPLA_WODA", new BigDecimal("150.0000"), LocalDate.of(2026, 4, 1));
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+                meterId,
+                new BigDecimal("150.0000"),
+                LocalDate.of(2026, 4, 1));
     }
 
     // =======================================================
@@ -139,26 +116,12 @@ class MeterReadingServiceTest {
             saved.setUpdatedAt(LocalDateTime.now());
 
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-<<<<<<< HEAD
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
-                eq(meterId), eq(LocalDate.of(2026, 4, 1))
-            )).thenReturn(false);
+                    eq(meterId), eq(LocalDate.of(2026, 4, 1)))).thenReturn(false);
             when(meterReadingRepository
-                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
-                .thenReturn(null);
-=======
-            when(meterReadingRepository
-                            .existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                                    eq(apartmentId),
-                                    eq("CIEPLA_WODA"),
-                                    eq(LocalDate.of(2026, 4, 1))))
-                    .thenReturn(false);
-            when(meterReadingRepository
-                            .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                                    eq(apartmentId), eq("CIEPLA_WODA")))
+                    .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
                     .thenReturn(null);
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
             when(meterReadingRepository.save(any(MeterReading.class))).thenReturn(saved);
 
             MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest);
@@ -191,8 +154,8 @@ class MeterReadingServiceTest {
             when(meterRepository.findById(meterId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining(meterId.toString());
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining(meterId.toString());
 
             verify(meterReadingRepository, never()).save(any());
         }
@@ -208,8 +171,8 @@ class MeterReadingServiceTest {
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
 
             assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
-                .isInstanceOf(BusinessValidationException.class)
-                .hasMessageContaining("nie jest przypisany");
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("nie jest przypisany");
 
             verify(meterReadingRepository, never()).save(any());
         }
@@ -223,8 +186,8 @@ class MeterReadingServiceTest {
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
 
             assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
-                .isInstanceOf(BusinessValidationException.class)
-                .hasMessageContaining("nieaktywny");
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("nieaktywny");
 
             verify(meterReadingRepository, never()).save(any());
         }
@@ -233,27 +196,13 @@ class MeterReadingServiceTest {
         @DisplayName("Duplikat (ten sam licznik i data) — rzuca BusinessValidationException")
         void shouldThrowWhenDuplicateReadingOnCreate() {
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-<<<<<<< HEAD
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
-                eq(meterId), eq(LocalDate.of(2026, 4, 1))
-            )).thenReturn(true);
-
-            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
-                .isInstanceOf(BusinessValidationException.class)
-                .hasMessageContaining(meterId.toString());
-=======
-            when(meterReadingRepository
-                            .existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                                    eq(apartmentId),
-                                    eq("CIEPLA_WODA"),
-                                    eq(LocalDate.of(2026, 4, 1))))
-                    .thenReturn(true);
+                    eq(meterId), eq(LocalDate.of(2026, 4, 1)))).thenReturn(true);
 
             assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
                     .isInstanceOf(BusinessValidationException.class)
-                    .hasMessageContaining("CIEPLA_WODA");
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+                    .hasMessageContaining(meterId.toString());
 
             verify(meterReadingRepository, never()).save(any());
         }
@@ -261,37 +210,18 @@ class MeterReadingServiceTest {
         @Test
         @DisplayName("Wartość niższa niż ostatni odczyt — rzuca BusinessValidationException")
         void shouldThrowWhenNewValueIsLowerThanLastReading() {
-<<<<<<< HEAD
             MeterReadingRequest regression = new MeterReadingRequest(
-                meterId,
-                new BigDecimal("50.0000"),
-                LocalDate.of(2026, 4, 1)
-            );
+                    meterId,
+                    new BigDecimal("50.0000"),
+                    LocalDate.of(2026, 4, 1));
 
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(any(), any()))
-                .thenReturn(false);
-            when(meterReadingRepository
-                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
-                .thenReturn(existingReading);
-=======
-            MeterReadingRequest regression =
-                    new MeterReadingRequest(
-                            "CIEPLA_WODA",
-                            new BigDecimal("50.0000"), // mniejsza niż 100 w existingReading
-                            LocalDate.of(2026, 4, 1));
-
-            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-            when(meterReadingRepository
-                            .existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                                    any(), any(), any()))
                     .thenReturn(false);
             when(meterReadingRepository
-                            .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                                    eq(apartmentId), eq("CIEPLA_WODA")))
+                    .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
                     .thenReturn(existingReading);
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
 
             assertThatThrownBy(() -> meterReadingService.create(apartmentId, regression))
                     .isInstanceOf(BusinessValidationException.class)
@@ -313,23 +243,12 @@ class MeterReadingServiceTest {
             saved.setUpdatedAt(LocalDateTime.now());
 
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
-<<<<<<< HEAD
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(any(), any()))
-                .thenReturn(false);
-            when(meterReadingRepository
-                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(any()))
-                .thenReturn(null);
-=======
-            when(meterReadingRepository
-                            .existsByApartmentIdAndMeterTypeAndReadingDateAndDeletedFalse(
-                                    any(), any(), any()))
                     .thenReturn(false);
             when(meterReadingRepository
-                            .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                                    any(), any()))
+                    .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(any()))
                     .thenReturn(null);
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
             when(meterReadingRepository.save(any())).thenReturn(saved);
 
             MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest);
@@ -385,8 +304,7 @@ class MeterReadingServiceTest {
             Page<MeterReading> page = new PageImpl<>(List.of(existingReading));
             when(apartmentRepository.existsById(apartmentId)).thenReturn(true);
             when(meterReadingRepository.findByApartmentIdAndDeletedFalse(
-                            eq(apartmentId), any(Pageable.class)))
-                    .thenReturn(page);
+                    eq(apartmentId), any(Pageable.class))).thenReturn(page);
 
             Page<MeterReadingResponse> result =
                     meterReadingService.getAllByApartment(apartmentId, 0, 10);
@@ -418,17 +336,10 @@ class MeterReadingServiceTest {
         @Test
         @DisplayName("Poprawne dane — zwraca zaktualizowane DTO")
         void shouldUpdateReadingSuccessfully() {
-<<<<<<< HEAD
             MeterReadingRequest updateRequest = new MeterReadingRequest(
-                meterId,
-                new BigDecimal("200.0000"),
-                LocalDate.of(2026, 5, 1)
-            );
-=======
-            MeterReadingRequest updateRequest =
-                    new MeterReadingRequest(
-                            "CIEPLA_WODA", new BigDecimal("200.0000"), LocalDate.of(2026, 5, 1));
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+                    meterId,
+                    new BigDecimal("200.0000"),
+                    LocalDate.of(2026, 5, 1));
 
             MeterReading updated = new MeterReading();
             updated.setId(readingId);
@@ -440,30 +351,13 @@ class MeterReadingServiceTest {
             updated.setUpdatedAt(LocalDateTime.now());
 
             when(meterReadingRepository.findByIdAndDeletedFalse(readingId))
-<<<<<<< HEAD
-                .thenReturn(Optional.of(existingReading));
-            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
-            when(meterReadingRepository
-                .existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
-                    eq(meterId), eq(LocalDate.of(2026, 5, 1)), eq(readingId)
-                )).thenReturn(false);
-            when(meterReadingRepository
-                .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
-                .thenReturn(existingReading);
-=======
                     .thenReturn(Optional.of(existingReading));
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+            when(meterReadingRepository.existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
+                    eq(meterId), eq(LocalDate.of(2026, 5, 1)), eq(readingId))).thenReturn(false);
             when(meterReadingRepository
-                            .existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
-                                    eq(apartmentId),
-                                    eq("CIEPLA_WODA"),
-                                    eq(LocalDate.of(2026, 5, 1)),
-                                    eq(readingId)))
-                    .thenReturn(false);
-            when(meterReadingRepository
-                            .findTopByApartmentIdAndMeterTypeAndDeletedFalseOrderByReadingDateDesc(
-                                    eq(apartmentId), eq("CIEPLA_WODA")))
+                    .findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(eq(meterId)))
                     .thenReturn(existingReading);
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
             when(meterReadingRepository.save(any())).thenReturn(updated);
 
             MeterReadingResponse response = meterReadingService.update(readingId, updateRequest);
@@ -484,31 +378,16 @@ class MeterReadingServiceTest {
         @Test
         @DisplayName("Duplikat podczas aktualizacji — rzuca BusinessValidationException")
         void shouldThrowWhenDuplicateOnUpdate() {
-<<<<<<< HEAD
             MeterReadingRequest updateRequest = new MeterReadingRequest(
-                meterId,
-                new BigDecimal("200.0000"),
-                LocalDate.of(2026, 4, 1)
-            );
-
-            when(meterReadingRepository.findByIdAndDeletedFalse(readingId))
-                .thenReturn(Optional.of(existingReading));
-            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
-            when(meterReadingRepository
-                .existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(any(), any(), any()))
-                .thenReturn(true);
-=======
-            MeterReadingRequest updateRequest =
-                    new MeterReadingRequest(
-                            "CIEPLA_WODA", new BigDecimal("200.0000"), LocalDate.of(2026, 4, 1));
+                    meterId,
+                    new BigDecimal("200.0000"),
+                    LocalDate.of(2026, 4, 1));
 
             when(meterReadingRepository.findByIdAndDeletedFalse(readingId))
                     .thenReturn(Optional.of(existingReading));
-            when(meterReadingRepository
-                            .existsByApartmentIdAndMeterTypeAndReadingDateAndIdNotAndDeletedFalse(
-                                    any(), any(), any(), any()))
-                    .thenReturn(true);
->>>>>>> ffc02e6 (uzupełnienie Javadoc w modelach, DTO i serwisach backendu)
+            when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
+            when(meterReadingRepository.existsByMeterIdAndReadingDateAndIdNotAndDeletedFalse(
+                    any(), any(), any())).thenReturn(true);
 
             assertThatThrownBy(() -> meterReadingService.update(readingId, updateRequest))
                     .isInstanceOf(BusinessValidationException.class);
