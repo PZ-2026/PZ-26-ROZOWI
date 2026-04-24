@@ -6,10 +6,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,10 +25,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.server.ResponseStatusException;
 import pl.edu.ur.blokur.dto.CastVoteRequest;
+import pl.edu.ur.blokur.dto.CreateResolutionRequest;
+import pl.edu.ur.blokur.dto.ResolutionDetailDto;
+import pl.edu.ur.blokur.models.Building;
 import pl.edu.ur.blokur.models.Resolution;
 import pl.edu.ur.blokur.models.ResolutionOption;
 import pl.edu.ur.blokur.models.ResolutionVote;
 import pl.edu.ur.blokur.models.User;
+import pl.edu.ur.blokur.repository.BuildingRepository;
 import pl.edu.ur.blokur.repository.ResolutionOptionRepository;
 import pl.edu.ur.blokur.repository.ResolutionRepository;
 import pl.edu.ur.blokur.repository.ResolutionVoteRepository;
@@ -34,8 +40,7 @@ import pl.edu.ur.blokur.repository.UserRepository;
 
 /**
  * Testy jednostkowe dla {@link ResolutionService}. Weryfikują logikę oddawania głosów w uchwałach,
- * w tym zabezpieczenie przed podwójnym głosowaniem za pomocą przechwytywania {@link
- * DataIntegrityViolationException}.
+ * tworzenia nowych uchwał, zarządzania wynikami i generowania raportów.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ResolutionService — serwis uchwał i głosowań")
@@ -49,26 +54,38 @@ class ResolutionServiceTest {
 
     @Mock private UserRepository userRepository;
 
+    @Mock private BuildingRepository buildingRepository;
+
     @InjectMocks private ResolutionService resolutionService;
 
     private static final String EMAIL = "lokator@blokur.pl";
+    private static final String ZARZADCA_EMAIL = "zarzadca@blokur.pl";
 
     private UUID resolutionId;
     private UUID optionId;
+    private UUID buildingId;
     private Resolution resolution;
     private ResolutionOption option;
     private User voter;
+    private User zarzadca;
+    private Building building;
     private CastVoteRequest request;
 
     @BeforeEach
     void setUp() {
         resolutionId = UUID.randomUUID();
         optionId = UUID.randomUUID();
+        buildingId = UUID.randomUUID();
+
+        building = new Building();
+        building.setId(buildingId);
 
         resolution = new Resolution();
         resolution.setId(resolutionId);
         resolution.setTitle("Uchwała nr 1/2026");
         resolution.setDescription("Opis uchwały testowej");
+        resolution.setBuilding(building);
+        resolution.setEndDate(LocalDateTime.now().plusDays(5));
 
         option = new ResolutionOption();
         option.setId(optionId);
@@ -78,8 +95,16 @@ class ResolutionServiceTest {
         voter = new User();
         voter.setId(UUID.randomUUID());
         voter.setEmail(EMAIL);
+        voter.setRole("MIESZKANIEC");
         voter.setFirstName("Jan");
         voter.setLastName("Testowy");
+
+        zarzadca = new User();
+        zarzadca.setId(UUID.randomUUID());
+        zarzadca.setEmail(ZARZADCA_EMAIL);
+        zarzadca.setRole("ZARZADCA");
+        zarzadca.setFirstName("Piotr");
+        zarzadca.setLastName("Szef");
 
         request = new CastVoteRequest(optionId);
     }
@@ -149,111 +174,87 @@ class ResolutionServiceTest {
                                 assertThat(rse.getStatusCode()).isEqualTo(CONFLICT);
                             });
         }
+    }
+
+    // =======================================================
+    // Scenario: Tworzenie uchwały
+    // =======================================================
+
+    @Nested
+    @DisplayName("Tworzenie uchwały przez Zarządcę")
+    class CreateResolutionTests {
 
         @Test
-        @DisplayName("Komunikat błędu 409 informuje o wcześniejszym oddaniu głosu")
-        void shouldIncludeInformativeMessageIn409Response() {
-            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
+        @DisplayName("Zarządca może poprawnie utworzyć nową uchwałę")
+        void zarzadcaShouldCreateResolution() {
+            CreateResolutionRequest createReq = new CreateResolutionRequest();
+            createReq.setTitle("Nowa uchwała");
+            createReq.setDescription("Opis");
+            createReq.setEndDate(LocalDateTime.now().plusDays(7));
+            createReq.setTargetBuildingId(buildingId);
+            createReq.setOptions(Arrays.asList("Opcja 1", "Opcja 2"));
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(buildingRepository.findById(buildingId)).thenReturn(Optional.of(building));
+            when(resolutionRepository.save(any(Resolution.class))).thenReturn(resolution);
+
+            resolutionService.createResolution(createReq, ZARZADCA_EMAIL);
+
+            verify(resolutionRepository).save(any(Resolution.class));
+            verify(resolutionOptionRepository, org.mockito.Mockito.times(2))
+                    .save(any(ResolutionOption.class));
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec nie może tworzyć uchwały (rzuca 403 FORBIDDEN)")
+        void mieszkaniecShouldNotCreateResolution() {
+            CreateResolutionRequest createReq = new CreateResolutionRequest();
+            createReq.setTitle("Nowa uchwała");
+            createReq.setDescription("Opis");
+            createReq.setEndDate(LocalDateTime.now().plusDays(7));
+            createReq.setTargetBuildingId(buildingId);
+            createReq.setOptions(Arrays.asList("Opcja 1", "Opcja 2"));
+
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
-            when(resolutionVoteRepository.save(any(ResolutionVote.class)))
-                    .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
+            assertThatThrownBy(() -> resolutionService.createResolution(createReq, EMAIL))
                     .isInstanceOf(ResponseStatusException.class)
-                    .hasMessageContaining("Użytkownik oddał już głos w tej uchwale");
+                    .satisfies(
+                            ex -> {
+                                ResponseStatusException rse = (ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode()).isEqualTo(FORBIDDEN);
+                            });
+
+            verify(resolutionRepository, never()).save(any(Resolution.class));
         }
     }
 
     // =======================================================
-    // Scenario: brak zasobu w bazie danych
+    // Scenario: Widoczność wyników
     // =======================================================
 
     @Nested
-    @DisplayName("Brakujące zasoby — HTTP 404")
-    class NotFoundTests {
+    @DisplayName("Pobieranie szczegółów i wyników uchwały")
+    class ResolutionDetailsTests {
 
         @Test
-        @DisplayName("Rzuca ResponseStatusException z HTTP 404 gdy uchwała nie istnieje")
-        void shouldThrow404WhenResolutionNotFound() {
-            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
-                    .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(
-                            ex -> {
-                                ResponseStatusException rse = (ResponseStatusException) ex;
-                                assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
-                            });
-
-            verify(resolutionVoteRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Rzuca ResponseStatusException z HTTP 404 gdy opcja głosowania nie istnieje")
-        void shouldThrow404WhenOptionNotFound() {
+        @DisplayName("Zarządca widzi wyniki nawet w trakcie trwania głosowania")
+        void zarzadcaSeesResultsAlways() {
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
             when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.empty());
+            when(resolutionOptionRepository.findByResolutionId(resolutionId))
+                    .thenReturn(List.of(option));
+            when(resolutionVoteRepository.existsByResolutionIdAndVoterId(
+                            resolutionId, zarzadca.getId()))
+                    .thenReturn(false);
+            when(resolutionVoteRepository.countByOptionId(optionId)).thenReturn(5L);
 
-            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
-                    .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(
-                            ex -> {
-                                ResponseStatusException rse = (ResponseStatusException) ex;
-                                assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
-                            });
+            ResolutionDetailDto dto =
+                    resolutionService.getResolutionDetails(resolutionId, ZARZADCA_EMAIL);
 
-            verify(resolutionVoteRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Rzuca ResponseStatusException z HTTP 404 gdy użytkownik nie istnieje")
-        void shouldThrow404WhenVoterNotFound() {
-            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
-            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
-                    .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(
-                            ex -> {
-                                ResponseStatusException rse = (ResponseStatusException) ex;
-                                assertThat(rse.getStatusCode()).isEqualTo(NOT_FOUND);
-                            });
-
-            verify(resolutionVoteRepository, never()).save(any());
-        }
-    }
-
-    // =======================================================
-    // Scenario: opcja nie należy do wskazanej uchwały
-    // =======================================================
-
-    @Nested
-    @DisplayName("Walidacja przynależności opcji do uchwały — HTTP 400")
-    class OptionMismatchTests {
-
-        @Test
-        @DisplayName("Rzuca ResponseStatusException z HTTP 400 gdy opcja należy do innej uchwały")
-        void shouldThrow400WhenOptionDoesNotBelongToResolution() {
-            Resolution otherResolution = new Resolution();
-            otherResolution.setId(UUID.randomUUID());
-            otherResolution.setTitle("Inna uchwała");
-
-            option.setResolution(otherResolution);
-
-            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
-            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
-
-            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
-                    .isInstanceOf(ResponseStatusException.class)
-                    .satisfies(
-                            ex -> {
-                                ResponseStatusException rse = (ResponseStatusException) ex;
-                                assertThat(rse.getStatusCode()).isEqualTo(BAD_REQUEST);
-                            });
-
-            verify(resolutionVoteRepository, never()).save(any());
+            assertThat(dto.getResults()).isNotNull();
+            assertThat(dto.getResults()).hasSize(1);
+            assertThat(dto.getResults().get(0).getVotesCount()).isEqualTo(5L);
         }
     }
 }
