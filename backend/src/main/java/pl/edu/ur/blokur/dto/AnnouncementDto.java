@@ -14,6 +14,8 @@ public class AnnouncementDto {
     private String title;
     private String content;
     private String authorName;
+    private String targetType;
+    private String attachmentUrl;
     private LocalDateTime plannedDate;
     private LocalDateTime createdAt;
 
@@ -28,6 +30,8 @@ public class AnnouncementDto {
      * @param title tytuł ogłoszenia
      * @param content treść ogłoszenia
      * @param authorName imię i nazwisko autora
+     * @param targetType typ zasięgu ogłoszenia
+     * @param attachmentUrl URL do załącznika PDF
      * @param plannedDate data planowanego opublikowania
      * @param createdAt data i czas utworzenia rekordu
      */
@@ -37,6 +41,8 @@ public class AnnouncementDto {
             String title,
             String content,
             String authorName,
+            String targetType,
+            String attachmentUrl,
             LocalDateTime plannedDate,
             LocalDateTime createdAt) {
         this.id = id;
@@ -44,6 +50,8 @@ public class AnnouncementDto {
         this.title = title;
         this.content = content;
         this.authorName = authorName;
+        this.targetType = targetType;
+        this.attachmentUrl = attachmentUrl;
         this.plannedDate = plannedDate;
         this.createdAt = createdAt;
     }
@@ -136,6 +144,42 @@ public class AnnouncementDto {
      */
     public void setAuthorName(String authorName) {
         this.authorName = authorName;
+    }
+
+    /**
+     * Zwraca typ zasięgu ogłoszenia.
+     *
+     * @return typ zasięgu
+     */
+    public String getTargetType() {
+        return targetType;
+    }
+
+    /**
+     * Ustawia typ zasięgu ogłoszenia.
+     *
+     * @param targetType typ zasięgu
+     */
+    public void setTargetType(String targetType) {
+        this.targetType = targetType;
+    }
+
+    /**
+     * Zwraca URL do załącznika PDF.
+     *
+     * @return URL do załącznika lub null
+     */
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    /**
+     * Ustawia URL do załącznika PDF.
+     *
+     * @param attachmentUrl URL do załącznika
+     */
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
     }
 
     /**
