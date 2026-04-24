@@ -98,7 +98,7 @@ public class Ticket {
     private List<TicketHistory> history = new ArrayList<>();
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TicketMedia> media = new ArrayList<>();
+    private List<TicketImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TicketComment> comments = new ArrayList<>();
@@ -446,21 +446,21 @@ public class Ticket {
     }
 
     /**
-     * Zwraca listę mediów (zdjęć) dołączonych do zgłoszenia.
+     * Zwraca listę zdjęć dołączonych do zgłoszenia.
      *
-     * @return lista mediów
+     * @return lista zdjęć
      */
-    public List<TicketMedia> getMedia() {
-        return media;
+    public List<TicketImage> getImages() {
+        return images;
     }
 
     /**
-     * Ustawia listę mediów dołączonych do zgłoszenia.
+     * Ustawia listę zdjęć dołączonych do zgłoszenia.
      *
-     * @param media lista mediów
+     * @param images lista zdjęć
      */
-    public void setMedia(List<TicketMedia> media) {
-        this.media = media;
+    public void setImages(List<TicketImage> images) {
+        this.images = images;
     }
 
     /**

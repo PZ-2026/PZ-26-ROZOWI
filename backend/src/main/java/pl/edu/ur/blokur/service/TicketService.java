@@ -246,6 +246,15 @@ public class TicketService {
         return dto;
     }
 
+    /**
+     * Przypisuje zgłoszenie do konserwatora, ustawiając planowaną datę wizyty i notatkę. Operacja
+     * dostępna tylko dla zarządcy.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request dane z żądania (id konserwatora, data, notatka)
+     * @param username email zalogowanego użytkownika
+     * @return zaktualizowane DTO zgłoszenia
+     */
     @Transactional
     public TicketDetailDto assignTicket(
             UUID ticketId, TicketAssignRequest request, String username) {
@@ -287,6 +296,14 @@ public class TicketService {
         return mapToDetail(ticketRepository.save(ticket));
     }
 
+    /**
+     * Zamyka zgłoszenie będące w stanie ZAKONCZONE_DO_WERYFIKACJI. Generuje protokół PDF i zapisuje
+     * jako nowy Document. Operacja dostępna tylko dla zarządcy.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param username email zalogowanego użytkownika
+     * @return zaktualizowane DTO zgłoszenia
+     */
     @Transactional
     public TicketDetailDto closeTicket(UUID ticketId, String username) {
         Ticket ticket =
@@ -309,9 +326,7 @@ public class TicketService {
                             + " zamknięte.");
         }
 
-        ticket.setStatus(TicketStatus.ZAMKNIETE);
-        ticket.setClosedAt(LocalDateTime.now());
-
+        // Generowanie PDF
         String conservatorName =
                 ticket.getAssignedTo() != null
                         ? ticket.getAssignedTo().getFirstName()
@@ -322,9 +337,30 @@ public class TicketService {
                 ticket.getWorkDescription() != null
                         ? ticket.getWorkDescription()
                         : ticket.getDescription();
+        List<String> beforeImages =
+                ticket.getImages().stream()
+                        .filter(
+                                img ->
+                                        img.getImageType()
+                                                == pl.edu.ur.blokur.models.TicketImageType.BEFORE)
+                        .map(pl.edu.ur.blokur.models.TicketImage::getFilePath)
+                        .toList();
+        List<String> afterImages =
+                ticket.getImages().stream()
+                        .filter(
+                                img ->
+                                        img.getImageType()
+                                                == pl.edu.ur.blokur.models.TicketImageType.AFTER)
+                        .map(pl.edu.ur.blokur.models.TicketImage::getFilePath)
+                        .toList();
+
         WorkAcceptanceProtocolRequest pdfRequest =
                 new WorkAcceptanceProtocolRequest(
-                        ticket.getTicketNumber(), descriptionToPdf, conservatorName);
+                        ticket.getTicketNumber(),
+                        descriptionToPdf,
+                        conservatorName,
+                        beforeImages,
+                        afterImages);
 
         try {
             byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(pdfRequest);
@@ -351,6 +387,9 @@ public class TicketService {
         } catch (Exception e) {
             throw new RuntimeException("Błąd podczas generowania i zapisu pliku PDF", e);
         }
+
+        ticket.setStatus(TicketStatus.ZAMKNIETE);
+        ticket.setClosedAt(LocalDateTime.now());
 
         TicketHistory history = new TicketHistory();
         history.setTicket(ticket);
@@ -379,11 +418,11 @@ public class TicketService {
                     "Brak uprawnień. Tylko zarządca może odrzucić zgłoszenie.");
         }
 
-        ticket.setStatus(TicketStatus.ODRZUCONE);
-
         String currentNote =
                 ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
         ticket.setInternalNote(currentNote + "Powód odrzucenia: " + request.getReason());
+
+        ticket.setStatus(TicketStatus.ODRZUCONE);
 
         TicketHistory history = new TicketHistory();
         history.setTicket(ticket);
@@ -533,7 +572,17 @@ public class TicketService {
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
-        TicketStatus newStatus = TicketStatus.valueOf(request.getStatus());
+        if ("KONSERWATOR".equals(user.getRole())) {
+            if (ticket.getAssignedTo() == null
+                    || !ticket.getAssignedTo().getId().equals(user.getId())) {
+                throw new BusinessValidationException(
+                        "Konserwator może zmieniać status tylko własnych zgłoszeń");
+            }
+        } else if (!"ZARZADCA".equals(user.getRole())) {
+            throw new BusinessValidationException("Brak uprawnień do zmiany statusu zgłoszenia");
+        }
+
+        TicketStatus newStatus = request.getStatus();
         ticketStateMachine.validateTransition(ticket.getStatus(), newStatus);
 
         recordStatusChange(ticket, newStatus, user, request.getComment());
