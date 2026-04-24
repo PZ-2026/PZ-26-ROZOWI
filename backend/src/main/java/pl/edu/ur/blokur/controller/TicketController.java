@@ -11,20 +11,22 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pl.edu.ur.blokur.dto.TicketAssignRequest;
+import pl.edu.ur.blokur.dto.TicketCompletionRequest;
 import pl.edu.ur.blokur.dto.TicketDetailDto;
 import pl.edu.ur.blokur.dto.TicketFilterParams;
+import pl.edu.ur.blokur.dto.TicketRejectRequest;
 import pl.edu.ur.blokur.dto.TicketRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
-import pl.edu.ur.blokur.dto.TicketAssignRequest;
-import pl.edu.ur.blokur.dto.TicketRejectRequest;
+import pl.edu.ur.blokur.dto.TicketSuspendRequest;
 import pl.edu.ur.blokur.service.TicketService;
-import org.springframework.web.bind.annotation.PatchMapping;
 
 /**
  * Kontroler obsługujący żądania HTTP dla modułu zgłoszeń. Tworzenie zgłoszeń dostępne wyłącznie dla
@@ -124,8 +126,8 @@ public class TicketController {
     }
 
     /**
-     * Przypisuje konserwatora do zgłoszenia. Zmienia status na ZAPLANOWANO.
-     * Dostępne tylko dla roli ZARZADCA.
+     * Przypisuje konserwatora do zgłoszenia. Zmienia status na ZAPLANOWANO. Dostępne tylko dla roli
+     * ZARZADCA.
      */
     @PatchMapping("/{id}/assign")
     @PreAuthorize("hasRole('ZARZADCA')")
@@ -135,10 +137,7 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.assignTicket(id, request, auth.getName()));
     }
 
-    /**
-     * Zamyka zgłoszenie i generuje protokół PDF.
-     * Dostępne tylko dla roli ZARZADCA.
-     */
+    /** Zamyka zgłoszenie i generuje protokół PDF. Dostępne tylko dla roli ZARZADCA. */
     @PatchMapping("/{id}/close")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<TicketDetailDto> closeTicket(@PathVariable UUID id) {
@@ -147,8 +146,8 @@ public class TicketController {
     }
 
     /**
-     * Odrzuca zgłoszenie z podaniem powodu. Zmienia status na ODRZUCONE.
-     * Dostępne tylko dla roli ZARZADCA.
+     * Odrzuca zgłoszenie z podaniem powodu. Zmienia status na ODRZUCONE. Dostępne tylko dla roli
+     * ZARZADCA.
      */
     @PatchMapping("/{id}/reject")
     @PreAuthorize("hasRole('ZARZADCA')")
@@ -156,5 +155,40 @@ public class TicketController {
             @PathVariable UUID id, @Valid @RequestBody TicketRejectRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(ticketService.rejectTicket(id, request, auth.getName()));
+    }
+
+    /**
+     * Rozpoczyna prace nad zgłoszeniem przez przypisanego konserwatora. Zmienia status na
+     * W_REALIZACJI. Dostępne tylko dla roli KONSERWATOR.
+     */
+    @PatchMapping("/{id}/start")
+    @PreAuthorize("hasRole('KONSERWATOR')")
+    public ResponseEntity<TicketDetailDto> startWork(@PathVariable UUID id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.startWork(id, auth.getName()));
+    }
+
+    /**
+     * Wstrzymuje prace nad zgłoszeniem przez przypisanego konserwatora z podaniem powodu. Zmienia
+     * status na WSTRZYMANO. Dostępne tylko dla roli KONSERWATOR.
+     */
+    @PatchMapping("/{id}/suspend")
+    @PreAuthorize("hasRole('KONSERWATOR')")
+    public ResponseEntity<TicketDetailDto> suspendWork(
+            @PathVariable UUID id, @Valid @RequestBody TicketSuspendRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.suspendWork(id, request, auth.getName()));
+    }
+
+    /**
+     * Kończy prace nad zgłoszeniem przez przypisanego konserwatora podając opis prac. Zmienia
+     * status na ZAKONCZONE_DO_WERYFIKACJI. Dostępne tylko dla roli KONSERWATOR.
+     */
+    @PostMapping("/{id}/completion")
+    @PreAuthorize("hasRole('KONSERWATOR')")
+    public ResponseEntity<TicketDetailDto> completeWork(
+            @PathVariable UUID id, @Valid @RequestBody TicketCompletionRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.completeWork(id, request, auth.getName()));
     }
 }

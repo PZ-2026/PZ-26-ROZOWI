@@ -9,9 +9,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -43,6 +48,9 @@ class DocumentServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
         admin = new User();
         admin.setId(UUID.randomUUID());
         admin.setRole("ZARZADCA");
@@ -69,6 +77,11 @@ class DocumentServiceTest {
         document.setCreatedAt(LocalDateTime.now());
         document.setApartment(apartment);
         document.setFileUrl(tempFile.toAbsolutePath().toString());
+    }
+
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
     }
 
     @Test

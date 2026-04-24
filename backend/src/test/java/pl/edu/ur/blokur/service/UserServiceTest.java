@@ -27,7 +27,9 @@ class UserServiceTest {
     @DisplayName("Powinno pobrac uzytkownikow z aktywnymi zgloszeniami")
     void shouldGetUsersWithActiveTickets() {
         String role = "KONSERWATOR";
-        UserWithTicketsDto dto = new UserWithTicketsDto(UUID.randomUUID(), "Jan", "Kowalski", "jan@blokur.pl", "123456789", 5);
+        UserWithTicketsDto dto =
+                new UserWithTicketsDto(
+                        UUID.randomUUID(), "Jan", "Kowalski", "jan@blokur.pl", "123456789", 5);
         when(userRepository.findUsersWithActiveTicketsByRole(role)).thenReturn(List.of(dto));
 
         List<UserWithTicketsDto> result = userService.getUsersWithActiveTicketCountByRole(role);
