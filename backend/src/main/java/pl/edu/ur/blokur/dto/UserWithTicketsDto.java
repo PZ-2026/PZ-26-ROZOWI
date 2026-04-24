@@ -13,7 +13,13 @@ public class UserWithTicketsDto {
 
     public UserWithTicketsDto() {}
 
-    public UserWithTicketsDto(UUID id, String firstName, String lastName, String email, String phone, long activeTicketsCount) {
+    public UserWithTicketsDto(
+            UUID id,
+            String firstName,
+            String lastName,
+            String email,
+            String phone,
+            long activeTicketsCount) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;

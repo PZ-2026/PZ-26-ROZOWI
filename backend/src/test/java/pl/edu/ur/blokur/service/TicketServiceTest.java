@@ -21,30 +21,32 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pl.edu.ur.blokur.dto.TicketAssignRequest;
+import pl.edu.ur.blokur.dto.TicketCompletionRequest;
 import pl.edu.ur.blokur.dto.TicketDetailDto;
 import pl.edu.ur.blokur.dto.TicketFilterParams;
+import pl.edu.ur.blokur.dto.TicketRejectRequest;
 import pl.edu.ur.blokur.dto.TicketRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
+import pl.edu.ur.blokur.dto.TicketSuspendRequest;
+import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Building;
+import pl.edu.ur.blokur.models.Document;
 import pl.edu.ur.blokur.models.Staircase;
 import pl.edu.ur.blokur.models.Ticket;
 import pl.edu.ur.blokur.models.TicketCategory;
+import pl.edu.ur.blokur.models.TicketHistory;
 import pl.edu.ur.blokur.models.TicketStatus;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
+import pl.edu.ur.blokur.repository.DocumentRepository;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
+import pl.edu.ur.blokur.repository.TicketHistoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
-import pl.edu.ur.blokur.repository.TicketHistoryRepository;
-import pl.edu.ur.blokur.repository.DocumentRepository;
-import pl.edu.ur.blokur.models.TicketHistory;
-import pl.edu.ur.blokur.models.Document;
-import pl.edu.ur.blokur.dto.TicketAssignRequest;
-import pl.edu.ur.blokur.dto.TicketRejectRequest;
-import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 
 /**
  * Testy jednostkowe dla {@link TicketService}. Weryfikują logikę tworzenia zgłoszeń, pobierania
@@ -616,16 +618,18 @@ class TicketServiceTest {
         @DisplayName("closeTicket — zamyka zgloszenie i generuje PDF")
         void shouldCloseTicket() {
             sampleTicket.setStatus(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
-            
+
             when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
             when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
-            when(pdfGeneratorService.generateWorkAcceptanceProtocol(any())).thenReturn(new byte[]{1, 2, 3});
+            when(pdfGeneratorService.generateWorkAcceptanceProtocol(any()))
+                    .thenReturn(new byte[] {1, 2, 3});
             when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
 
             TicketDetailDto result = ticketService.closeTicket(ticketId, ZARZADCA_EMAIL);
 
             assertThat(result.getStatus()).isEqualTo("ZAMKNIETE");
-            verify(pdfGeneratorService).generateWorkAcceptanceProtocol(any(WorkAcceptanceProtocolRequest.class));
+            verify(pdfGeneratorService)
+                    .generateWorkAcceptanceProtocol(any(WorkAcceptanceProtocolRequest.class));
             verify(documentRepository).save(any(Document.class));
             verify(ticketHistoryRepository).save(any(TicketHistory.class));
         }
@@ -643,6 +647,86 @@ class TicketServiceTest {
             TicketDetailDto result = ticketService.rejectTicket(ticketId, request, ZARZADCA_EMAIL);
 
             assertThat(result.getStatus()).isEqualTo("ODRZUCONE");
+            verify(ticketHistoryRepository).save(any(TicketHistory.class));
+        }
+    }
+
+    // =======================================================
+    // Operacje Konserwatora
+    // =======================================================
+
+    @Nested
+    @DisplayName("Operacje konserwatora")
+    class ConservatorOperationsTests {
+
+        @Test
+        @DisplayName("startWork — rozpoczyna prace nad zgłoszeniem")
+        void shouldStartWork() {
+            sampleTicket.setAssignedTo(konserwator);
+            sampleTicket.setStatus(TicketStatus.ZAPLANOWANO);
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
+            when(userRepository.findByEmail(KONSERWATOR_EMAIL))
+                    .thenReturn(Optional.of(konserwator));
+            when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            TicketDetailDto result = ticketService.startWork(ticketId, KONSERWATOR_EMAIL);
+
+            assertThat(result.getStatus()).isEqualTo("W_REALIZACJI");
+            verify(ticketHistoryRepository).save(any(TicketHistory.class));
+        }
+
+        @Test
+        @DisplayName("startWork — rzuca błąd gdy nie jest przypisane do tego konserwatora")
+        void shouldThrowWhenStartWorkNotAssigned() {
+            sampleTicket.setAssignedTo(null);
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
+            when(userRepository.findByEmail(KONSERWATOR_EMAIL))
+                    .thenReturn(Optional.of(konserwator));
+
+            assertThatThrownBy(() -> ticketService.startWork(ticketId, KONSERWATOR_EMAIL))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("nie jest przypisane");
+        }
+
+        @Test
+        @DisplayName("suspendWork — wstrzymuje prace i zapisuje notatkę")
+        void shouldSuspendWork() {
+            sampleTicket.setAssignedTo(konserwator);
+            sampleTicket.setStatus(TicketStatus.W_REALIZACJI);
+            TicketSuspendRequest request = new TicketSuspendRequest("Brak czesci");
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
+            when(userRepository.findByEmail(KONSERWATOR_EMAIL))
+                    .thenReturn(Optional.of(konserwator));
+            when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            TicketDetailDto result =
+                    ticketService.suspendWork(ticketId, request, KONSERWATOR_EMAIL);
+
+            assertThat(result.getStatus()).isEqualTo("WSTRZYMANO");
+            assertThat(sampleTicket.getInternalNote()).contains("Brak czesci");
+            verify(ticketHistoryRepository).save(any(TicketHistory.class));
+        }
+
+        @Test
+        @DisplayName("completeWork — kończy prace i zapisuje opis")
+        void shouldCompleteWork() {
+            sampleTicket.setAssignedTo(konserwator);
+            sampleTicket.setStatus(TicketStatus.W_REALIZACJI);
+            TicketCompletionRequest request = new TicketCompletionRequest("Wymieniono uszczelkę");
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
+            when(userRepository.findByEmail(KONSERWATOR_EMAIL))
+                    .thenReturn(Optional.of(konserwator));
+            when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            TicketDetailDto result =
+                    ticketService.completeWork(ticketId, request, KONSERWATOR_EMAIL);
+
+            assertThat(result.getStatus()).isEqualTo("ZAKONCZONE_DO_WERYFIKACJI");
+            assertThat(sampleTicket.getWorkDescription()).isEqualTo("Wymieniono uszczelkę");
             verify(ticketHistoryRepository).save(any(TicketHistory.class));
         }
     }
