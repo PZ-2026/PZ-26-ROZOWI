@@ -63,6 +63,7 @@ class TicketServiceTest {
     @Mock private TicketHistoryRepository ticketHistoryRepository;
     @Mock private DocumentRepository documentRepository;
     @Mock private PdfGeneratorService pdfGeneratorService;
+    @Mock private TicketStateMachine ticketStateMachine;
 
     @InjectMocks private TicketService ticketService;
 
