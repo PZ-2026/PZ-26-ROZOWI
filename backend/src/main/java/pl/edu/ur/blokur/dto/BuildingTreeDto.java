@@ -206,6 +206,9 @@ public class BuildingTreeDto {
     public static class ApartmentDto {
         private UUID id;
         private String number;
+        private Integer floor;
+        private BigDecimal areaM2;
+        private String ownershipType;
         private BigDecimal currentBalance;
 
         /**
@@ -242,6 +245,60 @@ public class BuildingTreeDto {
          */
         public void setNumber(String number) {
             this.number = number;
+        }
+
+        /**
+         * Zwraca piętro lokalu.
+         *
+         * @return numer piętra lub {@code null}
+         */
+        public Integer getFloor() {
+            return floor;
+        }
+
+        /**
+         * Ustawia piętro lokalu.
+         *
+         * @param floor numer piętra
+         */
+        public void setFloor(Integer floor) {
+            this.floor = floor;
+        }
+
+        /**
+         * Zwraca powierzchnię lokalu w m².
+         *
+         * @return powierzchnia lub {@code null}
+         */
+        public BigDecimal getAreaM2() {
+            return areaM2;
+        }
+
+        /**
+         * Ustawia powierzchnię lokalu w m².
+         *
+         * @param areaM2 powierzchnia w m²
+         */
+        public void setAreaM2(BigDecimal areaM2) {
+            this.areaM2 = areaM2;
+        }
+
+        /**
+         * Zwraca typ własności lokalu.
+         *
+         * @return WLASNOSCIOWY, NAJEM lub {@code null}
+         */
+        public String getOwnershipType() {
+            return ownershipType;
+        }
+
+        /**
+         * Ustawia typ własności lokalu.
+         *
+         * @param ownershipType WLASNOSCIOWY lub NAJEM
+         */
+        public void setOwnershipType(String ownershipType) {
+            this.ownershipType = ownershipType;
         }
 
         /**

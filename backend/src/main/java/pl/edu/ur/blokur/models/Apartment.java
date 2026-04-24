@@ -35,6 +35,15 @@ public class Apartment {
     @Column(name = "current_balance", precision = 12, scale = 2)
     private BigDecimal currentBalance;
 
+    @Column(name = "floor")
+    private Integer floor;
+
+    @Column(name = "area_m2", precision = 6, scale = 2)
+    private BigDecimal areaM2;
+
+    @Column(name = "ownership_type", length = 20)
+    private String ownershipType;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "staircase_id", nullable = false)
     private Staircase staircase;
@@ -94,6 +103,60 @@ public class Apartment {
      */
     public void setCurrentBalance(BigDecimal currentBalance) {
         this.currentBalance = currentBalance;
+    }
+
+    /**
+     * Zwraca piętro lokalu.
+     *
+     * @return numer piętra lub {@code null}
+     */
+    public Integer getFloor() {
+        return floor;
+    }
+
+    /**
+     * Ustawia piętro lokalu.
+     *
+     * @param floor numer piętra
+     */
+    public void setFloor(Integer floor) {
+        this.floor = floor;
+    }
+
+    /**
+     * Zwraca powierzchnię lokalu w m².
+     *
+     * @return powierzchnia lub {@code null}
+     */
+    public BigDecimal getAreaM2() {
+        return areaM2;
+    }
+
+    /**
+     * Ustawia powierzchnię lokalu w m².
+     *
+     * @param areaM2 powierzchnia w m²
+     */
+    public void setAreaM2(BigDecimal areaM2) {
+        this.areaM2 = areaM2;
+    }
+
+    /**
+     * Zwraca typ własności lokalu (WLASNOSCIOWY lub NAJEM).
+     *
+     * @return typ własności lub {@code null}
+     */
+    public String getOwnershipType() {
+        return ownershipType;
+    }
+
+    /**
+     * Ustawia typ własności lokalu.
+     *
+     * @param ownershipType WLASNOSCIOWY lub NAJEM
+     */
+    public void setOwnershipType(String ownershipType) {
+        this.ownershipType = ownershipType;
     }
 
     /**
