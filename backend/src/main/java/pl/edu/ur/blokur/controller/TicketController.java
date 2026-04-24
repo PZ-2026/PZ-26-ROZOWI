@@ -86,6 +86,10 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.getById(id, auth.getName()));
     }
 
+    /**
+     * Przypisuje konserwatora do zgłoszenia. Zmienia status na ZAPLANOWANO. Dostępne tylko dla roli
+     * ZARZADCA.
+     */
     @PatchMapping("/{id}/assign")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<TicketDetailDto> assignTicket(
@@ -94,6 +98,7 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.assignTicket(id, request, auth.getName()));
     }
 
+    /** Zamyka zgłoszenie i generuje protokół PDF. Dostępne tylko dla roli ZARZADCA. */
     @PatchMapping("/{id}/close")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<TicketDetailDto> closeTicket(@PathVariable UUID id) {
@@ -101,6 +106,10 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.closeTicket(id, auth.getName()));
     }
 
+    /**
+     * Odrzuca zgłoszenie z podaniem powodu. Zmienia status na ODRZUCONE. Dostępne tylko dla roli
+     * ZARZADCA.
+     */
     @PatchMapping("/{id}/reject")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<TicketDetailDto> rejectTicket(
@@ -132,6 +141,14 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.completeWork(id, request, auth.getName()));
     }
 
+    /**
+     * Zmienia status zgłoszenia z walidacją state-machine. Dostępne dla KONSERWATORA (własne
+     * zgłoszenia: W_REALIZACJI, WSTRZYMANO, ZAKONCZONE_DO_WERYFIKACJI) i ZARZĄDCY.
+     *
+     * @param id identyfikator zgłoszenia
+     * @param request nowy status i opcjonalny komentarz
+     * @return zaktualizowane zgłoszenie z kodem 200
+     */
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ZARZADCA') or hasRole('KONSERWATOR')")
     public ResponseEntity<TicketDetailDto> changeStatus(

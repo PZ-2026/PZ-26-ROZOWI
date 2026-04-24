@@ -1,12 +1,15 @@
 package pl.edu.ur.blokur.service;
 
 import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.io.image.ImageData;
+import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
@@ -14,6 +17,8 @@ import com.itextpdf.layout.properties.UnitValue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.springframework.core.io.ClassPathResource;
@@ -94,6 +99,10 @@ public class PdfGeneratorService {
 
         document.add(new Paragraph("\n\n"));
 
+        addImagesSection(document, "Zdjęcia przed naprawą", request.getBeforeImagesPaths());
+        addImagesSection(document, "Zdjęcia po naprawie", request.getAfterImagesPaths());
+
+        document.add(new Paragraph("\n"));
         document.add(new Paragraph("Podpis konserwatora: ______________________________"));
         document.add(new Paragraph("\n"));
         document.add(
@@ -103,6 +112,27 @@ public class PdfGeneratorService {
         document.close();
 
         return outputStream.toByteArray();
+    }
+
+    private void addImagesSection(
+            Document document, String title, java.util.List<String> imagePaths) {
+        if (imagePaths != null && !imagePaths.isEmpty()) {
+            document.add(new Paragraph(title).setBold().setFontSize(14f));
+            for (String path : imagePaths) {
+                try {
+                    if (Files.exists(Paths.get(path))) {
+                        ImageData imageData = ImageDataFactory.create(path);
+                        Image img = new Image(imageData);
+                        img.setAutoScale(true);
+                        document.add(img);
+                        document.add(new Paragraph("\n"));
+                    }
+                } catch (Exception e) {
+                    System.err.println(
+                            "Nie udalo sie zaladowac obrazu z " + path + ": " + e.getMessage());
+                }
+            }
+        }
     }
 
     /**
