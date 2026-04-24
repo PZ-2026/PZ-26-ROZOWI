@@ -5,6 +5,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.edu.ur.blokur.dto.ApartmentRequest;
+import pl.edu.ur.blokur.dto.ApartmentResponse;
 import pl.edu.ur.blokur.dto.BuildingRequest;
 import pl.edu.ur.blokur.dto.BuildingResponse;
 import pl.edu.ur.blokur.dto.BuildingTreeDto;
@@ -16,6 +18,7 @@ import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Building;
 import pl.edu.ur.blokur.models.Property;
 import pl.edu.ur.blokur.models.Staircase;
+import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.BuildingRepository;
 import pl.edu.ur.blokur.repository.PropertyRepository;
 import pl.edu.ur.blokur.repository.StaircaseRepository;
@@ -26,14 +29,17 @@ public class BuildingService {
 
     private final BuildingRepository buildingRepository;
     private final StaircaseRepository staircaseRepository;
+    private final ApartmentRepository apartmentRepository;
     private final PropertyRepository propertyRepository;
 
     public BuildingService(
             BuildingRepository buildingRepository,
             StaircaseRepository staircaseRepository,
+            ApartmentRepository apartmentRepository,
             PropertyRepository propertyRepository) {
         this.buildingRepository = buildingRepository;
         this.staircaseRepository = staircaseRepository;
+        this.apartmentRepository = apartmentRepository;
         this.propertyRepository = propertyRepository;
     }
 
@@ -145,6 +151,96 @@ public class BuildingService {
                     "Nie można usunąć klatki schodowej, która posiada lokale mieszkalne");
         }
         staircaseRepository.delete(staircase);
+    }
+
+    /**
+     * Tworzy nowy lokal w klatce schodowej.
+     *
+     * @param staircaseId identyfikator klatki schodowej
+     * @param request dane nowego lokalu
+     * @return utworzony lokal
+     */
+    @Transactional
+    public ApartmentResponse createApartment(UUID staircaseId, ApartmentRequest request) {
+        Staircase staircase = findStaircaseOrThrow(staircaseId);
+        Apartment apartment = new Apartment();
+        applyApartmentRequest(apartment, request);
+        apartment.setStaircase(staircase);
+        apartmentRepository.save(apartment);
+        return mapToApartmentResponse(apartment);
+    }
+
+    /**
+     * Aktualizuje dane lokalu.
+     *
+     * @param staircaseId identyfikator klatki (weryfikacja przynależności)
+     * @param apartmentId identyfikator lokalu
+     * @param request nowe dane lokalu
+     * @return zaktualizowany lokal
+     */
+    @Transactional
+    public ApartmentResponse updateApartment(
+            UUID staircaseId, UUID apartmentId, ApartmentRequest request) {
+        Apartment apartment = findApartmentInStaircase(staircaseId, apartmentId);
+        applyApartmentRequest(apartment, request);
+        apartmentRepository.save(apartment);
+        return mapToApartmentResponse(apartment);
+    }
+
+    /**
+     * Usuwa lokal. Historyczne powiązania ze zgłoszeniami pozostają nienaruszone.
+     *
+     * @param staircaseId identyfikator klatki (weryfikacja przynależności)
+     * @param apartmentId identyfikator lokalu
+     */
+    @Transactional
+    public void deleteApartment(UUID staircaseId, UUID apartmentId) {
+        Apartment apartment = findApartmentInStaircase(staircaseId, apartmentId);
+        apartmentRepository.delete(apartment);
+    }
+
+    private void applyApartmentRequest(Apartment apartment, ApartmentRequest request) {
+        apartment.setNumber(request.getNumber());
+        apartment.setFloor(request.getFloor());
+        apartment.setAreaM2(request.getAreaM2());
+        apartment.setOwnershipType(request.getOwnershipType());
+    }
+
+    private Staircase findStaircaseOrThrow(UUID staircaseId) {
+        return staircaseRepository
+                .findById(staircaseId)
+                .orElseThrow(
+                        () ->
+                                new NotFoundException(
+                                        "Klatka o id " + staircaseId + " nie istnieje"));
+    }
+
+    private Apartment findApartmentInStaircase(UUID staircaseId, UUID apartmentId) {
+        findStaircaseOrThrow(staircaseId);
+        Apartment apartment =
+                apartmentRepository
+                        .findById(apartmentId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Lokal o id " + apartmentId + " nie istnieje"));
+        if (!apartment.getStaircase().getId().equals(staircaseId)) {
+            throw new NotFoundException(
+                    "Lokal o id " + apartmentId + " nie należy do klatki " + staircaseId);
+        }
+        return apartment;
+    }
+
+    private ApartmentResponse mapToApartmentResponse(Apartment apartment) {
+        ApartmentResponse response = new ApartmentResponse();
+        response.setId(apartment.getId());
+        response.setStaircaseId(apartment.getStaircase().getId());
+        response.setNumber(apartment.getNumber());
+        response.setFloor(apartment.getFloor());
+        response.setAreaM2(apartment.getAreaM2());
+        response.setOwnershipType(apartment.getOwnershipType());
+        response.setCurrentBalance(apartment.getCurrentBalance());
+        return response;
     }
 
     private void applyBuildingRequest(Building building, BuildingRequest request) {
