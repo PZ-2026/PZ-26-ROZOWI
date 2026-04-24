@@ -533,7 +533,7 @@ public class TicketService {
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
-        TicketStatus newStatus = TicketStatus.valueOf(request.getStatus());
+        TicketStatus newStatus = request.getStatus();
         ticketStateMachine.validateTransition(ticket.getStatus(), newStatus);
 
         recordStatusChange(ticket, newStatus, user, request.getComment());

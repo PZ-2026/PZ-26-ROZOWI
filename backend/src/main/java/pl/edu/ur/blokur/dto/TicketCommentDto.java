@@ -13,6 +13,7 @@ public class TicketCommentDto {
     private UUID ticketId;
     private String authorName;
     private String content;
+    private pl.edu.ur.blokur.models.TicketCommentType commentType;
     private LocalDateTime createdAt;
 
     /** Konstruktor bezargumentowy wymagany przez mechanizmy serializacji. */
@@ -28,11 +29,17 @@ public class TicketCommentDto {
      * @param createdAt data i czas dodania komentarza
      */
     public TicketCommentDto(
-            UUID id, UUID ticketId, String authorName, String content, LocalDateTime createdAt) {
+            UUID id,
+            UUID ticketId,
+            String authorName,
+            String content,
+            pl.edu.ur.blokur.models.TicketCommentType commentType,
+            LocalDateTime createdAt) {
         this.id = id;
         this.ticketId = ticketId;
         this.authorName = authorName;
         this.content = content;
+        this.commentType = commentType;
         this.createdAt = createdAt;
     }
 
@@ -106,6 +113,24 @@ public class TicketCommentDto {
      */
     public void setContent(String content) {
         this.content = content;
+    }
+
+    /**
+     * Zwraca typ komentarza.
+     *
+     * @return typ komentarza
+     */
+    public pl.edu.ur.blokur.models.TicketCommentType getCommentType() {
+        return commentType;
+    }
+
+    /**
+     * Ustawia typ komentarza.
+     *
+     * @param commentType typ komentarza
+     */
+    public void setCommentType(pl.edu.ur.blokur.models.TicketCommentType commentType) {
+        this.commentType = commentType;
     }
 
     /**

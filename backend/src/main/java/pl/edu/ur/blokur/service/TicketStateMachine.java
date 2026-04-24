@@ -9,8 +9,8 @@ import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.models.TicketStatus;
 
 /**
- * Silnik state-machine dla statusów zgłoszenia. Definiuje dozwolone przejścia między statusami
- * i waliduje każdą próbę zmiany przed jej wykonaniem.
+ * Silnik state-machine dla statusów zgłoszenia. Definiuje dozwolone przejścia między statusami i
+ * waliduje każdą próbę zmiany przed jej wykonaniem.
  *
  * <p>Cykl życia: NOWE → ZAPLANOWANO → W_REALIZACJI → ZAKONCZONE_DO_WERYFIKACJI → ZAMKNIETE.
  * Alternatywne ścieżki: WSTRZYMANO (oczekiwanie) lub ODRZUCONE (zakończenie negatywne).
@@ -23,8 +23,7 @@ public class TicketStateMachine {
 
     static {
         ALLOWED_TRANSITIONS.put(
-                TicketStatus.NOWE,
-                EnumSet.of(TicketStatus.ZAPLANOWANO, TicketStatus.ODRZUCONE));
+                TicketStatus.NOWE, EnumSet.of(TicketStatus.ZAPLANOWANO, TicketStatus.ODRZUCONE));
 
         ALLOWED_TRANSITIONS.put(
                 TicketStatus.ZAPLANOWANO,
@@ -58,7 +57,8 @@ public class TicketStateMachine {
      * @throws BusinessValidationException gdy przejście jest niedozwolone
      */
     public void validateTransition(TicketStatus from, TicketStatus to) {
-        Set<TicketStatus> allowed = ALLOWED_TRANSITIONS.getOrDefault(from, EnumSet.noneOf(TicketStatus.class));
+        Set<TicketStatus> allowed =
+                ALLOWED_TRANSITIONS.getOrDefault(from, EnumSet.noneOf(TicketStatus.class));
         if (!allowed.contains(to)) {
             throw new BusinessValidationException(
                     "Niedozwolona zmiana statusu: " + from.name() + " → " + to.name());
