@@ -1,11 +1,15 @@
 package pl.edu.ur.blokur.dto;
 
+import java.util.List;
+
 /** DTO z danymi do wygenerowania protokołu odbioru prac. */
 public class WorkAcceptanceProtocolRequest {
 
     private String ticketNumber;
     private String workDescription;
     private String maintenanceWorkerName;
+    private List<String> beforeImagesPaths;
+    private List<String> afterImagesPaths;
 
     /** Konstruktor bezargumentowy wymagany przez deserializację Jacksona. */
     public WorkAcceptanceProtocolRequest() {}
@@ -22,6 +26,21 @@ public class WorkAcceptanceProtocolRequest {
         this.ticketNumber = ticketNumber;
         this.workDescription = workDescription;
         this.maintenanceWorkerName = maintenanceWorkerName;
+        this.beforeImagesPaths = new java.util.ArrayList<>();
+        this.afterImagesPaths = new java.util.ArrayList<>();
+    }
+
+    public WorkAcceptanceProtocolRequest(
+            String ticketNumber,
+            String workDescription,
+            String maintenanceWorkerName,
+            List<String> beforeImagesPaths,
+            List<String> afterImagesPaths) {
+        this.ticketNumber = ticketNumber;
+        this.workDescription = workDescription;
+        this.maintenanceWorkerName = maintenanceWorkerName;
+        this.beforeImagesPaths = beforeImagesPaths;
+        this.afterImagesPaths = afterImagesPaths;
     }
 
     /**
@@ -76,5 +95,21 @@ public class WorkAcceptanceProtocolRequest {
      */
     public void setMaintenanceWorkerName(String maintenanceWorkerName) {
         this.maintenanceWorkerName = maintenanceWorkerName;
+    }
+
+    public List<String> getBeforeImagesPaths() {
+        return beforeImagesPaths;
+    }
+
+    public void setBeforeImagesPaths(List<String> beforeImagesPaths) {
+        this.beforeImagesPaths = beforeImagesPaths;
+    }
+
+    public List<String> getAfterImagesPaths() {
+        return afterImagesPaths;
+    }
+
+    public void setAfterImagesPaths(List<String> afterImagesPaths) {
+        this.afterImagesPaths = afterImagesPaths;
     }
 }
