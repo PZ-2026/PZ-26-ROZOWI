@@ -44,6 +44,9 @@ public class User {
     @Column(name = "role", nullable = false, length = 50)
     private String role;
 
+    @Column(name = "phone", length = 20)
+    private String phone;
+
     @ColumnDefault("true")
     @Column(name = "is_active")
     private boolean active = true;
@@ -167,6 +170,24 @@ public class User {
      */
     public void setRole(String role) {
         this.role = role;
+    }
+
+    /**
+     * Zwraca numer telefonu użytkownika.
+     *
+     * @return numer telefonu lub {@code null} jeśli nie podano
+     */
+    public String getPhone() {
+        return phone;
+    }
+
+    /**
+     * Ustawia numer telefonu użytkownika.
+     *
+     * @param phone numer telefonu
+     */
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     /**
