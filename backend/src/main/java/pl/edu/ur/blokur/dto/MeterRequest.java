@@ -3,13 +3,10 @@ package pl.edu.ur.blokur.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import pl.edu.ur.blokur.models.MediumType;
 
-import java.time.LocalDate;
-
-/**
- * DTO z danymi nowego licznika przesyłanymi przez klienta.
- */
+/** DTO z danymi nowego licznika przesyłanymi przez klienta. */
 public class MeterRequest {
 
     @NotBlank(message = "Numer seryjny licznika nie może być pusty")
@@ -22,8 +19,7 @@ public class MeterRequest {
     @NotNull(message = "Data montażu jest wymagana")
     private LocalDate installationDate;
 
-    public MeterRequest() {
-    }
+    public MeterRequest() {}
 
     public MeterRequest(String serialNumber, MediumType mediumType, LocalDate installationDate) {
         this.serialNumber = serialNumber;

@@ -1,5 +1,17 @@
 package pl.edu.ur.blokur.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,40 +31,22 @@ import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.FinancialTransactionRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 /**
- * Testy jednostkowe dla {@link FinancialTransactionService}.
- * Weryfikują logikę biznesową transakcji finansowych: tworzenie transakcji
- * z atomową aktualizacją salda oraz pobieranie historii transakcji lokalu.
+ * Testy jednostkowe dla {@link FinancialTransactionService}. Weryfikują logikę biznesową transakcji
+ * finansowych: tworzenie transakcji z atomową aktualizacją salda oraz pobieranie historii
+ * transakcji lokalu.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FinancialTransactionService — serwis transakcji finansowych")
 class FinancialTransactionServiceTest {
 
-    @Mock
-    private FinancialTransactionRepository financialTransactionRepository;
+    @Mock private FinancialTransactionRepository financialTransactionRepository;
 
-    @Mock
-    private ApartmentRepository apartmentRepository;
+    @Mock private ApartmentRepository apartmentRepository;
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
 
-    @InjectMocks
-    private FinancialTransactionService financialTransactionService;
+    @InjectMocks private FinancialTransactionService financialTransactionService;
 
     private UUID apartmentId;
     private Apartment apartment;
@@ -72,12 +66,12 @@ class FinancialTransactionServiceTest {
         user.setId(UUID.randomUUID());
         user.setEmail("mock.zarzadca1@blokur.pl");
 
-        validRequest = new FinancialTransactionRequest(
-            "WPLATA",
-            new BigDecimal("500.00"),
-            "Wpłata czynszu za kwiecień 2026",
-            LocalDate.of(2026, 4, 15)
-        );
+        validRequest =
+                new FinancialTransactionRequest(
+                        "WPLATA",
+                        new BigDecimal("500.00"),
+                        "Wpłata czynszu za kwiecień 2026",
+                        LocalDate.of(2026, 4, 15));
     }
 
     // =======================================================
@@ -100,16 +94,14 @@ class FinancialTransactionServiceTest {
             saved.setTransactionDate(validRequest.getTransactionDate());
             saved.setRecordedBy(user);
 
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.of(apartment));
-            when(userRepository.findByEmail(user.getEmail()))
-                .thenReturn(Optional.of(user));
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
             when(financialTransactionRepository.save(any(FinancialTransaction.class)))
-                .thenReturn(saved);
+                    .thenReturn(saved);
 
             FinancialTransactionResponse response =
-                financialTransactionService.createTransaction(
-                    apartmentId, validRequest, user.getEmail());
+                    financialTransactionService.createTransaction(
+                            apartmentId, validRequest, user.getEmail());
 
             assertThat(response).isNotNull();
             assertThat(response.getType()).isEqualTo("WPLATA");
@@ -117,8 +109,7 @@ class FinancialTransactionServiceTest {
             assertThat(response.getApartmentId()).isEqualTo(apartmentId);
             assertThat(response.getRecordedByEmail()).isEqualTo(user.getEmail());
 
-            assertThat(apartment.getCurrentBalance())
-                .isEqualByComparingTo("700.00");
+            assertThat(apartment.getCurrentBalance()).isEqualByComparingTo("700.00");
 
             verify(financialTransactionRepository).save(any(FinancialTransaction.class));
             verify(apartmentRepository).save(apartment);
@@ -127,14 +118,14 @@ class FinancialTransactionServiceTest {
         @Test
         @DisplayName("Nieistniejący lokal — rzuca NotFoundException")
         void shouldThrowNotFoundWhenApartmentDoesNotExist() {
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.empty());
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() ->
-                financialTransactionService.createTransaction(
-                    apartmentId, validRequest, user.getEmail()))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining(apartmentId.toString());
+            assertThatThrownBy(
+                            () ->
+                                    financialTransactionService.createTransaction(
+                                            apartmentId, validRequest, user.getEmail()))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining(apartmentId.toString());
 
             verify(financialTransactionRepository, never()).save(any());
         }
@@ -142,16 +133,15 @@ class FinancialTransactionServiceTest {
         @Test
         @DisplayName("Nieistniejący użytkownik — rzuca NotFoundException")
         void shouldThrowNotFoundWhenUserDoesNotExist() {
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.of(apartment));
-            when(userRepository.findByEmail("nieznany@test.pl"))
-                .thenReturn(Optional.empty());
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail("nieznany@test.pl")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() ->
-                financialTransactionService.createTransaction(
-                    apartmentId, validRequest, "nieznany@test.pl"))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("nieznany@test.pl");
+            assertThatThrownBy(
+                            () ->
+                                    financialTransactionService.createTransaction(
+                                            apartmentId, validRequest, "nieznany@test.pl"))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining("nieznany@test.pl");
 
             verify(financialTransactionRepository, never()).save(any());
         }
@@ -170,29 +160,26 @@ class FinancialTransactionServiceTest {
             saved.setTransactionDate(validRequest.getTransactionDate());
             saved.setRecordedBy(user);
 
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.of(apartment));
-            when(userRepository.findByEmail(user.getEmail()))
-                .thenReturn(Optional.of(user));
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
             when(financialTransactionRepository.save(any(FinancialTransaction.class)))
-                .thenReturn(saved);
+                    .thenReturn(saved);
 
             financialTransactionService.createTransaction(
-                apartmentId, validRequest, user.getEmail());
+                    apartmentId, validRequest, user.getEmail());
 
-            assertThat(apartment.getCurrentBalance())
-                .isEqualByComparingTo("500.00");
+            assertThat(apartment.getCurrentBalance()).isEqualByComparingTo("500.00");
         }
 
         @Test
         @DisplayName("Kwota ujemna (naliczenie) — saldo maleje")
         void shouldDecreaseBalanceForNegativeAmount() {
-            FinancialTransactionRequest chargeRequest = new FinancialTransactionRequest(
-                "NALICZENIE",
-                new BigDecimal("-300.00"),
-                "Naliczenie czynszu za kwiecień",
-                LocalDate.of(2026, 4, 1)
-            );
+            FinancialTransactionRequest chargeRequest =
+                    new FinancialTransactionRequest(
+                            "NALICZENIE",
+                            new BigDecimal("-300.00"),
+                            "Naliczenie czynszu za kwiecień",
+                            LocalDate.of(2026, 4, 1));
 
             FinancialTransaction saved = new FinancialTransaction();
             saved.setId(UUID.randomUUID());
@@ -203,18 +190,15 @@ class FinancialTransactionServiceTest {
             saved.setTransactionDate(chargeRequest.getTransactionDate());
             saved.setRecordedBy(user);
 
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.of(apartment));
-            when(userRepository.findByEmail(user.getEmail()))
-                .thenReturn(Optional.of(user));
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
             when(financialTransactionRepository.save(any(FinancialTransaction.class)))
-                .thenReturn(saved);
+                    .thenReturn(saved);
 
             financialTransactionService.createTransaction(
-                apartmentId, chargeRequest, user.getEmail());
+                    apartmentId, chargeRequest, user.getEmail());
 
-            assertThat(apartment.getCurrentBalance())
-                .isEqualByComparingTo("-100.00");
+            assertThat(apartment.getCurrentBalance()).isEqualByComparingTo("-100.00");
         }
     }
 
@@ -238,48 +222,44 @@ class FinancialTransactionServiceTest {
             transaction.setTransactionDate(LocalDate.of(2026, 4, 15));
             transaction.setRecordedBy(user);
 
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.of(apartment));
-            when(financialTransactionRepository
-                .findByApartmentIdOrderByTransactionDateDesc(apartmentId))
-                .thenReturn(List.of(transaction));
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(financialTransactionRepository.findByApartmentIdOrderByTransactionDateDesc(
+                            apartmentId))
+                    .thenReturn(List.of(transaction));
 
             ApartmentTransactionsResponse response =
-                financialTransactionService.getTransactionsForApartment(apartmentId);
+                    financialTransactionService.getTransactionsForApartment(apartmentId);
 
-            assertThat(response.getCurrentBalance())
-                .isEqualByComparingTo("200.00");
+            assertThat(response.getCurrentBalance()).isEqualByComparingTo("200.00");
             assertThat(response.getTransactions()).hasSize(1);
-            assertThat(response.getTransactions().get(0).getType())
-                .isEqualTo("WPLATA");
+            assertThat(response.getTransactions().get(0).getType()).isEqualTo("WPLATA");
         }
 
         @Test
         @DisplayName("Nieistniejący lokal — rzuca NotFoundException")
         void shouldThrowNotFoundForNonExistentApartment() {
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.empty());
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() ->
-                financialTransactionService.getTransactionsForApartment(apartmentId))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining(apartmentId.toString());
+            assertThatThrownBy(
+                            () ->
+                                    financialTransactionService.getTransactionsForApartment(
+                                            apartmentId))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining(apartmentId.toString());
         }
 
         @Test
         @DisplayName("Lokal bez transakcji — zwraca saldo i pustą listę")
         void shouldReturnEmptyListWhenNoTransactions() {
-            when(apartmentRepository.findById(apartmentId))
-                .thenReturn(Optional.of(apartment));
-            when(financialTransactionRepository
-                .findByApartmentIdOrderByTransactionDateDesc(apartmentId))
-                .thenReturn(List.of());
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(financialTransactionRepository.findByApartmentIdOrderByTransactionDateDesc(
+                            apartmentId))
+                    .thenReturn(List.of());
 
             ApartmentTransactionsResponse response =
-                financialTransactionService.getTransactionsForApartment(apartmentId);
+                    financialTransactionService.getTransactionsForApartment(apartmentId);
 
-            assertThat(response.getCurrentBalance())
-                .isEqualByComparingTo("200.00");
+            assertThat(response.getCurrentBalance()).isEqualByComparingTo("200.00");
             assertThat(response.getTransactions()).isEmpty();
         }
     }

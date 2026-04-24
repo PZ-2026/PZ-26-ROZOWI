@@ -1,5 +1,9 @@
 package pl.edu.ur.blokur.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.ApartmentTransactionsResponse;
@@ -13,15 +17,9 @@ import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.FinancialTransactionRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 /**
- * Serwis biznesowy obsługujący logikę transakcji finansowych lokali.
- * Odpowiada za pobieranie historii transakcji, tworzenie nowych operacji
- * oraz atomową aktualizację salda lokalu.
+ * Serwis biznesowy obsługujący logikę transakcji finansowych lokali. Odpowiada za pobieranie
+ * historii transakcji, tworzenie nowych operacji oraz atomową aktualizację salda lokalu.
  */
 @Service
 public class FinancialTransactionService {
@@ -31,10 +29,9 @@ public class FinancialTransactionService {
     private final UserRepository userRepository;
 
     public FinancialTransactionService(
-        FinancialTransactionRepository financialTransactionRepository,
-        ApartmentRepository apartmentRepository,
-        UserRepository userRepository
-    ) {
+            FinancialTransactionRepository financialTransactionRepository,
+            ApartmentRepository apartmentRepository,
+            UserRepository userRepository) {
         this.financialTransactionRepository = financialTransactionRepository;
         this.apartmentRepository = apartmentRepository;
         this.userRepository = userRepository;
@@ -48,28 +45,30 @@ public class FinancialTransactionService {
      * @throws NotFoundException jeśli lokal nie istnieje
      */
     public ApartmentTransactionsResponse getTransactionsForApartment(UUID apartmentId) {
-        Apartment apartment = apartmentRepository.findById(apartmentId)
-            .orElseThrow(() -> new NotFoundException(
-                "Lokal o ID " + apartmentId + " nie istnieje"));
+        Apartment apartment =
+                apartmentRepository
+                        .findById(apartmentId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Lokal o ID " + apartmentId + " nie istnieje"));
 
-        List<FinancialTransactionResponse> transactions = financialTransactionRepository
-            .findByApartmentIdOrderByTransactionDateDesc(apartmentId)
-            .stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+        List<FinancialTransactionResponse> transactions =
+                financialTransactionRepository
+                        .findByApartmentIdOrderByTransactionDateDesc(apartmentId)
+                        .stream()
+                        .map(this::toResponse)
+                        .collect(Collectors.toList());
 
-        return new ApartmentTransactionsResponse(
-            apartment.getCurrentBalance(),
-            transactions
-        );
+        return new ApartmentTransactionsResponse(apartment.getCurrentBalance(), transactions);
     }
 
     /**
-     * Tworzy nową transakcję finansową dla wskazanego lokalu
-     * i aktualizuje jego saldo ({@code currentBalance}).
+     * Tworzy nową transakcję finansową dla wskazanego lokalu i aktualizuje jego saldo ({@code
+     * currentBalance}).
      *
-     * <p>Operacja jest atomowa — zapis transakcji i aktualizacja salda
-     * wykonywane są w ramach jednej transakcji bazodanowej.</p>
+     * <p>Operacja jest atomowa — zapis transakcji i aktualizacja salda wykonywane są w ramach
+     * jednej transakcji bazodanowej.
      *
      * @param apartmentId identyfikator lokalu
      * @param request dane nowej transakcji
@@ -79,17 +78,24 @@ public class FinancialTransactionService {
      */
     @Transactional
     public FinancialTransactionResponse createTransaction(
-        UUID apartmentId,
-        FinancialTransactionRequest request,
-        String userEmail
-    ) {
-        Apartment apartment = apartmentRepository.findById(apartmentId)
-            .orElseThrow(() -> new NotFoundException(
-                "Lokal o ID " + apartmentId + " nie istnieje"));
+            UUID apartmentId, FinancialTransactionRequest request, String userEmail) {
+        Apartment apartment =
+                apartmentRepository
+                        .findById(apartmentId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Lokal o ID " + apartmentId + " nie istnieje"));
 
-        User user = userRepository.findByEmail(userEmail)
-            .orElseThrow(() -> new NotFoundException(
-                "Użytkownik o adresie " + userEmail + " nie istnieje"));
+        User user =
+                userRepository
+                        .findByEmail(userEmail)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Użytkownik o adresie "
+                                                        + userEmail
+                                                        + " nie istnieje"));
 
         FinancialTransaction transaction = new FinancialTransaction();
         transaction.setApartment(apartment);
@@ -119,13 +125,12 @@ public class FinancialTransactionService {
      */
     private FinancialTransactionResponse toResponse(FinancialTransaction transaction) {
         return new FinancialTransactionResponse(
-            transaction.getId(),
-            transaction.getApartment().getId(),
-            transaction.getType(),
-            transaction.getAmount(),
-            transaction.getDescription(),
-            transaction.getTransactionDate(),
-            transaction.getRecordedBy().getEmail()
-        );
+                transaction.getId(),
+                transaction.getApartment().getId(),
+                transaction.getType(),
+                transaction.getAmount(),
+                transaction.getDescription(),
+                transaction.getTransactionDate(),
+                transaction.getRecordedBy().getEmail());
     }
 }

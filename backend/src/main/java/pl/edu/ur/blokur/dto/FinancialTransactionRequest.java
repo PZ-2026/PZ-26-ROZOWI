@@ -2,13 +2,10 @@ package pl.edu.ur.blokur.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * DTO z danymi transakcji finansowej przesyłanymi przez klienta.
- */
+/** DTO z danymi transakcji finansowej przesyłanymi przez klienta. */
 public class FinancialTransactionRequest {
 
     @NotBlank(message = "Typ transakcji jest wymagany")
@@ -23,11 +20,10 @@ public class FinancialTransactionRequest {
     @NotNull(message = "Data transakcji jest wymagana")
     private LocalDate transactionDate;
 
-    public FinancialTransactionRequest() {
-    }
+    public FinancialTransactionRequest() {}
 
-    public FinancialTransactionRequest(String type, BigDecimal amount,
-                                       String description, LocalDate transactionDate) {
+    public FinancialTransactionRequest(
+            String type, BigDecimal amount, String description, LocalDate transactionDate) {
         this.type = type;
         this.amount = amount;
         this.description = description;

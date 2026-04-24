@@ -1,14 +1,11 @@
 package pl.edu.ur.blokur.repository;
 
+import java.util.List;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import pl.edu.ur.blokur.models.Meter;
 
-import java.util.List;
-import java.util.UUID;
-
-/**
- * Repozytorium JPA dla encji {@link Meter}.
- */
+/** Repozytorium JPA dla encji {@link Meter}. */
 public interface MeterRepository extends JpaRepository<Meter, UUID> {
 
     /**

@@ -4,16 +4,16 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * DTO zbiorczej odpowiedzi dla endpointu GET transakcji lokalu.
- * Zawiera zbuforowane saldo ({@code currentBalance}) oraz historię transakcji.
+ * DTO zbiorczej odpowiedzi dla endpointu GET transakcji lokalu. Zawiera zbuforowane saldo ({@code
+ * currentBalance}) oraz historię transakcji.
  */
 public class ApartmentTransactionsResponse {
 
     private BigDecimal currentBalance;
     private List<FinancialTransactionResponse> transactions;
 
-    public ApartmentTransactionsResponse(BigDecimal currentBalance,
-                                         List<FinancialTransactionResponse> transactions) {
+    public ApartmentTransactionsResponse(
+            BigDecimal currentBalance, List<FinancialTransactionResponse> transactions) {
         this.currentBalance = currentBalance;
         this.transactions = transactions;
     }

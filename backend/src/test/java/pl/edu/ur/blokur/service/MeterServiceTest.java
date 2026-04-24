@@ -1,5 +1,16 @@
 package pl.edu.ur.blokur.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,35 +30,19 @@ import pl.edu.ur.blokur.models.Meter;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.MeterRepository;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 /**
- * Testy jednostkowe dla {@link MeterService}.
- * Weryfikują logikę biznesową zarządzania licznikami:
+ * Testy jednostkowe dla {@link MeterService}. Weryfikują logikę biznesową zarządzania licznikami:
  * dodawanie do lokalu, pobieranie listy, dezaktywacja oraz walidację.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MeterService — zarządzanie licznikami lokalu")
 class MeterServiceTest {
 
-    @Mock
-    private MeterRepository meterRepository;
+    @Mock private MeterRepository meterRepository;
 
-    @Mock
-    private ApartmentRepository apartmentRepository;
+    @Mock private ApartmentRepository apartmentRepository;
 
-    @InjectMocks
-    private MeterService meterService;
+    @InjectMocks private MeterService meterService;
 
     private UUID apartmentId;
     private UUID meterId;
@@ -72,11 +67,8 @@ class MeterServiceTest {
         meter.setInstallationDate(LocalDate.of(2025, 6, 15));
         meter.setActive(true);
 
-        validRequest = new MeterRequest(
-            "SN-12345",
-            MediumType.ZIMNA_WODA,
-            LocalDate.of(2025, 6, 15)
-        );
+        validRequest =
+                new MeterRequest("SN-12345", MediumType.ZIMNA_WODA, LocalDate.of(2025, 6, 15));
     }
 
     // =======================================================
@@ -92,11 +84,13 @@ class MeterServiceTest {
         void shouldCreateMeterSuccessfully() {
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.existsBySerialNumber("SN-12345")).thenReturn(false);
-            when(meterRepository.save(any(Meter.class))).thenAnswer(inv -> {
-                Meter m = inv.getArgument(0);
-                m.setId(meterId);
-                return m;
-            });
+            when(meterRepository.save(any(Meter.class)))
+                    .thenAnswer(
+                            inv -> {
+                                Meter m = inv.getArgument(0);
+                                m.setId(meterId);
+                                return m;
+                            });
 
             MeterResponse response = meterService.create(apartmentId, validRequest);
 
@@ -130,8 +124,8 @@ class MeterServiceTest {
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> meterService.create(apartmentId, validRequest))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining(apartmentId.toString());
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining(apartmentId.toString());
 
             verify(meterRepository, never()).save(any());
         }
@@ -143,8 +137,8 @@ class MeterServiceTest {
             when(meterRepository.existsBySerialNumber("SN-12345")).thenReturn(true);
 
             assertThatThrownBy(() -> meterService.create(apartmentId, validRequest))
-                .isInstanceOf(BusinessValidationException.class)
-                .hasMessageContaining("SN-12345");
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("SN-12345");
 
             verify(meterRepository, never()).save(any());
         }
@@ -152,7 +146,8 @@ class MeterServiceTest {
         @Test
         @DisplayName("Zapisuje wszystkie wartości zgodnie z requestem")
         void shouldPassAllRequestValuesToEntity() {
-            MeterRequest req = new MeterRequest("SN-777", MediumType.GAZ, LocalDate.of(2024, 2, 10));
+            MeterRequest req =
+                    new MeterRequest("SN-777", MediumType.GAZ, LocalDate.of(2024, 2, 10));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.existsBySerialNumber("SN-777")).thenReturn(false);
             when(meterRepository.save(any(Meter.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -186,15 +181,17 @@ class MeterServiceTest {
 
             when(apartmentRepository.existsById(apartmentId)).thenReturn(true);
             when(meterRepository.findByApartmentId(apartmentId))
-                .thenReturn(List.of(meter, inactive));
+                    .thenReturn(List.of(meter, inactive));
 
             List<MeterResponse> result = meterService.getAllByApartment(apartmentId);
 
             assertThat(result).hasSize(2);
-            assertThat(result).extracting(MeterResponse::getSerialNumber)
-                .containsExactlyInAnyOrder("SN-12345", "SN-OLD");
-            assertThat(result).extracting(MeterResponse::isActive)
-                .containsExactlyInAnyOrder(true, false);
+            assertThat(result)
+                    .extracting(MeterResponse::getSerialNumber)
+                    .containsExactlyInAnyOrder("SN-12345", "SN-OLD");
+            assertThat(result)
+                    .extracting(MeterResponse::isActive)
+                    .containsExactlyInAnyOrder(true, false);
         }
 
         @Test
@@ -214,8 +211,8 @@ class MeterServiceTest {
             when(apartmentRepository.existsById(apartmentId)).thenReturn(false);
 
             assertThatThrownBy(() -> meterService.getAllByApartment(apartmentId))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining(apartmentId.toString());
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining(apartmentId.toString());
 
             verify(meterRepository, never()).findByApartmentId(any());
         }
@@ -248,8 +245,8 @@ class MeterServiceTest {
             when(meterRepository.findById(meterId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> meterService.deactivate(meterId))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining(meterId.toString());
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining(meterId.toString());
 
             verify(meterRepository, never()).save(any());
         }
@@ -261,8 +258,8 @@ class MeterServiceTest {
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
 
             assertThatThrownBy(() -> meterService.deactivate(meterId))
-                .isInstanceOf(BusinessValidationException.class)
-                .hasMessageContaining("nieaktywny");
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("nieaktywny");
 
             verify(meterRepository, never()).save(any());
         }
