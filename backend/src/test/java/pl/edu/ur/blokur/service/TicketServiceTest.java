@@ -38,6 +38,13 @@ import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
+import pl.edu.ur.blokur.repository.TicketHistoryRepository;
+import pl.edu.ur.blokur.repository.DocumentRepository;
+import pl.edu.ur.blokur.models.TicketHistory;
+import pl.edu.ur.blokur.models.Document;
+import pl.edu.ur.blokur.dto.TicketAssignRequest;
+import pl.edu.ur.blokur.dto.TicketRejectRequest;
+import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 
 /**
  * Testy jednostkowe dla {@link TicketService}. Weryfikują logikę tworzenia zgłoszeń, pobierania
@@ -51,6 +58,9 @@ class TicketServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private TicketCategoryRepository ticketCategoryRepository;
     @Mock private TicketNumberGenerator ticketNumberGenerator;
+    @Mock private TicketHistoryRepository ticketHistoryRepository;
+    @Mock private DocumentRepository documentRepository;
+    @Mock private PdfGeneratorService pdfGeneratorService;
 
     @InjectMocks private TicketService ticketService;
 
@@ -571,6 +581,68 @@ class TicketServiceTest {
             TicketDetailDto result = ticketService.getById(buildingTicket.getId(), ZARZADCA_EMAIL);
 
             assertThat(result.getLocationLabel()).isEqualTo("Budynek Testowy");
+        }
+    }
+
+    // =======================================================
+    // Operacje zarządcy
+    // =======================================================
+
+    @Nested
+    @DisplayName("Operacje zarzadcy")
+    class ManagerOperationsTests {
+
+        @Test
+        @DisplayName("assignTicket — przypisuje konserwatora")
+        void shouldAssignTicket() {
+            TicketAssignRequest request = new TicketAssignRequest();
+            request.setAssignedTo(konserwator.getId());
+            request.setPlannedVisitAt(LocalDateTime.now().plusDays(1));
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(userRepository.findById(konserwator.getId())).thenReturn(Optional.of(konserwator));
+            when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            TicketDetailDto result = ticketService.assignTicket(ticketId, request, ZARZADCA_EMAIL);
+
+            assertThat(result.getStatus()).isEqualTo("ZAPLANOWANO");
+            assertThat(result.getAssignedToId()).isEqualTo(konserwator.getId());
+            verify(ticketHistoryRepository).save(any(TicketHistory.class));
+        }
+
+        @Test
+        @DisplayName("closeTicket — zamyka zgloszenie i generuje PDF")
+        void shouldCloseTicket() {
+            sampleTicket.setStatus(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
+            
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(pdfGeneratorService.generateWorkAcceptanceProtocol(any())).thenReturn(new byte[]{1, 2, 3});
+            when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            TicketDetailDto result = ticketService.closeTicket(ticketId, ZARZADCA_EMAIL);
+
+            assertThat(result.getStatus()).isEqualTo("ZAMKNIETE");
+            verify(pdfGeneratorService).generateWorkAcceptanceProtocol(any(WorkAcceptanceProtocolRequest.class));
+            verify(documentRepository).save(any(Document.class));
+            verify(ticketHistoryRepository).save(any(TicketHistory.class));
+        }
+
+        @Test
+        @DisplayName("rejectTicket — odrzuca zgloszenie")
+        void shouldRejectTicket() {
+            TicketRejectRequest request = new TicketRejectRequest();
+            request.setReason("Brak podstaw");
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            TicketDetailDto result = ticketService.rejectTicket(ticketId, request, ZARZADCA_EMAIL);
+
+            assertThat(result.getStatus()).isEqualTo("ODRZUCONE");
+            verify(ticketHistoryRepository).save(any(TicketHistory.class));
         }
     }
 }
