@@ -64,7 +64,7 @@ public class BuildingService {
     public BuildingResponse createBuilding(BuildingRequest request) {
         Building building = new Building();
         applyBuildingRequest(building, request);
-        buildingRepository.save(building);
+        building = buildingRepository.save(building);
         return mapToBuildingResponse(building);
     }
 
@@ -115,7 +115,7 @@ public class BuildingService {
         Staircase staircase = new Staircase();
         staircase.setLabel(request.getLabel());
         staircase.setBuilding(building);
-        staircaseRepository.save(staircase);
+        staircase = staircaseRepository.save(staircase);
         return mapToStaircaseResponse(staircase);
     }
 
@@ -166,7 +166,7 @@ public class BuildingService {
         Apartment apartment = new Apartment();
         applyApartmentRequest(apartment, request);
         apartment.setStaircase(staircase);
-        apartmentRepository.save(apartment);
+        apartment = apartmentRepository.save(apartment);
         return mapToApartmentResponse(apartment);
     }
 
