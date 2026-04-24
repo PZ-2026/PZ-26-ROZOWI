@@ -20,6 +20,7 @@ import pl.edu.ur.blokur.models.TicketCategory;
 import pl.edu.ur.blokur.models.TicketStatus;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
+import pl.edu.ur.blokur.dto.TicketStatusChangeRequest;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
@@ -48,6 +49,7 @@ public class TicketService {
     private final TicketHistoryRepository ticketHistoryRepository;
     private final DocumentRepository documentRepository;
     private final PdfGeneratorService pdfGeneratorService;
+    private final TicketStateMachine ticketStateMachine;
 
     /**
      * Tworzy instancję serwisu z wymaganymi zależnościami.
@@ -67,7 +69,8 @@ public class TicketService {
             TicketNumberGenerator ticketNumberGenerator,
             TicketHistoryRepository ticketHistoryRepository,
             DocumentRepository documentRepository,
-            PdfGeneratorService pdfGeneratorService) {
+            PdfGeneratorService pdfGeneratorService,
+            TicketStateMachine ticketStateMachine) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -75,6 +78,7 @@ public class TicketService {
         this.ticketHistoryRepository = ticketHistoryRepository;
         this.documentRepository = documentRepository;
         this.pdfGeneratorService = pdfGeneratorService;
+        this.ticketStateMachine = ticketStateMachine;
     }
 
     /**
@@ -329,14 +333,7 @@ public class TicketService {
         ticket.setAssignedTo(conservator);
         ticket.setPlannedVisitAt(request.getPlannedVisitAt());
         ticket.setInternalNote(request.getInternalNote());
-        ticket.setStatus(pl.edu.ur.blokur.models.TicketStatus.ZAPLANOWANO);
-
-        TicketHistory history = new TicketHistory();
-        history.setTicket(ticket);
-        history.setStatus("ZAPLANOWANO");
-        history.setChangedBy(manager);
-        history.setCreatedAt(LocalDateTime.now());
-        ticketHistoryRepository.save(history);
+        recordStatusChange(ticket, TicketStatus.ZAPLANOWANO, manager, null);
 
         return mapToDetail(ticketRepository.save(ticket));
     }
@@ -361,12 +358,7 @@ public class TicketService {
             throw new BusinessValidationException("Brak uprawnień. Tylko zarządca może zamknąć zgłoszenie.");
         }
 
-        if (ticket.getStatus() != pl.edu.ur.blokur.models.TicketStatus.ZAKONCZONE_DO_WERYFIKACJI) {
-            throw new BusinessValidationException("Zgłoszenie musi mieć status ZAKONCZONE_DO_WERYFIKACJI, aby mogło zostać zamknięte.");
-        }
-
-        ticket.setStatus(pl.edu.ur.blokur.models.TicketStatus.ZAMKNIETE);
-        ticket.setClosedAt(LocalDateTime.now());
+        // walidacja przejścia ZAKONCZONE_DO_WERYFIKACJI → ZAMKNIETE odbywa się w recordStatusChange
 
         // Generowanie PDF
         String conservatorName = ticket.getAssignedTo() != null ? ticket.getAssignedTo().getFirstName() + " " + ticket.getAssignedTo().getLastName() : "Nieznany";
@@ -397,12 +389,7 @@ public class TicketService {
             throw new RuntimeException("Błąd podczas generowania i zapisu pliku PDF", e);
         }
 
-        TicketHistory history = new TicketHistory();
-        history.setTicket(ticket);
-        history.setStatus("ZAMKNIETE");
-        history.setChangedBy(manager);
-        history.setCreatedAt(LocalDateTime.now());
-        ticketHistoryRepository.save(history);
+        recordStatusChange(ticket, TicketStatus.ZAMKNIETE, manager, null);
 
         return mapToDetail(ticketRepository.save(ticket));
     }
@@ -427,20 +414,74 @@ public class TicketService {
             throw new BusinessValidationException("Brak uprawnień. Tylko zarządca może odrzucić zgłoszenie.");
         }
 
-        ticket.setStatus(pl.edu.ur.blokur.models.TicketStatus.ODRZUCONE);
-        
         String currentNote = ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
         ticket.setInternalNote(currentNote + "Powód odrzucenia: " + request.getReason());
+        recordStatusChange(ticket, TicketStatus.ODRZUCONE, manager, request.getReason());
+
+        return mapToDetail(ticketRepository.save(ticket));
+    }
+
+    /**
+     * Zmienia status zgłoszenia z walidacją state-machine i zapisem do historii. Dostępna dla
+     * KONSERWATORA (W_REALIZACJI, WSTRZYMANO, ZAKONCZONE_DO_WERYFIKACJI) i ZARZĄDCY.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request nowy status i opcjonalny komentarz
+     * @param username email zalogowanego użytkownika
+     * @return zaktualizowane DTO zgłoszenia
+     */
+    @Transactional
+    public TicketDetailDto changeStatus(
+            UUID ticketId, TicketStatusChangeRequest request, String username) {
+        Ticket ticket =
+                ticketRepository
+                        .findById(ticketId)
+                        .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
+        User user =
+                userRepository
+                        .findByEmail(username)
+                        .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if ("KONSERWATOR".equals(user.getRole())) {
+            if (ticket.getAssignedTo() == null
+                    || !ticket.getAssignedTo().getId().equals(user.getId())) {
+                throw new BusinessValidationException(
+                        "Konserwator może zmieniać status tylko własnych zgłoszeń");
+            }
+        } else if (!"ZARZADCA".equals(user.getRole())) {
+            throw new BusinessValidationException(
+                    "Brak uprawnień do zmiany statusu zgłoszenia");
+        }
+
+        recordStatusChange(ticket, request.getStatus(), user, request.getComment());
+        return mapToDetail(ticketRepository.save(ticket));
+    }
+
+    /**
+     * Waliduje przejście statusu przez state-machine, ustawia nowy status i zapisuje wpis do
+     * ticket_history z changedBy = przekazany użytkownik.
+     *
+     * @param ticket encja zgłoszenia
+     * @param newStatus docelowy status
+     * @param changedBy użytkownik dokonujący zmiany
+     * @param comment opcjonalny komentarz
+     */
+    private void recordStatusChange(
+            Ticket ticket, TicketStatus newStatus, User changedBy, String comment) {
+        ticketStateMachine.validateTransition(ticket.getStatus(), newStatus);
+        ticket.setStatus(newStatus);
+        ticket.setUpdatedAt(LocalDateTime.now());
+        if (newStatus == TicketStatus.ZAMKNIETE) {
+            ticket.setClosedAt(LocalDateTime.now());
+        }
 
         TicketHistory history = new TicketHistory();
         history.setTicket(ticket);
-        history.setStatus("ODRZUCONE");
-        history.setChangedBy(manager);
-        history.setComment(request.getReason());
+        history.setStatus(newStatus.name());
+        history.setChangedBy(changedBy);
+        history.setComment(comment);
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
-
-        return mapToDetail(ticketRepository.save(ticket));
     }
 
     /**

@@ -23,6 +23,7 @@ import pl.edu.ur.blokur.dto.TicketRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
 import pl.edu.ur.blokur.dto.TicketAssignRequest;
 import pl.edu.ur.blokur.dto.TicketRejectRequest;
+import pl.edu.ur.blokur.dto.TicketStatusChangeRequest;
 import pl.edu.ur.blokur.service.TicketService;
 import org.springframework.web.bind.annotation.PatchMapping;
 
@@ -156,5 +157,21 @@ public class TicketController {
             @PathVariable UUID id, @Valid @RequestBody TicketRejectRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(ticketService.rejectTicket(id, request, auth.getName()));
+    }
+
+    /**
+     * Zmienia status zgłoszenia z walidacją state-machine. Dostępne dla KONSERWATORA
+     * (własne zgłoszenia: W_REALIZACJI, WSTRZYMANO, ZAKONCZONE_DO_WERYFIKACJI) i ZARZĄDCY.
+     *
+     * @param id identyfikator zgłoszenia
+     * @param request nowy status i opcjonalny komentarz
+     * @return zaktualizowane zgłoszenie z kodem 200
+     */
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR')")
+    public ResponseEntity<TicketDetailDto> changeStatus(
+            @PathVariable UUID id, @Valid @RequestBody TicketStatusChangeRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(ticketService.changeStatus(id, request, auth.getName()));
     }
 }
