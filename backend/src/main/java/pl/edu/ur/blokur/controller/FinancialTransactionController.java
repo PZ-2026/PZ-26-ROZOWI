@@ -1,6 +1,8 @@
 package pl.edu.ur.blokur.controller;
 
 import jakarta.validation.Valid;
+import java.security.Principal;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,13 +17,9 @@ import pl.edu.ur.blokur.dto.FinancialTransactionRequest;
 import pl.edu.ur.blokur.dto.FinancialTransactionResponse;
 import pl.edu.ur.blokur.service.FinancialTransactionService;
 
-import java.security.Principal;
-import java.util.UUID;
-
 /**
- * Kontroler REST obsługujący operacje na transakcjach finansowych lokali.
- * Udostępnia endpointy do pobierania historii transakcji z saldem
- * oraz do rejestrowania nowych operacji finansowych.
+ * Kontroler REST obsługujący operacje na transakcjach finansowych lokali. Udostępnia endpointy do
+ * pobierania historii transakcji z saldem oraz do rejestrowania nowych operacji finansowych.
  */
 @RestController
 @RequestMapping("/api")
@@ -29,16 +27,13 @@ public class FinancialTransactionController {
 
     private final FinancialTransactionService financialTransactionService;
 
-    public FinancialTransactionController(
-        FinancialTransactionService financialTransactionService
-    ) {
+    public FinancialTransactionController(FinancialTransactionService financialTransactionService) {
         this.financialTransactionService = financialTransactionService;
     }
 
     /**
-     * Pobiera historię transakcji finansowych oraz zbuforowane saldo
-     * dla wskazanego lokalu.
-     * Dostęp: ZARZADCA, MIESZKANIEC.
+     * Pobiera historię transakcji finansowych oraz zbuforowane saldo dla wskazanego lokalu. Dostęp:
+     * ZARZADCA, MIESZKANIEC.
      *
      * @param apartmentId identyfikator lokalu
      * @return historia transakcji z saldem (HTTP 200)
@@ -46,17 +41,15 @@ public class FinancialTransactionController {
     @GetMapping("/apartments/{apartmentId}/transactions")
     @PreAuthorize("hasAnyRole('ZARZADCA', 'MIESZKANIEC')")
     public ResponseEntity<ApartmentTransactionsResponse> getTransactions(
-        @PathVariable UUID apartmentId
-    ) {
+            @PathVariable UUID apartmentId) {
         ApartmentTransactionsResponse response =
-            financialTransactionService.getTransactionsForApartment(apartmentId);
+                financialTransactionService.getTransactionsForApartment(apartmentId);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Rejestruje nową transakcję finansową dla wskazanego lokalu.
-     * Operacja atomowo aktualizuje saldo lokalu ({@code currentBalance}).
-     * Dostęp: ZARZADCA.
+     * Rejestruje nową transakcję finansową dla wskazanego lokalu. Operacja atomowo aktualizuje
+     * saldo lokalu ({@code currentBalance}). Dostęp: ZARZADCA.
      *
      * @param apartmentId identyfikator lokalu
      * @param request dane nowej transakcji
@@ -66,13 +59,12 @@ public class FinancialTransactionController {
     @PostMapping("/apartments/{apartmentId}/transactions")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<FinancialTransactionResponse> createTransaction(
-        @PathVariable UUID apartmentId,
-        @Valid @RequestBody FinancialTransactionRequest request,
-        Principal principal
-    ) {
+            @PathVariable UUID apartmentId,
+            @Valid @RequestBody FinancialTransactionRequest request,
+            Principal principal) {
         FinancialTransactionResponse response =
-            financialTransactionService.createTransaction(
-                apartmentId, request, principal.getName());
+                financialTransactionService.createTransaction(
+                        apartmentId, request, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

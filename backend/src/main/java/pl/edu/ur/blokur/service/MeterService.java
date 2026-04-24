@@ -1,5 +1,7 @@
 package pl.edu.ur.blokur.service;
 
+import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.MeterRequest;
@@ -11,12 +13,7 @@ import pl.edu.ur.blokur.models.Meter;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.MeterRepository;
 
-import java.util.List;
-import java.util.UUID;
-
-/**
- * Serwis biznesowy obsługujący zarządzanie licznikami przypisanymi do lokali.
- */
+/** Serwis biznesowy obsługujący zarządzanie licznikami przypisanymi do lokali. */
 @Service
 public class MeterService {
 
@@ -39,13 +36,17 @@ public class MeterService {
      */
     @Transactional
     public MeterResponse create(UUID apartmentId, MeterRequest request) {
-        Apartment apartment = apartmentRepository.findById(apartmentId)
-            .orElseThrow(() -> new NotFoundException("Lokal o ID " + apartmentId + " nie istnieje"));
+        Apartment apartment =
+                apartmentRepository
+                        .findById(apartmentId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Lokal o ID " + apartmentId + " nie istnieje"));
 
         if (meterRepository.existsBySerialNumber(request.getSerialNumber())) {
             throw new BusinessValidationException(
-                "Licznik o numerze seryjnym '" + request.getSerialNumber() + "' już istnieje"
-            );
+                    "Licznik o numerze seryjnym '" + request.getSerialNumber() + "' już istnieje");
         }
 
         Meter meter = new Meter();
@@ -72,8 +73,8 @@ public class MeterService {
         }
 
         return meterRepository.findByApartmentId(apartmentId).stream()
-            .map(this::toResponse)
-            .toList();
+                .map(this::toResponse)
+                .toList();
     }
 
     /**
@@ -86,13 +87,17 @@ public class MeterService {
      */
     @Transactional
     public MeterResponse deactivate(UUID meterId) {
-        Meter meter = meterRepository.findById(meterId)
-            .orElseThrow(() -> new NotFoundException("Licznik o ID " + meterId + " nie istnieje"));
+        Meter meter =
+                meterRepository
+                        .findById(meterId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Licznik o ID " + meterId + " nie istnieje"));
 
         if (!meter.isActive()) {
             throw new BusinessValidationException(
-                "Licznik o ID " + meterId + " jest już nieaktywny"
-            );
+                    "Licznik o ID " + meterId + " jest już nieaktywny");
         }
 
         meter.setActive(false);
@@ -101,12 +106,11 @@ public class MeterService {
 
     private MeterResponse toResponse(Meter meter) {
         return new MeterResponse(
-            meter.getId(),
-            meter.getApartment().getId(),
-            meter.getSerialNumber(),
-            meter.getMediumType(),
-            meter.getInstallationDate(),
-            meter.isActive()
-        );
+                meter.getId(),
+                meter.getApartment().getId(),
+                meter.getSerialNumber(),
+                meter.getMediumType(),
+                meter.getInstallationDate(),
+                meter.isActive());
     }
 }

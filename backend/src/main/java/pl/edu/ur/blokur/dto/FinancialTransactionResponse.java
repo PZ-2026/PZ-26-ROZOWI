@@ -4,9 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/**
- * DTO z danymi pojedynczej transakcji finansowej zwracanymi przez API.
- */
+/** DTO z danymi pojedynczej transakcji finansowej zwracanymi przez API. */
 public class FinancialTransactionResponse {
 
     private UUID id;
@@ -17,10 +15,14 @@ public class FinancialTransactionResponse {
     private LocalDate transactionDate;
     private String recordedByEmail;
 
-    public FinancialTransactionResponse(UUID id, UUID apartmentId, String type,
-                                        BigDecimal amount, String description,
-                                        LocalDate transactionDate,
-                                        String recordedByEmail) {
+    public FinancialTransactionResponse(
+            UUID id,
+            UUID apartmentId,
+            String type,
+            BigDecimal amount,
+            String description,
+            LocalDate transactionDate,
+            String recordedByEmail) {
         this.id = id;
         this.apartmentId = apartmentId;
         this.type = type;

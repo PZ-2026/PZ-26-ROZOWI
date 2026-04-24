@@ -1,13 +1,10 @@
 package pl.edu.ur.blokur.dto;
 
-import pl.edu.ur.blokur.models.MediumType;
-
 import java.time.LocalDate;
 import java.util.UUID;
+import pl.edu.ur.blokur.models.MediumType;
 
-/**
- * DTO z danymi licznika zwracanymi przez API.
- */
+/** DTO z danymi licznika zwracanymi przez API. */
 public class MeterResponse {
 
     private UUID id;
@@ -18,13 +15,12 @@ public class MeterResponse {
     private boolean active;
 
     public MeterResponse(
-        UUID id,
-        UUID apartmentId,
-        String serialNumber,
-        MediumType mediumType,
-        LocalDate installationDate,
-        boolean active
-    ) {
+            UUID id,
+            UUID apartmentId,
+            String serialNumber,
+            MediumType mediumType,
+            LocalDate installationDate,
+            boolean active) {
         this.id = id;
         this.apartmentId = apartmentId;
         this.serialNumber = serialNumber;

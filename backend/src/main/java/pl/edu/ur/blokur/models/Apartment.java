@@ -133,8 +133,8 @@ public class Apartment {
     }
 
     /**
-     * Aktualizuje saldo lokalu poprzez dodanie podanej kwoty.
-     * Dodatnia kwota zwiększa saldo (wpłata), ujemna zmniejsza (naliczenie).
+     * Aktualizuje saldo lokalu poprzez dodanie podanej kwoty. Dodatnia kwota zwiększa saldo
+     * (wpłata), ujemna zmniejsza (naliczenie).
      *
      * @param amount kwota do dodania do salda
      */

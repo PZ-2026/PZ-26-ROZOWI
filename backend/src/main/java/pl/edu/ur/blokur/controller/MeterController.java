@@ -1,6 +1,8 @@
 package pl.edu.ur.blokur.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,12 +17,7 @@ import pl.edu.ur.blokur.dto.MeterRequest;
 import pl.edu.ur.blokur.dto.MeterResponse;
 import pl.edu.ur.blokur.service.MeterService;
 
-import java.util.List;
-import java.util.UUID;
-
-/**
- * Kontroler REST do zarządzania licznikami przypisanymi do lokali.
- */
+/** Kontroler REST do zarządzania licznikami przypisanymi do lokali. */
 @RestController
 @RequestMapping("/api")
 public class MeterController {
@@ -32,8 +29,7 @@ public class MeterController {
     }
 
     /**
-     * Dodaje nowy licznik do wskazanego lokalu.
-     * Dostęp: ZARZADCA.
+     * Dodaje nowy licznik do wskazanego lokalu. Dostęp: ZARZADCA.
      *
      * @param apartmentId identyfikator lokalu
      * @param request dane nowego licznika
@@ -42,16 +38,14 @@ public class MeterController {
     @PostMapping("/apartments/{apartmentId}/meters")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<MeterResponse> create(
-        @PathVariable UUID apartmentId,
-        @Valid @RequestBody MeterRequest request
-    ) {
+            @PathVariable UUID apartmentId, @Valid @RequestBody MeterRequest request) {
         MeterResponse response = meterService.create(apartmentId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
-     * Zwraca listę liczników przypisanych do wskazanego lokalu.
-     * Dostęp: ZARZADCA, KONSERWATOR, MIESZKANIEC.
+     * Zwraca listę liczników przypisanych do wskazanego lokalu. Dostęp: ZARZADCA, KONSERWATOR,
+     * MIESZKANIEC.
      *
      * @param apartmentId identyfikator lokalu
      * @return lista liczników lokalu
@@ -64,8 +58,7 @@ public class MeterController {
     }
 
     /**
-     * Dezaktywuje wskazany licznik (ustawia is_active = false).
-     * Dostęp: ZARZADCA.
+     * Dezaktywuje wskazany licznik (ustawia is_active = false). Dostęp: ZARZADCA.
      *
      * @param id identyfikator licznika
      * @return zdezaktywowany licznik

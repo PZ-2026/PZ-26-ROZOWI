@@ -9,18 +9,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.ColumnDefault;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.hibernate.annotations.ColumnDefault;
 
 /**
  * Encja reprezentująca transakcję finansową powiązaną z lokalem mieszkalnym.
  *
- * <p>Mapuje tabelę {@code financial_transactions}. Każda transakcja posiada
- * typ (np. WPLATA, NALICZENIE), kwotę, opis oraz datę transakcji.
- * Pole {@code recordedBy} wskazuje użytkownika, który zarejestrował operację.</p>
+ * <p>Mapuje tabelę {@code financial_transactions}. Każda transakcja posiada typ (np. WPLATA,
+ * NALICZENIE), kwotę, opis oraz datę transakcji. Pole {@code recordedBy} wskazuje użytkownika,
+ * który zarejestrował operację.
  */
 @Entity
 @Table(name = "financial_transactions")

@@ -1,12 +1,18 @@
 package pl.edu.ur.blokur.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Building;
@@ -14,17 +20,10 @@ import pl.edu.ur.blokur.models.FinancialTransaction;
 import pl.edu.ur.blokur.models.Staircase;
 import pl.edu.ur.blokur.models.User;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Testy integracyjne warstwy repozytorium dla {@link FinancialTransactionRepository}.
- * Weryfikują poprawność zapytań SQL, mapowania JPA oraz sortowania wyników.
- * Wykorzystują bazę H2 w profilu 'test'.
+ * Testy integracyjne warstwy repozytorium dla {@link FinancialTransactionRepository}. Weryfikują
+ * poprawność zapytań SQL, mapowania JPA oraz sortowania wyników. Wykorzystują bazę H2 w profilu
+ * 'test'.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -32,11 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("FinancialTransactionRepository — testy bazy danych")
 class FinancialTransactionRepositoryTest {
 
-    @Autowired
-    private TestEntityManager entityManager;
+    @Autowired private TestEntityManager entityManager;
 
-    @Autowired
-    private FinancialTransactionRepository transactionRepository;
+    @Autowired private FinancialTransactionRepository transactionRepository;
 
     private Staircase staircase;
     private User recorder;
@@ -64,7 +61,9 @@ class FinancialTransactionRepositoryTest {
     }
 
     @Test
-    @DisplayName("findByApartmentIdOrderByTransactionDateDesc — zwraca transakcje posortowane malejąco po dacie")
+    @DisplayName(
+            "findByApartmentIdOrderByTransactionDateDesc — zwraca transakcje posortowane malejąco"
+                    + " po dacie")
     void shouldFindTransactionsByApartmentIdOrderedByDateDesc() {
         // Given
         Apartment app1 = createApartment("1A");
@@ -78,7 +77,7 @@ class FinancialTransactionRepositoryTest {
 
         // When
         List<FinancialTransaction> results =
-            transactionRepository.findByApartmentIdOrderByTransactionDateDesc(app1.getId());
+                transactionRepository.findByApartmentIdOrderByTransactionDateDesc(app1.getId());
 
         // Then
         assertThat(results).hasSize(3);
@@ -97,7 +96,7 @@ class FinancialTransactionRepositoryTest {
         UUID randomId = UUID.randomUUID();
 
         List<FinancialTransaction> results =
-            transactionRepository.findByApartmentIdOrderByTransactionDateDesc(randomId);
+                transactionRepository.findByApartmentIdOrderByTransactionDateDesc(randomId);
 
         assertThat(results).isEmpty();
     }
@@ -110,7 +109,8 @@ class FinancialTransactionRepositoryTest {
         return entityManager.persist(apartment);
     }
 
-    private void createTransaction(Apartment apartment, String type, String amount, LocalDate date) {
+    private void createTransaction(
+            Apartment apartment, String type, String amount, LocalDate date) {
         FinancialTransaction transaction = new FinancialTransaction();
         transaction.setApartment(apartment);
         transaction.setType(type);

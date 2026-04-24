@@ -119,7 +119,8 @@ class PasswordResetServiceTest {
         void shouldThrowWhenTokenNotFound() {
             when(tokenRepository.findByToken("nieistniejacy")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> passwordResetService.resetPassword("nieistniejacy", "NoweHaslo1"))
+            assertThatThrownBy(
+                            () -> passwordResetService.resetPassword("nieistniejacy", "NoweHaslo1"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Nieprawidłowy token");
         }
@@ -127,8 +128,8 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("Wygasły token — rzuca IllegalArgumentException i usuwa token z bazy")
         void shouldThrowAndDeleteExpiredToken() {
-            PasswordResetToken expiredToken = new PasswordResetToken(
-                    testUser, "wygasly", LocalDateTime.now().minusHours(1));
+            PasswordResetToken expiredToken =
+                    new PasswordResetToken(testUser, "wygasly", LocalDateTime.now().minusHours(1));
             when(tokenRepository.findByToken("wygasly")).thenReturn(Optional.of(expiredToken));
 
             assertThatThrownBy(() -> passwordResetService.resetPassword("wygasly", "NoweHaslo1"))
@@ -141,8 +142,9 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("Prawidłowy token — hashuje nowe hasło i zapisuje użytkownika")
         void shouldHashAndSaveNewPassword() {
-            PasswordResetToken validToken = new PasswordResetToken(
-                    testUser, "dobryToken", LocalDateTime.now().plusHours(1));
+            PasswordResetToken validToken =
+                    new PasswordResetToken(
+                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 
@@ -155,8 +157,9 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("Prawidłowy token — usuwa token po zmianie hasła")
         void shouldDeleteTokenAfterSuccessfulReset() {
-            PasswordResetToken validToken = new PasswordResetToken(
-                    testUser, "dobryToken", LocalDateTime.now().plusHours(1));
+            PasswordResetToken validToken =
+                    new PasswordResetToken(
+                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode(any())).thenReturn("hash");
 
@@ -168,8 +171,9 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("Prawidłowy token — stare hasło nie pozostaje w bazie")
         void shouldNotKeepOldPassword() {
-            PasswordResetToken validToken = new PasswordResetToken(
-                    testUser, "dobryToken", LocalDateTime.now().plusHours(1));
+            PasswordResetToken validToken =
+                    new PasswordResetToken(
+                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 

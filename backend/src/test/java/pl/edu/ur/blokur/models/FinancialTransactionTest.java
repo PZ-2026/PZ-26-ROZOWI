@@ -1,18 +1,17 @@
 package pl.edu.ur.blokur.models;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
- * Testy jednostkowe encji {@link FinancialTransaction}.
- * Weryfikują poprawność getterów, setterów oraz domyślny stan obiektu.
+ * Testy jednostkowe encji {@link FinancialTransaction}. Weryfikują poprawność getterów, setterów
+ * oraz domyślny stan obiektu.
  */
 @DisplayName("FinancialTransaction — encja transakcji finansowej")
 class FinancialTransactionTest {

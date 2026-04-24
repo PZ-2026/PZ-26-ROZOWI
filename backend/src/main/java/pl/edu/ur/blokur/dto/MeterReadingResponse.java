@@ -1,11 +1,10 @@
 package pl.edu.ur.blokur.dto;
 
-import pl.edu.ur.blokur.models.MediumType;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import pl.edu.ur.blokur.models.MediumType;
 
 /** DTO z danymi odczytu licznika zwracanymi przez API. */
 public class MeterReadingResponse {

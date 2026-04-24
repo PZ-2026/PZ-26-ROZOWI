@@ -160,8 +160,8 @@ public class AdminUserService {
     }
 
     /**
-     * Dezaktywuje konto użytkownika ustawiając flagę {@code is_active = false}. Historia zgłoszeń
-     * i rozliczeń powiązana z kontem zostaje zachowana.
+     * Dezaktywuje konto użytkownika ustawiając flagę {@code is_active = false}. Historia zgłoszeń i
+     * rozliczeń powiązana z kontem zostaje zachowana.
      *
      * @param id identyfikator użytkownika do dezaktywacji
      * @throws IllegalArgumentException jeśli użytkownik nie istnieje
