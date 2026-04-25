@@ -14,4 +14,5 @@ kotlin {
 
 dependencies {
     implementation("javax.inject:javax.inject:1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }
