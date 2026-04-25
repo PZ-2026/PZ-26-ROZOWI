@@ -29,6 +29,7 @@ import pl.edu.ur.blokur.dto.AnnouncementRequest;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.repository.AnnouncementRepository;
 import pl.edu.ur.blokur.service.AnnouncementService;
+import pl.edu.ur.blokur.service.FileTypeValidator;
 
 /**
  * Kontroler obsługujący żądania HTTP dla modułu ogłoszeń. Udostępnia endpointy CRUD dla zarządcy
@@ -40,18 +41,22 @@ public class AnnouncementController {
 
     private final AnnouncementService announcementService;
     private final AnnouncementRepository announcementRepository;
+    private final FileTypeValidator fileTypeValidator;
 
     /**
      * Tworzy instancję kontrolera z wymaganymi zależnościami.
      *
      * @param announcementService serwis logiki biznesowej ogłoszeń
      * @param announcementRepository repozytorium ogłoszeń
+     * @param fileTypeValidator walidator typów plików
      */
     public AnnouncementController(
             AnnouncementService announcementService,
-            AnnouncementRepository announcementRepository) {
+            AnnouncementRepository announcementRepository,
+            FileTypeValidator fileTypeValidator) {
         this.announcementService = announcementService;
         this.announcementRepository = announcementRepository;
+        this.fileTypeValidator = fileTypeValidator;
     }
 
     /**
@@ -87,6 +92,9 @@ public class AnnouncementController {
     public ResponseEntity<AnnouncementDto> createAnnouncement(
             @Valid @RequestPart("data") AnnouncementRequest request,
             @RequestPart(value = "attachment", required = false) MultipartFile attachment) {
+        if (attachment != null && !attachment.isEmpty()) {
+            fileTypeValidator.validatePdf(attachment);
+        }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(announcementService.createAnnouncement(request, attachment, auth.getName()));
@@ -106,6 +114,9 @@ public class AnnouncementController {
             @PathVariable UUID id,
             @Valid @RequestPart("data") AnnouncementRequest request,
             @RequestPart(value = "attachment", required = false) MultipartFile attachment) {
+        if (attachment != null && !attachment.isEmpty()) {
+            fileTypeValidator.validatePdf(attachment);
+        }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(
                 announcementService.updateAnnouncement(id, request, attachment, auth.getName()));

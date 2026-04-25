@@ -50,6 +50,7 @@ class FinancialTransactionControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean private FinancialTransactionService financialTransactionService;
+    @MockitoBean private pl.edu.ur.blokur.service.FileTypeValidator fileTypeValidator;
 
     @MockitoBean private JwtService jwtService;
 

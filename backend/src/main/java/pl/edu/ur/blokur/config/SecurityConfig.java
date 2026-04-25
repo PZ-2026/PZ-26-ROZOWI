@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import pl.edu.ur.blokur.security.JwtAuthenticationFilter;
+import pl.edu.ur.blokur.security.RateLimitFilter;
 
 /**
  * Konfiguracja zabezpieczeń aplikacji Spring Security. Definiuje reguły autoryzacji, filtry JWT
@@ -24,9 +25,12 @@ import pl.edu.ur.blokur.security.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter, RateLimitFilter rateLimitFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
     /**
@@ -59,6 +63,7 @@ public class SecurityConfig {
                                         .authenticated());
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
