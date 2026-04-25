@@ -24,20 +24,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import pl.edu.ur.blokur.domain.model.UserRole
 import pl.edu.ur.blokur.presentation.auth.content.LoginForm
 import pl.edu.ur.blokur.presentation.auth.util.AuthEvent
 import pl.edu.ur.blokur.presentation.auth.viewmodel.AuthViewModel
 import pl.edu.ur.blokur.presentation.common.theme.GradientEnd
 import pl.edu.ur.blokur.presentation.common.theme.GradientStart
 
+/**
+ * Ekran logowania – composable najwyższego poziomu dla trasy [pl.edu.ur.blokur.presentation.auth.AuthRoutes.Login].
+ *
+ * Odpowiada za:
+ * - podpięcie do [AuthViewModel] (stan + zdarzenia),
+ * - wyświetlenie tła gradientowego, tytułu aplikacji i [LoginForm],
+ * - obsługę jednorazowych zdarzeń nawigacyjnych ([AuthEvent.NavigateToMain])
+ *   i błędów ([AuthEvent.ShowError]) przez Snackbar.
+ *
+ * @param viewModel       ViewModel wstrzykiwany przez Hilt.
+ * @param onLoginSuccess  callback wywoływany po udanym logowaniu; przekazuje rolę
+ *                        użytkownika, by nawigacja mogła wybrać właściwy panel.
+ */
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (UserRole) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val formFields by viewModel.formFields.collectAsState()
@@ -46,7 +58,7 @@ fun LoginScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is AuthEvent.NavigateToMain -> onLoginSuccess()
+                is AuthEvent.NavigateToMain -> onLoginSuccess(event.role)
                 is AuthEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
             }
         }
