@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.ApartmentTransactionsResponse;
 import pl.edu.ur.blokur.dto.FinancialTransactionRequest;
 import pl.edu.ur.blokur.dto.FinancialTransactionResponse;
+import pl.edu.ur.blokur.service.FileTypeValidator;
 import pl.edu.ur.blokur.service.FinancialTransactionService;
 
 /**
@@ -26,9 +27,13 @@ import pl.edu.ur.blokur.service.FinancialTransactionService;
 public class FinancialTransactionController {
 
     private final FinancialTransactionService financialTransactionService;
+    private final FileTypeValidator fileTypeValidator;
 
-    public FinancialTransactionController(FinancialTransactionService financialTransactionService) {
+    public FinancialTransactionController(
+            FinancialTransactionService financialTransactionService,
+            FileTypeValidator fileTypeValidator) {
         this.financialTransactionService = financialTransactionService;
+        this.fileTypeValidator = fileTypeValidator;
     }
 
     /**
@@ -82,6 +87,7 @@ public class FinancialTransactionController {
             @org.springframework.web.bind.annotation.RequestParam("file")
                     org.springframework.web.multipart.MultipartFile file,
             Principal principal) {
+        fileTypeValidator.validateCsv(file);
         pl.edu.ur.blokur.dto.CsvImportResultDto result =
                 financialTransactionService.importTransactionsFromCsv(file, principal.getName());
         return ResponseEntity.ok(result);

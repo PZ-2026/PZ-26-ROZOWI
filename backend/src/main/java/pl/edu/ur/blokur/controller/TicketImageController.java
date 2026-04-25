@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.ur.blokur.dto.TicketImageDto;
 import pl.edu.ur.blokur.models.TicketImageType;
+import pl.edu.ur.blokur.service.FileTypeValidator;
 import pl.edu.ur.blokur.service.TicketImageService;
 
 /** Kontroler obsługujący operacje na zdjęciach w systemie zgłoszeń. */
@@ -25,9 +26,12 @@ import pl.edu.ur.blokur.service.TicketImageService;
 public class TicketImageController {
 
     private final TicketImageService ticketImageService;
+    private final FileTypeValidator fileTypeValidator;
 
-    public TicketImageController(TicketImageService ticketImageService) {
+    public TicketImageController(
+            TicketImageService ticketImageService, FileTypeValidator fileTypeValidator) {
         this.ticketImageService = ticketImageService;
+        this.fileTypeValidator = fileTypeValidator;
     }
 
     /** Wgrywa nowe zdjęcie do zgłoszenia. */
@@ -38,6 +42,7 @@ public class TicketImageController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("image_type") TicketImageType imageType,
             Authentication auth) {
+        fileTypeValidator.validateImage(file);
         return ResponseEntity.ok(
                 ticketImageService.uploadImage(id, file, imageType, auth.getName()));
     }
