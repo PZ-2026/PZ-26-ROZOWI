@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +65,7 @@ class TicketServiceTest {
     @Mock private DocumentRepository documentRepository;
     @Mock private PdfGeneratorService pdfGeneratorService;
     @Mock private TicketStateMachine ticketStateMachine;
+    @Mock private BusinessHoursCalculator businessHoursCalculator;
 
     @InjectMocks private TicketService ticketService;
 
@@ -648,6 +650,82 @@ class TicketServiceTest {
 
             assertThat(result.getStatus()).isEqualTo("ODRZUCONE");
             verify(ticketHistoryRepository).save(any(TicketHistory.class));
+        }
+    }
+
+    // =======================================================
+    // SLA — slaBreached w odpowiedzi getAll
+    // =======================================================
+
+    @Nested
+    @DisplayName("SLA — pole slaBreached na liście zgłoszeń")
+    class SlaBreachedTests {
+
+        private Object[] buildRawRow(LocalDateTime createdAt, Integer slaHours) {
+            return new Object[] {
+                UUID.randomUUID().toString(),
+                "ZGL-2026-0001",
+                "Tytuł testowy",
+                "NOWE",
+                "Hydraulika",
+                "Jan Testowy",
+                null,
+                "10",
+                createdAt != null ? Timestamp.valueOf(createdAt) : null,
+                null,
+                slaHours
+            };
+        }
+
+        @Test
+        @DisplayName("slaBreached = true gdy elapsed > slaHours")
+        void setsSlaBreahedTrueWhenElapsedExceedsSla() {
+            LocalDateTime createdAt = LocalDateTime.of(2026, 4, 20, 8, 0);
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(ticketRepository.findWithFilters(null, null, null, null, null, null, null, null))
+                    .thenReturn(List.<Object[]>of(buildRawRow(createdAt, 4)));
+            when(businessHoursCalculator.calculate(
+                            any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(8.0);
+
+            List<TicketSummaryDto> result =
+                    ticketService.getAll(ZARZADCA_EMAIL, new TicketFilterParams());
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).isSlaBreached()).isTrue();
+        }
+
+        @Test
+        @DisplayName("slaBreached = false gdy elapsed <= slaHours")
+        void setsSlaBreahedFalseWhenElapsedWithinSla() {
+            LocalDateTime createdAt = LocalDateTime.of(2026, 4, 20, 8, 0);
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(ticketRepository.findWithFilters(null, null, null, null, null, null, null, null))
+                    .thenReturn(List.<Object[]>of(buildRawRow(createdAt, 24)));
+            when(businessHoursCalculator.calculate(
+                            any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(8.0);
+
+            List<TicketSummaryDto> result =
+                    ticketService.getAll(ZARZADCA_EMAIL, new TicketFilterParams());
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).isSlaBreached()).isFalse();
+        }
+
+        @Test
+        @DisplayName("slaBreached = false gdy sla_hours null (brak konfiguracji SLA)")
+        void setsSlaBreahedFalseWhenSlaHoursNull() {
+            LocalDateTime createdAt = LocalDateTime.of(2026, 4, 20, 8, 0);
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(ticketRepository.findWithFilters(null, null, null, null, null, null, null, null))
+                    .thenReturn(List.<Object[]>of(buildRawRow(createdAt, null)));
+
+            List<TicketSummaryDto> result =
+                    ticketService.getAll(ZARZADCA_EMAIL, new TicketFilterParams());
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).isSlaBreached()).isFalse();
         }
     }
 

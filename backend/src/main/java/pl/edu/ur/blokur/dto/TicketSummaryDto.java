@@ -20,6 +20,7 @@ public class TicketSummaryDto {
     private String locationLabel;
     private LocalDateTime createdAt;
     private LocalDateTime closedAt;
+    private boolean slaBreached;
 
     /** Konstruktor bezargumentowy wymagany przez mechanizmy serializacji. */
     public TicketSummaryDto() {}
@@ -239,5 +240,27 @@ public class TicketSummaryDto {
      */
     public void setClosedAt(LocalDateTime closedAt) {
         this.closedAt = closedAt;
+    }
+
+    /**
+     * Informuje, czy zgłoszenie przekroczyło SLA zdefiniowane dla jego kategorii.
+     *
+     * <p>Wartość {@code true} oznacza, że liczba godzin roboczych od momentu utworzenia zgłoszenia
+     * przekroczyła {@code sla_hours} przypisane do kategorii. Jeżeli kategoria nie ma
+     * skonfigurowanego SLA, zwracana jest wartość {@code false}.
+     *
+     * @return {@code true} jeśli SLA zostało przekroczone
+     */
+    public boolean isSlaBreached() {
+        return slaBreached;
+    }
+
+    /**
+     * Ustawia flagę przekroczenia SLA.
+     *
+     * @param slaBreached {@code true} jeśli SLA zostało przekroczone
+     */
+    public void setSlaBreached(boolean slaBreached) {
+        this.slaBreached = slaBreached;
     }
 }

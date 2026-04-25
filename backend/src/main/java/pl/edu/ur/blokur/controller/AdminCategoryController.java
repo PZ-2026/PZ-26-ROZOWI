@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.CategoryRequest;
 import pl.edu.ur.blokur.dto.CategoryResponse;
+import pl.edu.ur.blokur.dto.SlaRequest;
 import pl.edu.ur.blokur.service.TicketCategoryService;
 
 /**
@@ -60,6 +61,20 @@ public class AdminCategoryController {
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable UUID id, @Valid @RequestBody CategoryRequest request) {
         return ResponseEntity.ok(categoryService.updateCategory(id, request));
+    }
+
+    /**
+     * Ustawia docelowy czas reakcji SLA (w godzinach roboczych) dla wskazanej kategorii.
+     *
+     * @param id identyfikator kategorii
+     * @param request żądanie zawierające pole {@code slaHours} (min. 1)
+     * @return odpowiedź 204 No Content
+     */
+    @PatchMapping("/{id}/sla")
+    public ResponseEntity<Void> setSla(
+            @PathVariable UUID id, @Valid @RequestBody SlaRequest request) {
+        categoryService.setSlaHours(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     /**
