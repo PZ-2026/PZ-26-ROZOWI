@@ -22,13 +22,14 @@ import pl.edu.ur.blokur.presentation.tickets.ticketsGraph
 /**
  * Globalny host nawigacyjny łączący wszystkie grafy funkcjonalności.
  *
- * Po udanym logowaniu wybiera panel docelowy na podstawie roli użytkownika:
- * - [UserRole.MIESZKANIEC]  → panel mieszkańca ([ResidentRoutes.Main])
- * - [UserRole.KONSERWATOR]  → panel konserwatora (docelowo osobny graf; chwilowo mieszkaniec)
- * - [UserRole.ADMINISTRATOR]→ panel zarządcy (docelowo osobny graf; chwilowo mieszkaniec)
+ * **Routing po logowaniu (per rola):**
+ * - [UserRole.MIESZKANIEC]  → panel mieszkańca (wszystkie 4 zakładki)
+ * - [UserRole.KONSERWATOR]  → panel główny z ograniczonymi zakładkami (Zgłoszenia + Profil)
+ * - [UserRole.ZARZADCA]     → panel główny z pełnymi zakładkami
  *
- * Ekran logowania jest usuwany ze stosu po przekierowaniu (`inclusive = true`),
- * by przycisk Wstecz nie wracał na ekran logowania.
+ * **Wylogowanie:**
+ * Po kliknięciu ikony wylogowania w TopBar stos nawigacji jest całkowicie czyszczony
+ * i użytkownik trafia z powrotem na ekran logowania.
  *
  * @param appNavController globalny NavController; domyślnie tworzony przez [rememberNavController].
  * @param startDestination trasa startowa; domyślnie [AuthRoutes.Login].
@@ -47,7 +48,6 @@ fun AppNavHost(
             onLoginSuccess = { role ->
                 val destination: AppRoute = when (role) {
                     UserRole.MIESZKANIEC -> ResidentRoutes.Main
-                    // TODO: dodać osobne panele gdy zostaną zaimplementowane
                     UserRole.KONSERWATOR -> ResidentRoutes.Main
                     UserRole.ZARZADCA -> ResidentRoutes.Main
                 }
@@ -59,6 +59,11 @@ fun AppNavHost(
 
         residentGraph(
             navController = appNavController,
+            onLogout = {
+                appNavController.navigate(AuthRoutes.Login) {
+                    popUpTo(0) { inclusive = true }
+                }
+            },
             announcementsRoute = AnnouncementsRoutes.Main,
             financesRoute = FinancesRoutes.Main,
             profileRoute = ProfileRoutes.Main,

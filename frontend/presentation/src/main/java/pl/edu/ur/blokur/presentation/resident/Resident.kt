@@ -12,14 +12,27 @@ import pl.edu.ur.blokur.presentation.resident.screen.ResidentMainScreen
 import pl.edu.ur.blokur.presentation.resident.util.NavBarOption
 import pl.edu.ur.blokur.presentation.resident.viewmodel.ResidentMainViewModel
 
+/** Trasy nawigacyjne głównego panelu po zalogowaniu. */
 sealed interface ResidentRoutes : AppRoute {
     @Serializable
     data object Main : ResidentRoutes
 }
 
+/**
+ * Rejestruje composable głównego panelu w grafie nawigacji.
+ *
+ * @param navController   globalny NavController.
+ * @param onLogout        callback wywoływany po wylogowaniu – obsługiwany w AppNavHost.
+ * @param announcementsRoute trasa zakładki ogłoszeń.
+ * @param financesRoute      trasa zakładki finansów.
+ * @param profileRoute       trasa zakładki profilu.
+ * @param ticketsRoute       trasa zakładki zgłoszeń.
+ * @param nestedGraphs    builder zagnieżdżonych grafów funkcjonalności.
+ */
 fun NavGraphBuilder.residentGraph(
     navController: NavController,
-    announcementsRoute : AppRoute,
+    onLogout: () -> Unit,
+    announcementsRoute: AppRoute,
     financesRoute: AppRoute,
     profileRoute: AppRoute,
     ticketsRoute: AppRoute,
@@ -28,17 +41,17 @@ fun NavGraphBuilder.residentGraph(
     composable<ResidentRoutes.Main> {
         val viewModel: ResidentMainViewModel = hiltViewModel()
         val bottomNavController = rememberNavController()
+
         ResidentMainScreen(
-            viewModel,
+            viewModel = viewModel,
             onNavBarItemClicked = { item ->
-                val route = when(item) {
+                val route = when (item) {
                     NavBarOption.NONE -> ResidentRoutes.Main
                     NavBarOption.ANNOUNCEMENTS -> announcementsRoute
                     NavBarOption.FINANCES -> financesRoute
                     NavBarOption.PROFILE -> profileRoute
                     NavBarOption.TICKETS -> ticketsRoute
                 }
-
                 bottomNavController.navigate(route) {
                     popUpTo(bottomNavController.graph.startDestinationId) {
                         saveState = true
@@ -46,9 +59,10 @@ fun NavGraphBuilder.residentGraph(
                     launchSingleTop = true
                     restoreState = true
                 }
-            }
-        ) {
-            modifier -> NavHost(
+            },
+            onLogout = onLogout
+        ) { modifier ->
+            NavHost(
                 navController = bottomNavController,
                 startDestination = profileRoute,
                 modifier = modifier

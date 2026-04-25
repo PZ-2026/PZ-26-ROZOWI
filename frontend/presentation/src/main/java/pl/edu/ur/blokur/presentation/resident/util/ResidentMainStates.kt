@@ -13,4 +13,7 @@ sealed interface ResidentMainState {
 
 sealed interface ResidentMainEvent {
     data class ChangeResidentView(var option: NavBarOption) : ResidentMainEvent
+
+    /** Emitowany po pomyślnym wylogowaniu – nawigacja powinna wrócić do ekranu logowania. */
+    data object Logout : ResidentMainEvent
 }
