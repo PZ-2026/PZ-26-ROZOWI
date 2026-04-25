@@ -19,11 +19,17 @@ public class AnnouncementDto {
     private LocalDateTime plannedDate;
     private LocalDateTime createdAt;
 
+    /**
+     * Liczba odbiorców powiadomienia PUSH wysłanego przy tworzeniu ogłoszenia. Wypełniana tylko w
+     * odpowiedzi na żądanie tworzenia (POST); przy pobieraniu listy ogłoszeń wynosi {@code 0}.
+     */
+    private long recipientCount;
+
     /** Konstruktor bezargumentowy wymagany przez mechanizmy serializacji. */
     public AnnouncementDto() {}
 
     /**
-     * Konstruktor parametryczny tworzący kompletny obiekt DTO.
+     * Konstruktor parametryczny tworzący kompletny obiekt DTO (bez liczby odbiorców).
      *
      * @param id unikalny identyfikator ogłoszenia
      * @param type typ ogłoszenia (np. OGLOSZENIE, KOMUNIKAT)
@@ -54,6 +60,35 @@ public class AnnouncementDto {
         this.attachmentUrl = attachmentUrl;
         this.plannedDate = plannedDate;
         this.createdAt = createdAt;
+    }
+
+    /**
+     * Konstruktor parametryczny tworzący kompletny obiekt DTO z liczbą odbiorców.
+     *
+     * @param id unikalny identyfikator ogłoszenia
+     * @param type typ ogłoszenia (np. OGLOSZENIE, KOMUNIKAT)
+     * @param title tytuł ogłoszenia
+     * @param content treść ogłoszenia
+     * @param authorName imię i nazwisko autora
+     * @param targetType typ zasięgu ogłoszenia
+     * @param attachmentUrl URL do załącznika PDF
+     * @param plannedDate data planowanego opublikowania
+     * @param createdAt data i czas utworzenia rekordu
+     * @param recipientCount liczba odbiorców powiadomienia PUSH
+     */
+    public AnnouncementDto(
+            UUID id,
+            String type,
+            String title,
+            String content,
+            String authorName,
+            String targetType,
+            String attachmentUrl,
+            LocalDateTime plannedDate,
+            LocalDateTime createdAt,
+            long recipientCount) {
+        this(id, type, title, content, authorName, targetType, attachmentUrl, plannedDate, createdAt);
+        this.recipientCount = recipientCount;
     }
 
     /**
@@ -216,5 +251,26 @@ public class AnnouncementDto {
      */
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    /**
+     * Zwraca liczbę odbiorców powiadomienia PUSH dla tego ogłoszenia.
+     *
+     * <p>Wartość jest wypełniana tylko w odpowiedzi na żądanie tworzenia ogłoszenia (POST). W
+     * pozostałych przypadkach wynosi {@code 0}.
+     *
+     * @return liczba odbiorców powiadomienia PUSH
+     */
+    public long getRecipientCount() {
+        return recipientCount;
+    }
+
+    /**
+     * Ustawia liczbę odbiorców powiadomienia PUSH.
+     *
+     * @param recipientCount liczba odbiorców
+     */
+    public void setRecipientCount(long recipientCount) {
+        this.recipientCount = recipientCount;
     }
 }

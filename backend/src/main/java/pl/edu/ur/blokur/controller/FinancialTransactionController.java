@@ -37,18 +37,22 @@ public class FinancialTransactionController {
     }
 
     /**
-     * Pobiera historię transakcji finansowych oraz zbuforowane saldo dla wskazanego lokalu. Dostęp:
-     * ZARZADCA, MIESZKANIEC.
+     * Pobiera historię transakcji finansowych oraz zbuforowane saldo dla wskazanego lokalu.
+     *
+     * <p>Mieszkaniec widzi wyłącznie transakcje z ostatnich 24 miesięcy (WF-08). Zarządca widzi
+     * pełną historię.
      *
      * @param apartmentId identyfikator lokalu
+     * @param principal kontekst bezpieczeństwa zalogowanego użytkownika
      * @return historia transakcji z saldem (HTTP 200)
      */
     @GetMapping("/apartments/{apartmentId}/transactions")
     @PreAuthorize("hasAnyRole('ZARZADCA', 'MIESZKANIEC')")
     public ResponseEntity<ApartmentTransactionsResponse> getTransactions(
-            @PathVariable UUID apartmentId) {
+            @PathVariable UUID apartmentId, Principal principal) {
         ApartmentTransactionsResponse response =
-                financialTransactionService.getTransactionsForApartment(apartmentId);
+                financialTransactionService.getTransactionsForApartment(
+                        apartmentId, principal.getName());
         return ResponseEntity.ok(response);
     }
 

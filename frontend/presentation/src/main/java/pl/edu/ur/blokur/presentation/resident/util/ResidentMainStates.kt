@@ -7,6 +7,7 @@ sealed interface ResidentMainState {
     data object ViewingWelcome : ResidentMainState
     data object ViewingAnnouncements : ResidentMainState
     data object ViewingFinances : ResidentMainState
+    data object ViewingPropertyTree : ResidentMainState
     data object ViewingProfile : ResidentMainState
     data object ViewingTickets : ResidentMainState
 }

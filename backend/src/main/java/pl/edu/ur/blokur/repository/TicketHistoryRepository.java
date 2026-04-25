@@ -88,4 +88,20 @@ public interface TicketHistoryRepository extends JpaRepository<TicketHistory, UU
                     + "WHERE u.id = :userId "
                     + "ORDER BY h.createdAt DESC")
     List<TicketHistoryDto> findHistoryByUserId(@Param("userId") UUID userId);
+
+    /**
+     * Pobiera najnowszy wpis historii dla danego zgłoszenia o wskazanym statusie. Używane przez
+     * {@code TicketAutoCloseJob} do wyznaczenia momentu wejścia w stan
+     * {@code ZAKONCZONE_DO_WERYFIKACJI}.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param status status, dla którego szukamy ostatniego wpisu (np. {@code "ZAKONCZONE_DO_WERYFIKACJI"})
+     * @return encja {@link TicketHistory} lub pusty Optional
+     */
+    @Query(
+            "SELECT h FROM TicketHistory h "
+                    + "WHERE h.ticket.id = :ticketId AND h.status = :status "
+                    + "ORDER BY h.createdAt DESC")
+    List<TicketHistory> findByTicketIdAndStatusOrderByCreatedAtDesc(
+            @Param("ticketId") UUID ticketId, @Param("status") String status);
 }

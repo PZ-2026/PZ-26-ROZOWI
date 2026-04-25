@@ -214,9 +214,28 @@ class FinancialTransactionServiceTest {
     @DisplayName("getTransactionsForApartment()")
     class GetTransactionsTests {
 
+        private static final String ZARZADCA_EMAIL = "zarzadca@blokur.pl";
+        private static final String MIESZKANIEC_EMAIL = "mieszkaniec@blokur.pl";
+
+        private User zarzadca;
+        private User mieszkaniec;
+
+        @BeforeEach
+        void setUpUsers() {
+            zarzadca = new User();
+            zarzadca.setId(UUID.randomUUID());
+            zarzadca.setEmail(ZARZADCA_EMAIL);
+            zarzadca.setRole("ZARZADCA");
+
+            mieszkaniec = new User();
+            mieszkaniec.setId(UUID.randomUUID());
+            mieszkaniec.setEmail(MIESZKANIEC_EMAIL);
+            mieszkaniec.setRole("MIESZKANIEC");
+        }
+
         @Test
-        @DisplayName("Istniejący lokal — zwraca saldo i listę transakcji")
-        void shouldReturnBalanceAndTransactions() {
+        @DisplayName("Zarządca — zwraca pełną historię (bez limitu 24 miesięcy)")
+        void givenZarzadca_shouldReturnFullHistory() {
             FinancialTransaction transaction = new FinancialTransaction();
             transaction.setId(UUID.randomUUID());
             transaction.setApartment(apartment);
@@ -224,19 +243,81 @@ class FinancialTransactionServiceTest {
             transaction.setAmount(new BigDecimal("500.00"));
             transaction.setDescription("Wpłata czynszu");
             transaction.setTransactionDate(LocalDate.of(2026, 4, 15));
-            transaction.setRecordedBy(user);
+            transaction.setRecordedBy(zarzadca);
 
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
             when(financialTransactionRepository.findByApartmentIdOrderByTransactionDateDesc(
                             apartmentId))
                     .thenReturn(List.of(transaction));
 
             ApartmentTransactionsResponse response =
-                    financialTransactionService.getTransactionsForApartment(apartmentId);
+                    financialTransactionService.getTransactionsForApartment(
+                            apartmentId, ZARZADCA_EMAIL);
 
             assertThat(response.getCurrentBalance()).isEqualByComparingTo("200.00");
             assertThat(response.getTransactions()).hasSize(1);
             assertThat(response.getTransactions().get(0).getType()).isEqualTo("WPLATA");
+            verify(financialTransactionRepository)
+                    .findByApartmentIdOrderByTransactionDateDesc(apartmentId);
+            verify(financialTransactionRepository, never())
+                    .findByApartmentIdAndTransactionDateAfter(any(), any());
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec — używa zapytania z limitem 24 miesięcy")
+        void givenMieszkaniec_shouldApply24MonthFilter() {
+            FinancialTransaction recent = new FinancialTransaction();
+            recent.setId(UUID.randomUUID());
+            recent.setApartment(apartment);
+            recent.setType("WPLATA");
+            recent.setAmount(new BigDecimal("300.00"));
+            recent.setDescription("Wpłata z ostatnich 24 miesięcy");
+            recent.setTransactionDate(LocalDate.now().minusMonths(6));
+            recent.setRecordedBy(mieszkaniec);
+
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail(MIESZKANIEC_EMAIL))
+                    .thenReturn(Optional.of(mieszkaniec));
+            when(financialTransactionRepository.findByApartmentIdAndTransactionDateAfter(
+                            eq(apartmentId), any(LocalDate.class)))
+                    .thenReturn(List.of(recent));
+
+            ApartmentTransactionsResponse response =
+                    financialTransactionService.getTransactionsForApartment(
+                            apartmentId, MIESZKANIEC_EMAIL);
+
+            assertThat(response.getTransactions()).hasSize(1);
+            assertThat(response.getTransactions().get(0).getType()).isEqualTo("WPLATA");
+            verify(financialTransactionRepository)
+                    .findByApartmentIdAndTransactionDateAfter(
+                            eq(apartmentId), any(LocalDate.class));
+            verify(financialTransactionRepository, never())
+                    .findByApartmentIdOrderByTransactionDateDesc(any());
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec — data graniczna to 24 miesiące wstecz od dziś")
+        void givenMieszkaniec_cutoffShouldBe24MonthsAgo() {
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail(MIESZKANIEC_EMAIL))
+                    .thenReturn(Optional.of(mieszkaniec));
+            when(financialTransactionRepository.findByApartmentIdAndTransactionDateAfter(
+                            any(), any()))
+                    .thenReturn(List.of());
+
+            financialTransactionService.getTransactionsForApartment(
+                    apartmentId, MIESZKANIEC_EMAIL);
+
+            LocalDate expectedCutoff = LocalDate.now().minusMonths(24);
+            verify(financialTransactionRepository)
+                    .findByApartmentIdAndTransactionDateAfter(
+                            eq(apartmentId),
+                            org.mockito.ArgumentMatchers.argThat(
+                                    cutoff ->
+                                            !cutoff.isAfter(expectedCutoff)
+                                                    && !cutoff.isBefore(
+                                                            expectedCutoff.minusDays(1))));
         }
 
         @Test
@@ -247,21 +328,37 @@ class FinancialTransactionServiceTest {
             assertThatThrownBy(
                             () ->
                                     financialTransactionService.getTransactionsForApartment(
-                                            apartmentId))
+                                            apartmentId, ZARZADCA_EMAIL))
                     .isInstanceOf(NotFoundException.class)
                     .hasMessageContaining(apartmentId.toString());
         }
 
         @Test
-        @DisplayName("Lokal bez transakcji — zwraca saldo i pustą listę")
-        void shouldReturnEmptyListWhenNoTransactions() {
+        @DisplayName("Nieistniejący użytkownik — rzuca NotFoundException")
+        void shouldThrowNotFoundForNonExistentUser() {
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail("ghost@blokur.pl")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(
+                            () ->
+                                    financialTransactionService.getTransactionsForApartment(
+                                            apartmentId, "ghost@blokur.pl"))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining("ghost@blokur.pl");
+        }
+
+        @Test
+        @DisplayName("Zarządca — lokal bez transakcji zwraca puste saldo")
+        void givenZarzadca_shouldReturnEmptyListWhenNoTransactions() {
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
             when(financialTransactionRepository.findByApartmentIdOrderByTransactionDateDesc(
                             apartmentId))
                     .thenReturn(List.of());
 
             ApartmentTransactionsResponse response =
-                    financialTransactionService.getTransactionsForApartment(apartmentId);
+                    financialTransactionService.getTransactionsForApartment(
+                            apartmentId, ZARZADCA_EMAIL);
 
             assertThat(response.getCurrentBalance()).isEqualByComparingTo("200.00");
             assertThat(response.getTransactions()).isEmpty();

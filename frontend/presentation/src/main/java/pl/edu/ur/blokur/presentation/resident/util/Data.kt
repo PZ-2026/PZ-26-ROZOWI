@@ -2,6 +2,7 @@ package pl.edu.ur.blokur.presentation.resident.util
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.AccountTree
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Notifications
@@ -12,6 +13,7 @@ enum class NavBarOption {
     NONE,
     ANNOUNCEMENTS,
     FINANCES,
+    PROPERTY_TREE,
     PROFILE,
     TICKETS
 }
@@ -24,6 +26,15 @@ data class BottomNavItem(
 
 /** Pełny zestaw zakładek – dla mieszkańca i zarządcy. */
 val bottomNavItems = listOf(
+    BottomNavItem("Zgłoszenia", Icons.Outlined.Build, NavBarOption.TICKETS),
+    BottomNavItem("Finanse", Icons.Outlined.DateRange, NavBarOption.FINANCES),
+    BottomNavItem("Ogłoszenia", Icons.Outlined.Notifications, NavBarOption.ANNOUNCEMENTS),
+    BottomNavItem("Profil", Icons.Outlined.AccountCircle, NavBarOption.PROFILE)
+)
+
+/** Zestaw zakładek widocznych dla zarządcy, rozszerzony o drzewo nieruchomości. */
+val managerNavItems = listOf(
+    BottomNavItem("Drzewo", Icons.Outlined.AccountTree, NavBarOption.PROPERTY_TREE),
     BottomNavItem("Zgłoszenia", Icons.Outlined.Build, NavBarOption.TICKETS),
     BottomNavItem("Finanse", Icons.Outlined.DateRange, NavBarOption.FINANCES),
     BottomNavItem("Ogłoszenia", Icons.Outlined.Notifications, NavBarOption.ANNOUNCEMENTS),
@@ -43,5 +54,6 @@ val konserwatorNavItems = listOf(
  */
 fun navItemsForRole(role: UserRole?): List<BottomNavItem> = when (role) {
     UserRole.KONSERWATOR -> konserwatorNavItems
+    UserRole.ZARZADCA -> managerNavItems
     else -> bottomNavItems
 }

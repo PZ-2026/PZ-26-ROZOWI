@@ -381,6 +381,98 @@ public class TicketService {
                 return mapToDetail(ticketRepository.save(ticket));
         }
 
+        /**
+         * Automatycznie zamyka zgłoszenie będące w stanie {@code ZAKONCZONE_DO_WERYFIKACJI} bez
+         * konieczności interakcji zarządcy. Używane wyłącznie przez {@code TicketAutoCloseJob}
+         * po upływie 5 dni roboczych bez zastrzeżeń mieszkańca.
+         *
+         * <p>Jako autora wpisu historii ustawia konserwatora przypisanego do zgłoszenia
+         * (jeśli istnieje), w przeciwnym razie autora zgłoszenia. Do historii dołączany jest
+         * komentarz informujący o automatycznym zamknięciu.
+         *
+         * @param ticketId identyfikator zgłoszenia do zamknięcia
+         * @throws NotFoundException jeśli zgłoszenie nie istnieje
+         * @throws BusinessValidationException jeśli zgłoszenie nie jest w stanie
+         *     {@code ZAKONCZONE_DO_WERYFIKACJI}
+         */
+        @Transactional
+        public void autoCloseTicket(UUID ticketId) {
+                Ticket ticket = ticketRepository
+                                .findById(ticketId)
+                                .orElseThrow(
+                                                () -> new NotFoundException(
+                                                                "Zgłoszenie o ID " + ticketId + " nie istnieje"));
+
+                if (ticket.getStatus() != TicketStatus.ZAKONCZONE_DO_WERYFIKACJI) {
+                        throw new BusinessValidationException(
+                                        "Automatyczne zamknięcie możliwe tylko dla statusu ZAKONCZONE_DO_WERYFIKACJI");
+                }
+
+                User changedBy = ticket.getAssignedTo() != null
+                                ? ticket.getAssignedTo()
+                                : ticket.getAuthor();
+
+                String conservatorName = ticket.getAssignedTo() != null
+                                ? ticket.getAssignedTo().getFirstName() + " " + ticket.getAssignedTo().getLastName()
+                                : "Nieznany";
+                String descriptionToPdf = ticket.getWorkDescription() != null
+                                ? ticket.getWorkDescription()
+                                : ticket.getDescription();
+                List<String> beforeImages = ticket.getImages().stream()
+                                .filter(img -> img.getImageType() == pl.edu.ur.blokur.models.TicketImageType.BEFORE)
+                                .map(pl.edu.ur.blokur.models.TicketImage::getFilePath)
+                                .toList();
+                List<String> afterImages = ticket.getImages().stream()
+                                .filter(img -> img.getImageType() == pl.edu.ur.blokur.models.TicketImageType.AFTER)
+                                .map(pl.edu.ur.blokur.models.TicketImage::getFilePath)
+                                .toList();
+
+                WorkAcceptanceProtocolRequest pdfRequest = new WorkAcceptanceProtocolRequest(
+                                ticket.getTicketNumber(),
+                                descriptionToPdf,
+                                conservatorName,
+                                beforeImages,
+                                afterImages);
+
+                try {
+                        byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(pdfRequest);
+                        Path dirPath = Paths.get("uploads/documents");
+                        if (!Files.exists(dirPath)) {
+                                Files.createDirectories(dirPath);
+                        }
+                        String fileName = "protokol-"
+                                        + ticket.getTicketNumber()
+                                        + "-"
+                                        + System.currentTimeMillis()
+                                        + ".pdf";
+                        Path filePath = dirPath.resolve(fileName);
+                        Files.write(filePath, pdfBytes);
+
+                        Document document = new Document();
+                        document.setType("PROTOKOL");
+                        document.setTitle("Protokół odbioru - " + ticket.getTicketNumber());
+                        document.setFileUrl(filePath.toString());
+                        document.setTicket(ticket);
+                        document.setOwnerUser(changedBy);
+                        documentRepository.save(document);
+                } catch (Exception e) {
+                        throw new RuntimeException("Błąd podczas generowania protokołu PDF przy auto-zamknięciu", e);
+                }
+
+                ticket.setStatus(TicketStatus.ZAMKNIETE);
+                ticket.setClosedAt(LocalDateTime.now());
+
+                TicketHistory history = new TicketHistory();
+                history.setTicket(ticket);
+                history.setStatus("ZAMKNIETE");
+                history.setChangedBy(changedBy);
+                history.setComment("Automatyczne zamknięcie po upływie 5 dni roboczych bez zastrzeżeń.");
+                history.setCreatedAt(LocalDateTime.now());
+                ticketHistoryRepository.save(history);
+
+                ticketRepository.save(ticket);
+        }
+
         @Transactional
         public TicketDetailDto rejectTicket(
                         UUID ticketId, TicketRejectRequest request, String username) {

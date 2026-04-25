@@ -25,6 +25,7 @@ sealed interface ResidentRoutes : AppRoute {
  * @param onLogout        callback wywoływany po wylogowaniu – obsługiwany w AppNavHost.
  * @param announcementsRoute trasa zakładki ogłoszeń.
  * @param financesRoute      trasa zakładki finansów.
+ * @param propertyTreeRoute  trasa zakładki drzewa nieruchomości.
  * @param profileRoute       trasa zakładki profilu.
  * @param ticketsRoute       trasa zakładki zgłoszeń.
  * @param nestedGraphs    builder zagnieżdżonych grafów funkcjonalności.
@@ -34,6 +35,7 @@ fun NavGraphBuilder.residentGraph(
     onLogout: () -> Unit,
     announcementsRoute: AppRoute,
     financesRoute: AppRoute,
+    propertyTreeRoute: AppRoute,
     profileRoute: AppRoute,
     ticketsRoute: AppRoute,
     nestedGraphs: NavGraphBuilder.(NavController) -> Unit
@@ -49,6 +51,7 @@ fun NavGraphBuilder.residentGraph(
                     NavBarOption.NONE -> ResidentRoutes.Main
                     NavBarOption.ANNOUNCEMENTS -> announcementsRoute
                     NavBarOption.FINANCES -> financesRoute
+                    NavBarOption.PROPERTY_TREE -> propertyTreeRoute
                     NavBarOption.PROFILE -> profileRoute
                     NavBarOption.TICKETS -> ticketsRoute
                 }

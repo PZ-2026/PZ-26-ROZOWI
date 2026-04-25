@@ -52,6 +52,7 @@ fun ResidentMainScreen(
     val title = when (state) {
         is ResidentMainState.ViewingAnnouncements -> "Ogłoszenia"
         is ResidentMainState.ViewingFinances -> "Finanse"
+        is ResidentMainState.ViewingPropertyTree -> "Drzewo nieruchomości"
         is ResidentMainState.ViewingProfile -> "Profil"
         is ResidentMainState.ViewingTickets -> "Zgłoszenia"
         is ResidentMainState.Error -> "Błąd"

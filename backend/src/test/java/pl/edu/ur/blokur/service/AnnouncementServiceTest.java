@@ -511,4 +511,146 @@ class AnnouncementServiceTest {
                     .hasMessageContaining("Tylko zarządca może edytować ogłoszenia");
         }
     }
+
+    // =======================================================
+    // Liczba odbiorców ogłoszenia (WF-05)
+    // =======================================================
+
+    /**
+     * Testy dla metody {@link AnnouncementService#countRecipients(Announcement)} oraz weryfikacja,
+     * że {@link AnnouncementService#createAnnouncement} zwraca poprawną liczbę odbiorców w DTO.
+     */
+    @Nested
+    @DisplayName("Liczba odbiorców ogłoszenia — countRecipients")
+    class CountRecipientsTests {
+
+        /**
+         * Tworzy ogłoszenie z zadanym typem zasięgu i opcjonalnym obiektem docelowym.
+         */
+        private Announcement announcementWithTarget(
+                AnnouncementTargetType type, Building b, Staircase sc, Apartment apt) {
+            Announcement ann = new Announcement();
+            ann.setId(UUID.randomUUID());
+            ann.setTargetType(type);
+            ann.setTargetBuilding(b);
+            ann.setTargetStaircase(sc);
+            ann.setTargetApartment(apt);
+            return ann;
+        }
+
+        @Test
+        @DisplayName("Typ WSZYSCY — zlicza wszystkich aktywnych mieszkańców")
+        void wszyscy_shouldCallCountAllResidents() {
+            Announcement ann = announcementWithTarget(AnnouncementTargetType.WSZYSCY, null, null, null);
+            when(userRepository.countAllResidents()).thenReturn(42L);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isEqualTo(42L);
+            verify(userRepository).countAllResidents();
+        }
+
+        @Test
+        @DisplayName("Typ null — traktowany jak WSZYSCY")
+        void nullType_shouldCallCountAllResidents() {
+            Announcement ann = announcementWithTarget(null, null, null, null);
+            when(userRepository.countAllResidents()).thenReturn(7L);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isEqualTo(7L);
+            verify(userRepository).countAllResidents();
+        }
+
+        @Test
+        @DisplayName("Typ BUDYNEK — zlicza mieszkańców budynku")
+        void budynek_shouldCallCountResidentsByBuildingId() {
+            Announcement ann = announcementWithTarget(AnnouncementTargetType.BUDYNEK, building, null, null);
+            when(userRepository.countResidentsByBuildingId(buildingId)).thenReturn(15L);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isEqualTo(15L);
+            verify(userRepository).countResidentsByBuildingId(buildingId);
+        }
+
+        @Test
+        @DisplayName("Typ BUDYNEK bez przypisanego budynku — zwraca 0")
+        void budynek_nullBuilding_shouldReturnZero() {
+            Announcement ann = announcementWithTarget(AnnouncementTargetType.BUDYNEK, null, null, null);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isZero();
+        }
+
+        @Test
+        @DisplayName("Typ KLATKA — zlicza mieszkańców klatki")
+        void klatka_shouldCallCountResidentsByStaircaseId() {
+            Announcement ann = announcementWithTarget(AnnouncementTargetType.KLATKA, null, staircase, null);
+            when(userRepository.countResidentsByStaircaseId(staircaseId)).thenReturn(5L);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isEqualTo(5L);
+            verify(userRepository).countResidentsByStaircaseId(staircaseId);
+        }
+
+        @Test
+        @DisplayName("Typ KLATKA bez przypisanej klatki — zwraca 0")
+        void klatka_nullStaircase_shouldReturnZero() {
+            Announcement ann = announcementWithTarget(AnnouncementTargetType.KLATKA, null, null, null);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isZero();
+        }
+
+        @Test
+        @DisplayName("Typ NIERUCHOMOSC — zlicza mieszkańców lokalu")
+        void nieruchomosc_shouldCallCountResidentsByApartmentId() {
+            Announcement ann = announcementWithTarget(AnnouncementTargetType.NIERUCHOMOSC, null, null, apartment);
+            when(userRepository.countResidentsByApartmentId(apartmentId)).thenReturn(2L);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isEqualTo(2L);
+            verify(userRepository).countResidentsByApartmentId(apartmentId);
+        }
+
+        @Test
+        @DisplayName("Typ NIERUCHOMOSC bez przypisanego lokalu — zwraca 0")
+        void nieruchomosc_nullApartment_shouldReturnZero() {
+            Announcement ann = announcementWithTarget(AnnouncementTargetType.NIERUCHOMOSC, null, null, null);
+
+            long count = announcementService.countRecipients(ann);
+
+            assertThat(count).isZero();
+        }
+
+        @Test
+        @DisplayName("createAnnouncement zwraca recipientCount w DTO")
+        void createAnnouncement_shouldReturnRecipientCountInDto() {
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Nowe ogłoszenie");
+            request.setContent("Treść");
+            request.setTargetType(AnnouncementTargetType.WSZYSCY);
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(announcementRepository.save(any(Announcement.class)))
+                    .thenAnswer(inv -> {
+                        Announcement a = inv.getArgument(0);
+                        if (a.getId() == null) {
+                            a.setId(UUID.randomUUID());
+                        }
+                        return a;
+                    });
+            when(userRepository.countAllResidents()).thenReturn(99L);
+
+            AnnouncementDto dto =
+                    announcementService.createAnnouncement(request, null, ZARZADCA_EMAIL);
+
+            assertThat(dto.getRecipientCount()).isEqualTo(99L);
+        }
+    }
 }

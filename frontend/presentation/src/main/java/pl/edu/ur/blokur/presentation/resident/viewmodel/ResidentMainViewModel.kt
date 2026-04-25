@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.domain.model.UserRole
 import pl.edu.ur.blokur.domain.usecase.GetCurrentUserRoleUseCase
 import pl.edu.ur.blokur.domain.usecase.LogoutUseCase
 import pl.edu.ur.blokur.domain.usecase.TestAUseCase
@@ -61,7 +62,12 @@ class ResidentMainViewModel @Inject constructor(
             testAUseCase("2")
             val role = getCurrentUserRoleUseCase()
             _availableNavItems.value = navItemsForRole(role)
-            _state.value = ResidentMainState.ViewingWelcome
+            val initialOption = when (role) {
+                UserRole.ZARZADCA -> NavBarOption.PROPERTY_TREE
+                UserRole.KONSERWATOR -> NavBarOption.TICKETS
+                else -> NavBarOption.PROFILE
+            }
+            onOptionClicked(initialOption)
         }
     }
 
@@ -78,6 +84,7 @@ class ResidentMainViewModel @Inject constructor(
                 NavBarOption.NONE -> ResidentMainState.Loading
                 NavBarOption.ANNOUNCEMENTS -> ResidentMainState.ViewingAnnouncements
                 NavBarOption.FINANCES -> ResidentMainState.ViewingFinances
+                NavBarOption.PROPERTY_TREE -> ResidentMainState.ViewingPropertyTree
                 NavBarOption.PROFILE -> ResidentMainState.ViewingProfile
                 NavBarOption.TICKETS -> ResidentMainState.ViewingTickets
             }

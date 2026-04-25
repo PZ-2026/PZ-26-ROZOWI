@@ -48,11 +48,12 @@ fun PrimaryButton(
 fun SecondaryButton(
     text: String,
     onClick: () -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = Modifier.height(54.dp),
+        modifier = modifier.height(54.dp),
         enabled = enabled,
         shape = RoundedCornerShape(18.dp),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),

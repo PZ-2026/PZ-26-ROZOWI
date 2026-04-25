@@ -186,6 +186,16 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     List<Object[]> findAllSummariesRaw();
 
     /**
+     * Pobiera wszystkie aktywne zgłoszenia o podanym statusie. Używane przez {@code
+     * TicketAutoCloseJob} do wyszukiwania kandydatów do automatycznego zamknięcia.
+     *
+     * @param status status zgłoszenia (wartość enum {@link pl.edu.ur.blokur.models.TicketStatus})
+     * @return lista zgłoszeń o podanym statusie
+     */
+    @Query("SELECT t FROM Ticket t WHERE t.status = :status")
+    List<Ticket> findAllByTicketStatus(@Param("status") pl.edu.ur.blokur.models.TicketStatus status);
+
+    /**
      * Pobiera maksymalny numer sekwencyjny zgłoszeń dla danego roku. Używane przy inicjalizacji
      * generatora numerów zgłoszeń po restarcie aplikacji.
      *

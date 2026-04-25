@@ -55,11 +55,16 @@ public class FinancialTransactionService {
     /**
      * Pobiera historię transakcji oraz zbuforowane saldo dla wskazanego lokalu.
      *
+     * <p>Dla roli {@code MIESZKANIEC} historia jest ograniczona do ostatnich 24 miesięcy zgodnie
+     * z wymaganiem WF-08. Zarządca widzi pełną historię bez ograniczenia czasowego.
+     *
      * @param apartmentId identyfikator lokalu
+     * @param callerEmail adres e-mail zalogowanego użytkownika (używany do określenia roli)
      * @return DTO zawierające saldo i listę transakcji
-     * @throws NotFoundException jeśli lokal nie istnieje
+     * @throws NotFoundException jeśli lokal lub użytkownik nie istnieje
      */
-    public ApartmentTransactionsResponse getTransactionsForApartment(UUID apartmentId) {
+    public ApartmentTransactionsResponse getTransactionsForApartment(
+            UUID apartmentId, String callerEmail) {
         Apartment apartment =
                 apartmentRepository
                         .findById(apartmentId)
@@ -68,12 +73,28 @@ public class FinancialTransactionService {
                                         new NotFoundException(
                                                 "Lokal o ID " + apartmentId + " nie istnieje"));
 
+        User caller =
+                userRepository
+                        .findByEmail(callerEmail)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Użytkownik o adresie "
+                                                        + callerEmail
+                                                        + " nie istnieje"));
+
+        List<FinancialTransaction> raw;
+        if ("MIESZKANIEC".equals(caller.getRole())) {
+            LocalDate cutoff = LocalDate.now().minusMonths(24);
+            raw = financialTransactionRepository.findByApartmentIdAndTransactionDateAfter(
+                    apartmentId, cutoff);
+        } else {
+            raw = financialTransactionRepository
+                    .findByApartmentIdOrderByTransactionDateDesc(apartmentId);
+        }
+
         List<FinancialTransactionResponse> transactions =
-                financialTransactionRepository
-                        .findByApartmentIdOrderByTransactionDateDesc(apartmentId)
-                        .stream()
-                        .map(this::toResponse)
-                        .collect(Collectors.toList());
+                raw.stream().map(this::toResponse).collect(Collectors.toList());
 
         return new ApartmentTransactionsResponse(apartment.getCurrentBalance(), transactions);
     }

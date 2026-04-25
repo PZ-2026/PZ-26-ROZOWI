@@ -150,7 +150,10 @@ public class AnnouncementService {
 
         sendPushNotificationsAsync(saved);
 
-        return mapToDto(saved);
+        long count = countRecipients(saved);
+        AnnouncementDto dto = mapToDto(saved);
+        dto.setRecipientCount(count);
+        return dto;
     }
 
     /**
@@ -227,6 +230,43 @@ public class AnnouncementService {
         }
 
         announcementRepository.delete(announcement);
+    }
+
+    /**
+     * Oblicza liczbę aktywnych mieszkańców ({@code MIESZKANIEC}) będących adresatami ogłoszenia na
+     * podstawie jego zasięgu. Wynik jest zwracany w polu {@code recipientCount} DTO odpowiedzi,
+     * dzięki czemu zarządca widzi potwierdzenie z liczbą adresatów (spec. KA-05).
+     *
+     * @param announcement zapisane ogłoszenie
+     * @return liczba odbiorców powiadomienia PUSH
+     */
+    long countRecipients(Announcement announcement) {
+        AnnouncementTargetType type = announcement.getTargetType();
+        if (type == null || type == AnnouncementTargetType.WSZYSCY) {
+            return userRepository.countAllResidents();
+        }
+        switch (type) {
+            case BUDYNEK:
+                if (announcement.getTargetBuilding() != null) {
+                    return userRepository.countResidentsByBuildingId(
+                            announcement.getTargetBuilding().getId());
+                }
+                return 0;
+            case KLATKA:
+                if (announcement.getTargetStaircase() != null) {
+                    return userRepository.countResidentsByStaircaseId(
+                            announcement.getTargetStaircase().getId());
+                }
+                return 0;
+            case NIERUCHOMOSC:
+                if (announcement.getTargetApartment() != null) {
+                    return userRepository.countResidentsByApartmentId(
+                            announcement.getTargetApartment().getId());
+                }
+                return 0;
+            default:
+                return 0;
+        }
     }
 
     /** Przypisuje cel ogłoszenia na podstawie typu zasięgu. */

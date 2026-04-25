@@ -32,6 +32,7 @@ fun BottomNavBar(
     val selectedOption = when (state) {
         is ResidentMainState.ViewingAnnouncements -> NavBarOption.ANNOUNCEMENTS
         is ResidentMainState.ViewingFinances -> NavBarOption.FINANCES
+        is ResidentMainState.ViewingPropertyTree -> NavBarOption.PROPERTY_TREE
         is ResidentMainState.ViewingProfile -> NavBarOption.PROFILE
         is ResidentMainState.ViewingTickets -> NavBarOption.TICKETS
         else -> NavBarOption.NONE
