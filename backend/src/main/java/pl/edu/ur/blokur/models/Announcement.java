@@ -2,6 +2,8 @@ package pl.edu.ur.blokur.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -53,6 +55,13 @@ public class Announcement {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "target_apartment_id")
     private Apartment targetApartment;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_type", nullable = false, length = 20)
+    private AnnouncementTargetType targetType = AnnouncementTargetType.WSZYSCY;
+
+    @Column(name = "attachment_path", length = 500)
+    private String attachmentPath;
 
     @Column(name = "planned_date")
     private LocalDateTime plannedDate;
@@ -240,5 +249,41 @@ public class Announcement {
      */
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    /**
+     * Zwraca typ zasięgu ogłoszenia.
+     *
+     * @return typ zasięgu (WSZYSCY, NIERUCHOMOSC, BUDYNEK, KLATKA)
+     */
+    public AnnouncementTargetType getTargetType() {
+        return targetType;
+    }
+
+    /**
+     * Ustawia typ zasięgu ogłoszenia.
+     *
+     * @param targetType typ zasięgu
+     */
+    public void setTargetType(AnnouncementTargetType targetType) {
+        this.targetType = targetType;
+    }
+
+    /**
+     * Zwraca ścieżkę do załącznika PDF.
+     *
+     * @return ścieżka do pliku lub null jeśli brak załącznika
+     */
+    public String getAttachmentPath() {
+        return attachmentPath;
+    }
+
+    /**
+     * Ustawia ścieżkę do załącznika PDF.
+     *
+     * @param attachmentPath ścieżka do pliku
+     */
+    public void setAttachmentPath(String attachmentPath) {
+        this.attachmentPath = attachmentPath;
     }
 }
