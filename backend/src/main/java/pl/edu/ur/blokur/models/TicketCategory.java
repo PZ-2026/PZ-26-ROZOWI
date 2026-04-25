@@ -31,6 +31,9 @@ public class TicketCategory {
     @ColumnDefault("true")
     private boolean isActive = true;
 
+    @Column(name = "sla_hours")
+    private Integer slaHours;
+
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
 
@@ -86,6 +89,24 @@ public class TicketCategory {
      */
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    /**
+     * Zwraca docelowy czas reakcji w godzinach roboczych zdefiniowany dla tej kategorii.
+     *
+     * @return liczba godzin roboczych SLA lub {@code null} jeśli SLA nie zostało skonfigurowane
+     */
+    public Integer getSlaHours() {
+        return slaHours;
+    }
+
+    /**
+     * Ustawia docelowy czas reakcji w godzinach roboczych dla tej kategorii.
+     *
+     * @param slaHours liczba godzin roboczych SLA; {@code null} wyłącza kontrolę SLA
+     */
+    public void setSlaHours(Integer slaHours) {
+        this.slaHours = slaHours;
     }
 
     /**

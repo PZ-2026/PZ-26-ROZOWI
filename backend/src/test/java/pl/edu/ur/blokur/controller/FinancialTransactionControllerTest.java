@@ -21,9 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import pl.edu.ur.blokur.dto.ApartmentTransactionsResponse;
+import pl.edu.ur.blokur.dto.CsvImportErrorDto;
+import pl.edu.ur.blokur.dto.CsvImportResultDto;
 import pl.edu.ur.blokur.dto.FinancialTransactionRequest;
 import pl.edu.ur.blokur.dto.FinancialTransactionResponse;
 import pl.edu.ur.blokur.exception.NotFoundException;
@@ -208,6 +212,75 @@ class FinancialTransactionControllerTest {
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(invalid)))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    // =======================================================
+    // POST /api/finance/import
+    // =======================================================
+
+    @Nested
+    @DisplayName("POST /api/finance/import")
+    class ImportTransactionsTests {
+
+        @Test
+        @DisplayName("Poprawny plik - zwraca 200 OK z podsumowaniem")
+        void shouldReturn200ForValidFile() throws Exception {
+            java.security.Principal principal = () -> "mock.zarzadca1@blokur.pl";
+
+            MockMultipartFile file =
+                    new MockMultipartFile(
+                            "file",
+                            "test.csv",
+                            "text/csv",
+                            "apartment_id,date,type,amount,description\n123,2026-04-15,WPLATA,150.00,Czynsz"
+                                    .getBytes());
+
+            CsvImportResultDto resultDto = new CsvImportResultDto(1, 0, List.of());
+
+            when(financialTransactionService.importTransactionsFromCsv(
+                            any(), eq("mock.zarzadca1@blokur.pl")))
+                    .thenReturn(resultDto);
+
+            mockMvc.perform(
+                            MockMvcRequestBuilders.multipart("/api/finance/import")
+                                    .file(file)
+                                    .principal(principal))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.importedCount").value(1))
+                    .andExpect(jsonPath("$.errorCount").value(0))
+                    .andExpect(jsonPath("$.errors").isEmpty());
+        }
+
+        @Test
+        @DisplayName("Częściowo błędny plik - zwraca 200 OK z błędami")
+        void shouldReturn200WithErrors() throws Exception {
+            java.security.Principal principal = () -> "mock.zarzadca1@blokur.pl";
+
+            MockMultipartFile file =
+                    new MockMultipartFile(
+                            "file",
+                            "test.csv",
+                            "text/csv",
+                            "apartment_id,date,type,amount,description\ninvalid,date,typ,amount,opis"
+                                    .getBytes());
+
+            CsvImportResultDto resultDto =
+                    new CsvImportResultDto(0, 1, List.of(new CsvImportErrorDto(2, "Błąd UUID")));
+
+            when(financialTransactionService.importTransactionsFromCsv(
+                            any(), eq("mock.zarzadca1@blokur.pl")))
+                    .thenReturn(resultDto);
+
+            mockMvc.perform(
+                            MockMvcRequestBuilders.multipart("/api/finance/import")
+                                    .file(file)
+                                    .principal(principal))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.importedCount").value(0))
+                    .andExpect(jsonPath("$.errorCount").value(1))
+                    .andExpect(jsonPath("$.errors[0].line").value(2))
+                    .andExpect(jsonPath("$.errors[0].message").value("Błąd UUID"));
         }
     }
 }

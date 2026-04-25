@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pl.edu.ur.blokur.dto.CategoryRequest;
 import pl.edu.ur.blokur.dto.CategoryResponse;
+import pl.edu.ur.blokur.dto.SlaRequest;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.TicketCategory;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
@@ -131,6 +132,51 @@ class TicketCategoryServiceTest {
 
             assertThatThrownBy(() -> categoryService.updateCategory(unknownId, request))
                     .isInstanceOf(NotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("setSlaHours")
+    class SetSlaHours {
+
+        @Test
+        @DisplayName("ustawia sla_hours dla istniejącej kategorii")
+        void setsSlaHoursOnExistingCategory() {
+            when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(activeCategory));
+
+            SlaRequest request = new SlaRequest();
+            request.setSlaHours(24);
+
+            categoryService.setSlaHours(categoryId, request);
+
+            assertThat(activeCategory.getSlaHours()).isEqualTo(24);
+        }
+
+        @Test
+        @DisplayName("rzuca NotFoundException dla nieznanego id")
+        void throwsNotFoundForUnknownId() {
+            UUID unknownId = UUID.randomUUID();
+            when(categoryRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+            SlaRequest request = new SlaRequest();
+            request.setSlaHours(8);
+
+            assertThatThrownBy(() -> categoryService.setSlaHours(unknownId, request))
+                    .isInstanceOf(NotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("nadpisuje poprzednią wartość sla_hours")
+        void overwritesPreviousSlaHours() {
+            activeCategory.setSlaHours(48);
+            when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(activeCategory));
+
+            SlaRequest request = new SlaRequest();
+            request.setSlaHours(8);
+
+            categoryService.setSlaHours(categoryId, request);
+
+            assertThat(activeCategory.getSlaHours()).isEqualTo(8);
         }
     }
 

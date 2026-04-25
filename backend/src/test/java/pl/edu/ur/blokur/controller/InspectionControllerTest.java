@@ -120,6 +120,7 @@ class InspectionControllerTest {
 
             mockMvc.perform(
                             post("/api/inspections")
+                                    .principal(() -> "testUser")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(validRequest)))
                     .andExpect(status().isCreated())
@@ -141,6 +142,7 @@ class InspectionControllerTest {
 
             mockMvc.perform(
                             post("/api/inspections")
+                                    .principal(() -> "testUser")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(invalid)))
                     .andExpect(status().isBadRequest());
@@ -154,6 +156,7 @@ class InspectionControllerTest {
 
             mockMvc.perform(
                             post("/api/inspections")
+                                    .principal(() -> "testUser")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(invalid)))
                     .andExpect(status().isBadRequest());
@@ -172,6 +175,7 @@ class InspectionControllerTest {
 
             mockMvc.perform(
                             post("/api/inspections")
+                                    .principal(() -> "testUser")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(invalid)))
                     .andExpect(status().isBadRequest());
@@ -185,6 +189,7 @@ class InspectionControllerTest {
 
             mockMvc.perform(
                             post("/api/inspections")
+                                    .principal(() -> "testUser")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(validRequest)))
                     .andExpect(status().isNotFound());
@@ -204,7 +209,7 @@ class InspectionControllerTest {
         void shouldReturn200WithList() throws Exception {
             when(inspectionService.getAll(any())).thenReturn(List.of(sampleResponse));
 
-            mockMvc.perform(get("/api/inspections"))
+            mockMvc.perform(get("/api/inspections").principal(() -> "testUser"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$[0].title").value("Przegląd gazowy"))
@@ -216,7 +221,7 @@ class InspectionControllerTest {
         void shouldReturn200WithEmptyList() throws Exception {
             when(inspectionService.getAll(any())).thenReturn(List.of());
 
-            mockMvc.perform(get("/api/inspections"))
+            mockMvc.perform(get("/api/inspections").principal(() -> "testUser"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$").isEmpty());

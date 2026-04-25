@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.CategoryRequest;
 import pl.edu.ur.blokur.dto.CategoryResponse;
+import pl.edu.ur.blokur.dto.SlaRequest;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.TicketCategory;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
@@ -70,6 +71,25 @@ public class TicketCategoryService {
                                                 "Kategoria o id " + id + " nie istnieje"));
         category.setName(request.getName());
         return new CategoryResponse(category.getId(), category.getName());
+    }
+
+    /**
+     * Ustawia docelowy czas reakcji SLA (w godzinach roboczych) dla wskazanej kategorii.
+     *
+     * @param id identyfikator kategorii
+     * @param request żądanie zawierające liczbę godzin roboczych SLA
+     * @throws NotFoundException gdy kategoria o podanym id nie istnieje
+     */
+    @Transactional
+    public void setSlaHours(UUID id, SlaRequest request) {
+        TicketCategory category =
+                categoryRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Kategoria o id " + id + " nie istnieje"));
+        category.setSlaHours(request.getSlaHours());
     }
 
     /**

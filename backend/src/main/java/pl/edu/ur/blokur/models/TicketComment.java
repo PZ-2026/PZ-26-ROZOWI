@@ -2,6 +2,8 @@ package pl.edu.ur.blokur.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,6 +36,10 @@ public class TicketComment {
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "comment_type", nullable = false, length = 20)
+    private TicketCommentType commentType;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -108,6 +114,24 @@ public class TicketComment {
      */
     public void setContent(String content) {
         this.content = content;
+    }
+
+    /**
+     * Zwraca typ komentarza.
+     *
+     * @return typ komentarza (PUBLICZNY/WEWNETRZNY)
+     */
+    public TicketCommentType getCommentType() {
+        return commentType;
+    }
+
+    /**
+     * Ustawia typ komentarza.
+     *
+     * @param commentType typ komentarza
+     */
+    public void setCommentType(TicketCommentType commentType) {
+        this.commentType = commentType;
     }
 
     /**

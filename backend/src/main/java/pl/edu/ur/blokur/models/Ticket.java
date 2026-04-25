@@ -3,6 +3,8 @@ package pl.edu.ur.blokur.models;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,18 +34,19 @@ public class Ticket {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "ticket_number", unique = true, nullable = false, length = 100)
+    @Column(name = "ticket_number", unique = true, nullable = false, length = 20)
     private String ticketNumber;
 
-    @Column(name = "title", nullable = false, length = 200)
+    @Column(name = "title", nullable = false, length = 100)
     private String title;
 
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @ColumnDefault("'NOWE'")
-    @Column(name = "status", length = 50)
-    private String status = "NOWE";
+    @Column(name = "status", length = 50, nullable = false)
+    private TicketStatus status = TicketStatus.NOWE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
@@ -69,12 +72,24 @@ public class Ticket {
     @JoinColumn(name = "building_id")
     private Building building;
 
+    @Column(name = "planned_visit_at")
+    private LocalDateTime plannedVisitAt;
+
+    @Column(name = "internal_note", columnDefinition = "TEXT")
+    private String internalNote;
+
+    @Column(name = "work_description", columnDefinition = "TEXT", length = 1000)
+    private String workDescription;
+
     @ColumnDefault("false")
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
@@ -83,7 +98,7 @@ public class Ticket {
     private List<TicketHistory> history = new ArrayList<>();
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TicketMedia> media = new ArrayList<>();
+    private List<TicketImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TicketComment> comments = new ArrayList<>();
@@ -109,7 +124,7 @@ public class Ticket {
     /**
      * Zwraca unikalny numer zgłoszenia widoczny dla użytkownika.
      *
-     * @return numer zgłoszenia
+     * @return numer zgłoszenia w formacie ZGL-RRRR-NNNN
      */
     public String getTicketNumber() {
         return ticketNumber;
@@ -118,7 +133,7 @@ public class Ticket {
     /**
      * Ustawia unikalny numer zgłoszenia.
      *
-     * @param ticketNumber numer zgłoszenia
+     * @param ticketNumber numer zgłoszenia w formacie ZGL-RRRR-NNNN
      */
     public void setTicketNumber(String ticketNumber) {
         this.ticketNumber = ticketNumber;
@@ -127,7 +142,7 @@ public class Ticket {
     /**
      * Zwraca tytuł zgłoszenia.
      *
-     * @return tytuł zgłoszenia
+     * @return tytuł zgłoszenia (maks. 100 znaków)
      */
     public String getTitle() {
         return title;
@@ -136,7 +151,7 @@ public class Ticket {
     /**
      * Ustawia tytuł zgłoszenia.
      *
-     * @param title tytuł zgłoszenia
+     * @param title tytuł zgłoszenia (maks. 100 znaków)
      */
     public void setTitle(String title) {
         this.title = title;
@@ -145,7 +160,7 @@ public class Ticket {
     /**
      * Zwraca szczegółowy opis zgłoszenia.
      *
-     * @return opis zgłoszenia
+     * @return opis zgłoszenia (maks. 2000 znaków)
      */
     public String getDescription() {
         return description;
@@ -154,7 +169,7 @@ public class Ticket {
     /**
      * Ustawia opis zgłoszenia.
      *
-     * @param description opis zgłoszenia
+     * @param description opis zgłoszenia (maks. 2000 znaków)
      */
     public void setDescription(String description) {
         this.description = description;
@@ -163,25 +178,25 @@ public class Ticket {
     /**
      * Zwraca aktualny status zgłoszenia.
      *
-     * @return status jako String (np. NOWE, W_REALIZACJI)
+     * @return wartość enum {@link TicketStatus}
      */
-    public String getStatus() {
+    public TicketStatus getStatus() {
         return status;
     }
 
     /**
      * Ustawia status zgłoszenia.
      *
-     * @param status status zgłoszenia
+     * @param status wartość enum {@link TicketStatus}
      */
-    public void setStatus(String status) {
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
 
     /**
      * Zwraca kategorię przypisaną do zgłoszenia.
      *
-     * @return instancja TicketCategory
+     * @return instancja {@link TicketCategory}
      */
     public TicketCategory getCategory() {
         return category;
@@ -190,7 +205,7 @@ public class Ticket {
     /**
      * Ustawia kategorię zgłoszenia.
      *
-     * @param category instancja TicketCategory
+     * @param category instancja {@link TicketCategory}
      */
     public void setCategory(TicketCategory category) {
         this.category = category;
@@ -199,7 +214,7 @@ public class Ticket {
     /**
      * Zwraca użytkownika, który utworzył zgłoszenie.
      *
-     * @return instancja User
+     * @return instancja {@link User}
      */
     public User getAuthor() {
         return author;
@@ -208,7 +223,7 @@ public class Ticket {
     /**
      * Ustawia autora zgłoszenia.
      *
-     * @param author instancja User
+     * @param author instancja {@link User}
      */
     public void setAuthor(User author) {
         this.author = author;
@@ -217,7 +232,7 @@ public class Ticket {
     /**
      * Zwraca konserwatora przypisanego do realizacji zgłoszenia.
      *
-     * @return instancja User lub null jeśli nieprzypisane
+     * @return instancja {@link User} lub {@code null} jeśli nieprzypisane
      */
     public User getAssignedTo() {
         return assignedTo;
@@ -226,7 +241,7 @@ public class Ticket {
     /**
      * Przypisuje konserwatora do realizacji zgłoszenia.
      *
-     * @param assignedTo instancja User
+     * @param assignedTo instancja {@link User}
      */
     public void setAssignedTo(User assignedTo) {
         this.assignedTo = assignedTo;
@@ -235,7 +250,7 @@ public class Ticket {
     /**
      * Zwraca mieszkanie powiązane ze zgłoszeniem.
      *
-     * @return instancja Apartment lub null
+     * @return instancja {@link Apartment} lub {@code null}
      */
     public Apartment getApartment() {
         return apartment;
@@ -244,7 +259,7 @@ public class Ticket {
     /**
      * Ustawia mieszkanie powiązane ze zgłoszeniem.
      *
-     * @param apartment instancja Apartment
+     * @param apartment instancja {@link Apartment}
      */
     public void setApartment(Apartment apartment) {
         this.apartment = apartment;
@@ -253,7 +268,7 @@ public class Ticket {
     /**
      * Zwraca klatkę schodową powiązaną ze zgłoszeniem.
      *
-     * @return instancja Staircase lub null
+     * @return instancja {@link Staircase} lub {@code null}
      */
     public Staircase getStaircase() {
         return staircase;
@@ -262,7 +277,7 @@ public class Ticket {
     /**
      * Ustawia klatkę schodową powiązaną ze zgłoszeniem.
      *
-     * @param staircase instancja Staircase
+     * @param staircase instancja {@link Staircase}
      */
     public void setStaircase(Staircase staircase) {
         this.staircase = staircase;
@@ -271,7 +286,7 @@ public class Ticket {
     /**
      * Zwraca budynek powiązany ze zgłoszeniem.
      *
-     * @return instancja Building lub null
+     * @return instancja {@link Building} lub {@code null}
      */
     public Building getBuilding() {
         return building;
@@ -280,16 +295,70 @@ public class Ticket {
     /**
      * Ustawia budynek powiązany ze zgłoszeniem.
      *
-     * @param building instancja Building
+     * @param building instancja {@link Building}
      */
     public void setBuilding(Building building) {
         this.building = building;
     }
 
     /**
+     * Zwraca planowaną datę wizyty/naprawy.
+     *
+     * @return data planowanej wizyty lub {@code null} jeśli nie zaplanowano
+     */
+    public LocalDateTime getPlannedVisitAt() {
+        return plannedVisitAt;
+    }
+
+    /**
+     * Ustawia planowaną datę wizyty/naprawy.
+     *
+     * @param plannedVisitAt data planowanej wizyty
+     */
+    public void setPlannedVisitAt(LocalDateTime plannedVisitAt) {
+        this.plannedVisitAt = plannedVisitAt;
+    }
+
+    /**
+     * Zwraca wewnętrzną notatkę widoczną tylko dla zarządcy i konserwatora.
+     *
+     * @return treść notatki wewnętrznej lub {@code null}
+     */
+    public String getInternalNote() {
+        return internalNote;
+    }
+
+    /**
+     * Ustawia wewnętrzną notatkę do zgłoszenia.
+     *
+     * @param internalNote treść notatki wewnętrznej
+     */
+    public void setInternalNote(String internalNote) {
+        this.internalNote = internalNote;
+    }
+
+    /**
+     * Zwraca opis wykonanych prac dodany przez konserwatora po zakończeniu zgłoszenia.
+     *
+     * @return opis wykonanych prac (maks. 1000 znaków) lub {@code null}
+     */
+    public String getWorkDescription() {
+        return workDescription;
+    }
+
+    /**
+     * Ustawia opis wykonanych prac dodany przez konserwatora.
+     *
+     * @param workDescription opis wykonanych prac
+     */
+    public void setWorkDescription(String workDescription) {
+        this.workDescription = workDescription;
+    }
+
+    /**
      * Zwraca flagę soft delete zgłoszenia.
      *
-     * @return true jeśli zgłoszenie jest usunięte
+     * @return {@code true} jeśli zgłoszenie jest usunięte
      */
     public boolean isDeleted() {
         return isDeleted;
@@ -323,9 +392,27 @@ public class Ticket {
     }
 
     /**
+     * Zwraca datę i czas ostatniej modyfikacji zgłoszenia.
+     *
+     * @return data ostatniej aktualizacji lub {@code null}
+     */
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    /**
+     * Ustawia datę i czas ostatniej modyfikacji zgłoszenia.
+     *
+     * @param updatedAt data ostatniej aktualizacji
+     */
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    /**
      * Zwraca datę i czas zamknięcia zgłoszenia.
      *
-     * @return data zamknięcia lub null jeśli zgłoszenie jest otwarte
+     * @return data zamknięcia lub {@code null} jeśli zgłoszenie jest otwarte
      */
     public LocalDateTime getClosedAt() {
         return closedAt;
@@ -359,21 +446,21 @@ public class Ticket {
     }
 
     /**
-     * Zwraca listę mediów (zdjęć) dołączonych do zgłoszenia.
+     * Zwraca listę zdjęć dołączonych do zgłoszenia.
      *
-     * @return lista mediów
+     * @return lista zdjęć
      */
-    public List<TicketMedia> getMedia() {
-        return media;
+    public List<TicketImage> getImages() {
+        return images;
     }
 
     /**
-     * Ustawia listę mediów dołączonych do zgłoszenia.
+     * Ustawia listę zdjęć dołączonych do zgłoszenia.
      *
-     * @param media lista mediów
+     * @param images lista zdjęć
      */
-    public void setMedia(List<TicketMedia> media) {
-        this.media = media;
+    public void setImages(List<TicketImage> images) {
+        this.images = images;
     }
 
     /**
