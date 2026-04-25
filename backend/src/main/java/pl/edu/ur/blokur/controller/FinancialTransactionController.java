@@ -67,4 +67,23 @@ public class FinancialTransactionController {
                         apartmentId, request, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    /**
+     * Endpoint do masowego importu transakcji finansowych z pliku CSV. Odczytuje dane i zapisuje
+     * tylko poprawne wiersze, błędne ignoruje dodając o nich informacje. Dostęp: ZARZADCA.
+     *
+     * @param file plik CSV
+     * @param principal zalogowany użytkownik
+     * @return podsumowanie importu
+     */
+    @PostMapping("/finance/import")
+    @PreAuthorize("hasRole('ZARZADCA')")
+    public ResponseEntity<pl.edu.ur.blokur.dto.CsvImportResultDto> importTransactions(
+            @org.springframework.web.bind.annotation.RequestParam("file")
+                    org.springframework.web.multipart.MultipartFile file,
+            Principal principal) {
+        pl.edu.ur.blokur.dto.CsvImportResultDto result =
+                financialTransactionService.importTransactionsFromCsv(file, principal.getName());
+        return ResponseEntity.ok(result);
+    }
 }
