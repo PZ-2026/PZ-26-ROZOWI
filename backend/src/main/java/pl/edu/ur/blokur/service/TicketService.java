@@ -48,6 +48,7 @@ public class TicketService {
     private final DocumentRepository documentRepository;
     private final PdfGeneratorService pdfGeneratorService;
     private final TicketStateMachine ticketStateMachine;
+    private final BusinessHoursCalculator businessHoursCalculator;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -57,7 +58,8 @@ public class TicketService {
             TicketHistoryRepository ticketHistoryRepository,
             DocumentRepository documentRepository,
             PdfGeneratorService pdfGeneratorService,
-            TicketStateMachine ticketStateMachine) {
+            TicketStateMachine ticketStateMachine,
+            BusinessHoursCalculator businessHoursCalculator) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -66,6 +68,7 @@ public class TicketService {
         this.documentRepository = documentRepository;
         this.pdfGeneratorService = pdfGeneratorService;
         this.ticketStateMachine = ticketStateMachine;
+        this.businessHoursCalculator = businessHoursCalculator;
     }
 
     @PostConstruct
@@ -675,6 +678,14 @@ public class TicketService {
         dto.setLocationLabel(row[7] != null ? row[7].toString() : null);
         dto.setCreatedAt(row[8] != null ? ((java.sql.Timestamp) row[8]).toLocalDateTime() : null);
         dto.setClosedAt(row[9] != null ? ((java.sql.Timestamp) row[9]).toLocalDateTime() : null);
+
+        Integer slaHours = row[10] != null ? ((Number) row[10]).intValue() : null;
+        if (slaHours != null && dto.getCreatedAt() != null) {
+            double elapsed =
+                    businessHoursCalculator.calculate(dto.getCreatedAt(), LocalDateTime.now());
+            dto.setSlaBreached(elapsed > slaHours);
+        }
+
         return dto;
     }
 }
