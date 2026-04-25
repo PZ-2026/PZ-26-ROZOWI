@@ -6,6 +6,7 @@ import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
+import pl.edu.ur.blokur.domain.model.UserRole
 
 enum class NavBarOption {
     NONE,
@@ -21,25 +22,26 @@ data class BottomNavItem(
     val option: NavBarOption
 )
 
+/** Pełny zestaw zakładek – dla mieszkańca i zarządcy. */
 val bottomNavItems = listOf(
-    BottomNavItem(
-        label = "Zgłoszenia",
-        icon = Icons.Outlined.Build,
-        option = NavBarOption.TICKETS
-    ),
-    BottomNavItem(
-        label = "Finanse",
-        icon = Icons.Outlined.DateRange,
-        option = NavBarOption.FINANCES
-    ),
-    BottomNavItem(
-        label = "Ogłoszenia",
-        icon = Icons.Outlined.Notifications,
-        option = NavBarOption.ANNOUNCEMENTS
-    ),
-    BottomNavItem(
-        label = "Profil",
-        icon = Icons.Outlined.AccountCircle,
-        option = NavBarOption.PROFILE
-    )
+    BottomNavItem("Zgłoszenia", Icons.Outlined.Build, NavBarOption.TICKETS),
+    BottomNavItem("Finanse", Icons.Outlined.DateRange, NavBarOption.FINANCES),
+    BottomNavItem("Ogłoszenia", Icons.Outlined.Notifications, NavBarOption.ANNOUNCEMENTS),
+    BottomNavItem("Profil", Icons.Outlined.AccountCircle, NavBarOption.PROFILE)
 )
+
+/** Uproszczony zestaw zakładek – dla konserwatora (tylko zgłoszenia i profil). */
+val konserwatorNavItems = listOf(
+    BottomNavItem("Zgłoszenia", Icons.Outlined.Build, NavBarOption.TICKETS),
+    BottomNavItem("Profil", Icons.Outlined.AccountCircle, NavBarOption.PROFILE)
+)
+
+/**
+ * Zwraca listę zakładek nawigacji dolnej odpowiednią dla danej roli użytkownika.
+ *
+ * @param role rola użytkownika; `null` traktowany jak [UserRole.MIESZKANIEC].
+ */
+fun navItemsForRole(role: UserRole?): List<BottomNavItem> = when (role) {
+    UserRole.KONSERWATOR -> konserwatorNavItems
+    else -> bottomNavItems
+}

@@ -3,12 +3,6 @@ package pl.edu.ur.blokur.domain.usecase
 import pl.edu.ur.blokur.domain.UseCaseNotImplementedException
 import javax.inject.Inject
 
-class LogoutUseCase @Inject constructor() {
-    suspend operator fun invoke() {
-        throw UseCaseNotImplementedException(this::class.qualifiedName.toString())
-    }
-}
-
 class BrowseAnnouncementsArchiveUseCase @Inject constructor() {
     suspend operator fun invoke() {
         throw UseCaseNotImplementedException(this::class.qualifiedName.toString())
