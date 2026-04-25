@@ -48,6 +48,7 @@ class PropertyControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean private PropertyService propertyService;
+    @MockitoBean private pl.edu.ur.blokur.service.FileTypeValidator fileTypeValidator;
 
     @MockitoBean private JwtService jwtService;
 
