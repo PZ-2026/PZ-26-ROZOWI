@@ -4,13 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,7 +30,8 @@ class RateLimitFilterTest {
         @Test
         @DisplayName("przepuszcza /api/auth/refresh bez liczenia")
         void passesRefreshEndpoint() throws Exception {
-            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/refresh");
+            MockHttpServletRequest request =
+                    new MockHttpServletRequest("POST", "/api/auth/refresh");
             MockHttpServletResponse response = new MockHttpServletResponse();
             FilterChain chain = mock(FilterChain.class);
 
@@ -69,8 +65,7 @@ class RateLimitFilterTest {
             FilterChain chain = mock(FilterChain.class);
 
             for (int i = 0; i < RateLimitFilter.MAX_REQUESTS; i++) {
-                MockHttpServletRequest request =
-                        buildRequest("/api/auth/login", "192.168.1.1");
+                MockHttpServletRequest request = buildRequest("/api/auth/login", "192.168.1.1");
                 MockHttpServletResponse response = new MockHttpServletResponse();
                 filter.doFilterInternal(request, response, chain);
                 assertThat(response.getStatus())

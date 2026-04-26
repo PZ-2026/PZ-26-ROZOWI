@@ -49,8 +49,8 @@ public class FileTypeValidator {
     }
 
     /**
-     * Waliduje, że przesłany plik nie jest plikiem binarnym (akceptuje pliki tekstowe CSV).
-     * Odrzuca pliki zaczynające się od znanych sygnatur binarnych (JPEG, PNG, PDF).
+     * Waliduje, że przesłany plik nie jest plikiem binarnym (akceptuje pliki tekstowe CSV). Odrzuca
+     * pliki zaczynające się od znanych sygnatur binarnych (JPEG, PNG, PDF).
      *
      * @param file przesłany plik
      * @throws ResponseStatusException HTTP 415 gdy plik zaczyna się od sygnatury binarnej
