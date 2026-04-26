@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">10.200.3.15</domain> <!-- Własny adres ip komputera na którym uruchomiony jest backend -->
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">10.0.2.2</domain>  <!-- Emulator domyślnie łączy się tak do localhosta na PC -->
-    </domain-config>
-</network-security-config>

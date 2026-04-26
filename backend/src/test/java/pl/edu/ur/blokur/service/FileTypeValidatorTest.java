@@ -28,7 +28,8 @@ class FileTypeValidatorTest {
         @DisplayName("akceptuje plik JPEG")
         void acceptsJpeg() {
             byte[] content = buildContent(FileTypeValidator.JPEG_MAGIC, 20);
-            MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", content);
+            MockMultipartFile file =
+                    new MockMultipartFile("file", "photo.jpg", "image/jpeg", content);
 
             assertThatCode(() -> validator.validateImage(file)).doesNotThrowAnyException();
         }
@@ -37,7 +38,8 @@ class FileTypeValidatorTest {
         @DisplayName("akceptuje plik PNG")
         void acceptsPng() {
             byte[] content = buildContent(FileTypeValidator.PNG_MAGIC, 20);
-            MockMultipartFile file = new MockMultipartFile("file", "photo.png", "image/png", content);
+            MockMultipartFile file =
+                    new MockMultipartFile("file", "photo.png", "image/png", content);
 
             assertThatCode(() -> validator.validateImage(file)).doesNotThrowAnyException();
         }
@@ -46,7 +48,8 @@ class FileTypeValidatorTest {
         @DisplayName("odrzuca plik PDF jako obraz — HTTP 415")
         void rejectsPdf() {
             byte[] content = buildContent(FileTypeValidator.PDF_MAGIC, 20);
-            MockMultipartFile file = new MockMultipartFile("file", "doc.pdf", "application/pdf", content);
+            MockMultipartFile file =
+                    new MockMultipartFile("file", "doc.pdf", "application/pdf", content);
 
             assertThatThrownBy(() -> validator.validateImage(file))
                     .isInstanceOf(ResponseStatusException.class)
@@ -57,7 +60,8 @@ class FileTypeValidatorTest {
         @DisplayName("odrzuca plik tekstowy jako obraz — HTTP 415")
         void rejectsText() {
             MockMultipartFile file =
-                    new MockMultipartFile("file", "data.csv", "text/plain", "col1,col2\n1,2".getBytes());
+                    new MockMultipartFile(
+                            "file", "data.csv", "text/plain", "col1,col2\n1,2".getBytes());
 
             assertThatThrownBy(() -> validator.validateImage(file))
                     .isInstanceOf(ResponseStatusException.class)
@@ -83,7 +87,8 @@ class FileTypeValidatorTest {
         @DisplayName("odrzuca JPEG jako PDF — HTTP 415")
         void rejectsJpeg() {
             byte[] content = buildContent(FileTypeValidator.JPEG_MAGIC, 20);
-            MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", content);
+            MockMultipartFile file =
+                    new MockMultipartFile("file", "photo.jpg", "image/jpeg", content);
 
             assertThatThrownBy(() -> validator.validatePdf(file))
                     .isInstanceOf(ResponseStatusException.class)
@@ -120,7 +125,8 @@ class FileTypeValidatorTest {
         @DisplayName("odrzuca JPEG jako CSV — HTTP 415")
         void rejectsJpeg() {
             byte[] content = buildContent(FileTypeValidator.JPEG_MAGIC, 20);
-            MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", content);
+            MockMultipartFile file =
+                    new MockMultipartFile("file", "photo.jpg", "image/jpeg", content);
 
             assertThatThrownBy(() -> validator.validateCsv(file))
                     .isInstanceOf(ResponseStatusException.class)
