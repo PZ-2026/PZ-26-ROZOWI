@@ -40,7 +40,8 @@ public class PropertyController {
      * @param propertyService serwis zarządzający nieruchomościami
      * @param fileTypeValidator walidator typów plików
      */
-    public PropertyController(PropertyService propertyService, FileTypeValidator fileTypeValidator) {
+    public PropertyController(
+            PropertyService propertyService, FileTypeValidator fileTypeValidator) {
         this.propertyService = propertyService;
         this.fileTypeValidator = fileTypeValidator;
     }

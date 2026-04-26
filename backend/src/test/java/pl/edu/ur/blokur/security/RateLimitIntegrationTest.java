@@ -15,18 +15,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.edu.ur.blokur.controller.AuthController;
-import pl.edu.ur.blokur.security.CustomUserDetailsService;
-import pl.edu.ur.blokur.security.JwtAuthenticationFilter;
-import pl.edu.ur.blokur.security.JwtService;
-import pl.edu.ur.blokur.security.RateLimitFilter;
 import pl.edu.ur.blokur.service.LoginAttemptService;
 import pl.edu.ur.blokur.service.PasswordResetService;
 import pl.edu.ur.blokur.service.RefreshTokenService;
 
 /**
- * Test integracyjny weryfikujący działanie RateLimitFilter w pełnym łańcuchu Spring MVC.
- * Po wysłaniu 60 żądań do /api/auth/login 61. żądanie powinno zostać zablokowane (HTTP 429)
- * z nagłówkiem Retry-After.
+ * Test integracyjny weryfikujący działanie RateLimitFilter w pełnym łańcuchu Spring MVC. Po
+ * wysłaniu 60 żądań do /api/auth/login 61. żądanie powinno zostać zablokowane (HTTP 429) z
+ * nagłówkiem Retry-After.
  */
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = true)
@@ -36,7 +32,9 @@ class RateLimitIntegrationTest {
 
     @Autowired private MockMvc mockMvc;
 
-    @MockitoBean private org.springframework.security.authentication.AuthenticationManager authenticationManager;
+    @MockitoBean
+    private org.springframework.security.authentication.AuthenticationManager authenticationManager;
+
     @MockitoBean private JwtService jwtService;
     @MockitoBean private pl.edu.ur.blokur.repository.UserRepository userRepository;
     @MockitoBean private LoginAttemptService loginAttemptService;

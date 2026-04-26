@@ -15,9 +15,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Filtr HTTP implementujący rate limiting metodą sliding window dla endpointów publicznych /api/auth.
- * Limit: 60 żądań na minutę per IP. Przekroczenie skutkuje odpowiedzią HTTP 429 z nagłówkiem
- * Retry-After informującym o czasie oczekiwania w sekundach.
+ * Filtr HTTP implementujący rate limiting metodą sliding window dla endpointów publicznych
+ * /api/auth. Limit: 60 żądań na minutę per IP. Przekroczenie skutkuje odpowiedzią HTTP 429 z
+ * nagłówkiem Retry-After informującym o czasie oczekiwania w sekundach.
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -43,8 +43,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String ip = resolveClientIp(request);
         long now = System.currentTimeMillis();
 
-        Deque<Long> timestamps =
-                requestTimestamps.computeIfAbsent(ip, k -> new ArrayDeque<>());
+        Deque<Long> timestamps = requestTimestamps.computeIfAbsent(ip, k -> new ArrayDeque<>());
 
         synchronized (timestamps) {
             while (!timestamps.isEmpty() && now - timestamps.peekFirst() > WINDOW_MS) {
@@ -52,8 +51,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             }
 
             if (timestamps.size() >= MAX_REQUESTS) {
-                long retryAfterSeconds =
-                        (WINDOW_MS - (now - timestamps.peekFirst())) / 1000 + 1;
+                long retryAfterSeconds = (WINDOW_MS - (now - timestamps.peekFirst())) / 1000 + 1;
                 response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
                 response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
                 response.setContentType("application/json;charset=UTF-8");
@@ -62,7 +60,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                 "{\"error\":\"Too Many Requests\","
                                         + "\"message\":\"Przekroczono limit "
                                         + MAX_REQUESTS
-                                        + " \u017c\u0105da\u0144 na minut\u0119. Spr\u00f3buj ponownie za "
+                                        + " \u017c\u0105da\u0144 na minut\u0119. Spr\u00f3buj"
+                                        + " ponownie za "
                                         + retryAfterSeconds
                                         + " sekund.\"}");
                 return;

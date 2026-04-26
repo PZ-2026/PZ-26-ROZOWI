@@ -20,9 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "My Application"
-include(":app-old")
-include(":domain")
-include(":application")
-include(":infrastructure")
-include(":presentation")
 include(":app")
