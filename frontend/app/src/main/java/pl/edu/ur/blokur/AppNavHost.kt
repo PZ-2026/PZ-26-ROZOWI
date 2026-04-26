@@ -16,6 +16,8 @@ import pl.edu.ur.blokur.ui.views.main.MainRoutes
 import pl.edu.ur.blokur.ui.views.main.mainGraph
 import pl.edu.ur.blokur.ui.views.profile.ProfileRoutes
 import pl.edu.ur.blokur.ui.views.profile.profileGraph
+import pl.edu.ur.blokur.ui.views.properties.PropertyRoutes
+import pl.edu.ur.blokur.ui.views.properties.propertiesGraph
 import pl.edu.ur.blokur.ui.views.tickets.TicketRoutes
 import pl.edu.ur.blokur.ui.views.tickets.ticketsGraph
 
@@ -56,11 +58,13 @@ fun AppNavHost(
             financesRoute = FinancesRoutes.Main,
             profileRoute = ProfileRoutes.Main,
             ticketsRoute = TicketRoutes.List,
+            propertiesRoute = PropertyRoutes.Tree,
             nestedGraphs = { bottomNavController ->
                 announcementsGraph(bottomNavController)
                 financesGraph(bottomNavController)
                 profileGraph(bottomNavController)
                 ticketsGraph(bottomNavController)
+                propertiesGraph(bottomNavController)
             }
         )
     }

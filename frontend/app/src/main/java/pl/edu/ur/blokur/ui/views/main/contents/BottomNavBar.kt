@@ -34,6 +34,7 @@ fun BottomNavBar(
         is ResidentMainState.ViewingFinances -> NavBarOption.FINANCES
         is ResidentMainState.ViewingProfile -> NavBarOption.PROFILE
         is ResidentMainState.ViewingTickets -> NavBarOption.TICKETS
+        is ResidentMainState.ViewingProperties -> NavBarOption.PROPERTIES
         else -> NavBarOption.NONE
     }
 
