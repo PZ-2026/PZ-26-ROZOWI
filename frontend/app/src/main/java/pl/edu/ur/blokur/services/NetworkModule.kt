@@ -77,6 +77,11 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
+    @Provides
+    @Singleton
+    fun providePropertyApiService(@Named("main") retrofit: Retrofit): PropertyApiService =
+        retrofit.create(PropertyApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }

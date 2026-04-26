@@ -54,6 +54,7 @@ fun ResidentMainScreen(
         is ResidentMainState.ViewingFinances -> "Finanse"
         is ResidentMainState.ViewingProfile -> "Profil"
         is ResidentMainState.ViewingTickets -> "Zgłoszenia"
+        is ResidentMainState.ViewingProperties -> "Nieruchomości"
         is ResidentMainState.Error -> "Błąd"
         else -> "Blokur"
     }
