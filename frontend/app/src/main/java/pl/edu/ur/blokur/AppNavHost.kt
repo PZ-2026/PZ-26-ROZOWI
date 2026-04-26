@@ -4,35 +4,23 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import pl.edu.ur.blokur.domain.model.UserRole
-import pl.edu.ur.blokur.presentation.announcements.AnnouncementsRoutes
-import pl.edu.ur.blokur.presentation.announcements.announcementsGraph
-import pl.edu.ur.blokur.presentation.auth.AuthRoutes
-import pl.edu.ur.blokur.presentation.auth.authGraph
-import pl.edu.ur.blokur.presentation.common.AppRoute
-import pl.edu.ur.blokur.presentation.finances.FinancesRoutes
-import pl.edu.ur.blokur.presentation.finances.financesGraph
-import pl.edu.ur.blokur.presentation.profile.ProfileRoutes
-import pl.edu.ur.blokur.presentation.profile.profileGraph
-import pl.edu.ur.blokur.presentation.resident.ResidentRoutes
-import pl.edu.ur.blokur.presentation.resident.residentGraph
-import pl.edu.ur.blokur.presentation.tickets.TicketRoutes
-import pl.edu.ur.blokur.presentation.tickets.ticketsGraph
+import pl.edu.ur.blokur.dtos.UserRole
+import pl.edu.ur.blokur.ui.navigation.AppRoute
+import pl.edu.ur.blokur.ui.views.announcements.AnnouncementsRoutes
+import pl.edu.ur.blokur.ui.views.announcements.announcementsGraph
+import pl.edu.ur.blokur.ui.views.auth.AuthRoutes
+import pl.edu.ur.blokur.ui.views.auth.authGraph
+import pl.edu.ur.blokur.ui.views.finances.FinancesRoutes
+import pl.edu.ur.blokur.ui.views.finances.financesGraph
+import pl.edu.ur.blokur.ui.views.main.MainRoutes
+import pl.edu.ur.blokur.ui.views.main.mainGraph
+import pl.edu.ur.blokur.ui.views.profile.ProfileRoutes
+import pl.edu.ur.blokur.ui.views.profile.profileGraph
+import pl.edu.ur.blokur.ui.views.tickets.TicketRoutes
+import pl.edu.ur.blokur.ui.views.tickets.ticketsGraph
 
 /**
  * Globalny host nawigacyjny łączący wszystkie grafy funkcjonalności.
- *
- * **Routing po logowaniu (per rola):**
- * - [UserRole.MIESZKANIEC]  → panel mieszkańca (wszystkie 4 zakładki)
- * - [UserRole.KONSERWATOR]  → panel główny z ograniczonymi zakładkami (Zgłoszenia + Profil)
- * - [UserRole.ZARZADCA]     → panel główny z pełnymi zakładkami
- *
- * **Wylogowanie:**
- * Po kliknięciu ikony wylogowania w TopBar stos nawigacji jest całkowicie czyszczony
- * i użytkownik trafia z powrotem na ekran logowania.
- *
- * @param appNavController globalny NavController; domyślnie tworzony przez [rememberNavController].
- * @param startDestination trasa startowa; domyślnie [AuthRoutes.Login].
  */
 @Composable
 fun AppNavHost(
@@ -47,9 +35,9 @@ fun AppNavHost(
             navController = appNavController,
             onLoginSuccess = { role ->
                 val destination: AppRoute = when (role) {
-                    UserRole.MIESZKANIEC -> ResidentRoutes.Main
-                    UserRole.KONSERWATOR -> ResidentRoutes.Main
-                    UserRole.ZARZADCA -> ResidentRoutes.Main
+                    UserRole.MIESZKANIEC -> MainRoutes.Main
+                    UserRole.KONSERWATOR -> MainRoutes.Main
+                    UserRole.ZARZADCA -> MainRoutes.Main
                 }
                 appNavController.navigate(destination) {
                     popUpTo(AuthRoutes.Login) { inclusive = true }
@@ -57,7 +45,7 @@ fun AppNavHost(
             }
         )
 
-        residentGraph(
+        mainGraph(
             navController = appNavController,
             onLogout = {
                 appNavController.navigate(AuthRoutes.Login) {
