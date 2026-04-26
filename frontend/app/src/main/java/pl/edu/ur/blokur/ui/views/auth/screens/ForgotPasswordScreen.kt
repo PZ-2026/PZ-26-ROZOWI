@@ -13,48 +13,39 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.UserRole
-import pl.edu.ur.blokur.ui.views.auth.contents.LoginForm
-import pl.edu.ur.blokur.ui.views.auth.utils.AuthEvent
-import pl.edu.ur.blokur.ui.views.auth.viewmodels.AuthViewModel
 import pl.edu.ur.blokur.ui.theme.GradientEnd
 import pl.edu.ur.blokur.ui.theme.GradientStart
+import pl.edu.ur.blokur.ui.views.auth.contents.ForgotPasswordForm
+import pl.edu.ur.blokur.ui.views.auth.utils.ForgotPasswordEvent
+import pl.edu.ur.blokur.ui.views.auth.viewmodels.ForgotPasswordViewModel
 
 /**
- * Ekran logowania – composable najwyższego poziomu.
- *
- * @param viewModel       ViewModel wstrzykiwany przez Hilt.
- * @param onLoginSuccess  callback wywoływany po udanym logowaniu; przekazuje rolę użytkownika.
- * @param onForgotPassword callback nawigujący do ekranu „Zapomniałem hasła".
+ * Ekran „Zapomniałem hasła" — użytkownik podaje e-mail, na który zostanie
+ * wysłany link resetujący.
  */
 @Composable
-fun LoginScreen(
-    viewModel: AuthViewModel,
-    onLoginSuccess: (UserRole) -> Unit,
-    onForgotPassword: () -> Unit = {}
+fun ForgotPasswordScreen(
+    viewModel: ForgotPasswordViewModel,
+    onNavigateBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val formFields by viewModel.formFields.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is AuthEvent.NavigateToMain -> onLoginSuccess(event.role)
-                is AuthEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
+                is ForgotPasswordEvent.NavigateBack -> onNavigateBack()
+                is ForgotPasswordEvent.ShowSnackbar -> Unit
             }
         }
     }
@@ -85,7 +76,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Zaloguj się do swojego konta",
+                text = "Odzyskiwanie dostępu",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -93,22 +84,15 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            LoginForm(
+            ForgotPasswordForm(
                 state = state,
-                loginFormFields = formFields,
-                onLoginFormChange = viewModel::onFormChanged,
-                onLoginClicked = viewModel::login,
-                onForgotPassword = onForgotPassword
+                formFields = formFields,
+                onFormChanged = viewModel::onFormChanged,
+                onSubmit = viewModel::submit,
+                onNavigateBack = viewModel::onNavigateBack
             )
 
             Spacer(modifier = Modifier.height(48.dp))
         }
-
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .safeDrawingPadding()
-        )
     }
 }

@@ -42,3 +42,19 @@ data class TokenPairResponseDto(
     @SerializedName("refreshToken") val refreshToken: String,
     @SerializedName("role") val role: String
 )
+
+/** POST /api/auth/forgot-password — ciało żądania. */
+data class ForgotPasswordRequestDto(
+    @SerializedName("email") val email: String
+)
+
+/** POST /api/auth/reset-password — ciało żądania. */
+data class ResetPasswordRequestDto(
+    @SerializedName("token") val token: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
+/** Generyczna odpowiedź z komunikatem (forgot-password, reset-password). */
+data class MessageResponseDto(
+    @SerializedName("message") val message: String
+)

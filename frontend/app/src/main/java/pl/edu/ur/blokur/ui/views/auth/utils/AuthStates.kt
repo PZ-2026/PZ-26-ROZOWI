@@ -4,9 +4,6 @@ import pl.edu.ur.blokur.dtos.UserRole
 
 /**
  * Stany ekranu logowania.
- *
- * Obserwowane przez [pl.edu.ur.blokur.presentation.auth.screen.LoginScreen]
- * przez `StateFlow` z ViewModelu.
  */
 sealed interface AuthState {
     /** Formularz bezczynny – gotowy do wprowadzenia danych. */
@@ -24,33 +21,61 @@ sealed interface AuthState {
 
 /**
  * Jednorazowe zdarzenia nawigacyjne i feedback emitowane przez AuthViewModel.
- *
- * Przesyłane przez `Channel` – każde zdarzenie odbierane jest dokładnie raz.
  */
 sealed interface AuthEvent {
-
-    /**
-     * Logowanie powiodło się – przekieruj do odpowiedniego panelu.
-     *
-     * @property role rola zdekodowana z odpowiedzi serwera, decyduje o docelowym ekranie.
-     */
     data class NavigateToMain(val role: UserRole) : AuthEvent
-
-    /** Wyświetl błąd w Snackbarze (alternatywna ścieżka do [AuthState.Error]). */
     data class ShowError(val message: String) : AuthEvent
 }
 
 /**
  * Stan pól formularza logowania.
- *
- * Immutable data class – każda zmiana tworzy nową kopię przez `copy()`.
- *
- * @property email           wpisany adres e-mail.
- * @property password        wpisane hasło.
- * @property passwordVisible czy hasło jest widoczne w polu tekstowym.
  */
 data class LoginFormFields(
     val email: String,
     val password: String,
     val passwordVisible: Boolean
+)
+
+// ─── Zapomniałem hasła ───────────────────────────────────────────────
+
+/** Stan ekranu „Zapomniałem hasła". */
+sealed interface ForgotPasswordState {
+    data object Idle : ForgotPasswordState
+    data object Loading : ForgotPasswordState
+    data class Success(val message: String) : ForgotPasswordState
+    data class Error(val message: String) : ForgotPasswordState
+}
+
+/** Zdarzenia ekranu „Zapomniałem hasła". */
+sealed interface ForgotPasswordEvent {
+    data object NavigateBack : ForgotPasswordEvent
+    data class ShowSnackbar(val message: String) : ForgotPasswordEvent
+}
+
+/** Pole formularza „Zapomniałem hasła". */
+data class ForgotPasswordFormFields(
+    val email: String = ""
+)
+
+// ─── Resetowanie hasła ───────────────────────────────────────────────
+
+/** Stan ekranu „Resetuj hasło". */
+sealed interface ResetPasswordState {
+    data object Idle : ResetPasswordState
+    data object Loading : ResetPasswordState
+    data class Success(val message: String) : ResetPasswordState
+    data class Error(val message: String) : ResetPasswordState
+}
+
+/** Zdarzenia ekranu „Resetuj hasło". */
+sealed interface ResetPasswordEvent {
+    data object NavigateToLogin : ResetPasswordEvent
+    data class ShowSnackbar(val message: String) : ResetPasswordEvent
+}
+
+/** Pola formularza resetowania hasła. */
+data class ResetPasswordFormFields(
+    val newPassword: String = "",
+    val confirmPassword: String = "",
+    val passwordVisible: Boolean = false
 )

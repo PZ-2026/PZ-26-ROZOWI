@@ -3,6 +3,7 @@ package pl.edu.ur.blokur.ui.views.auth.contents
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,7 +19,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
@@ -40,6 +43,7 @@ fun LoginForm(
     loginFormFields: LoginFormFields,
     onLoginFormChange: (LoginFormFields) -> Unit,
     onLoginClicked: () -> Unit,
+    onForgotPassword: () -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val isLoading = state is AuthState.Loading
@@ -123,7 +127,18 @@ fun LoginForm(
             shape = MaterialTheme.shapes.medium
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onForgotPassword) {
+                Text(
+                    text = "Zapomniałem hasła",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
 
         PrimaryButton(
             text = if (isLoading) "Logowanie..." else "Zaloguj się",
