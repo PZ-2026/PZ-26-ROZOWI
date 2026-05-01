@@ -3,7 +3,7 @@ package pl.edu.ur.blokur.models;
 /**
  * Enum reprezentujący możliwe stany zgłoszenia w systemie Blokur.
  *
- * <p>Cykl życia zgłoszenia: NOWE → ZAPLANOWANO → W_REALIZACJI → ZAKONCZONE_DO_WERYFIKACJI →
+ * <p>Cykl życia zgłoszenia: NOWE → ZAPLANOWANO → W_REALIZACJI → ZAKONCZONE →
  * ZAMKNIETE. Alternatywne zakończenia: WSTRZYMANO (oczekiwanie) lub ODRZUCONE.
  */
 public enum TicketStatus {
@@ -21,7 +21,7 @@ public enum TicketStatus {
     WSTRZYMANO,
 
     /** Prace zakończone, czeka na weryfikację przez zarządcę lub mieszkańca. */
-    ZAKONCZONE_DO_WERYFIKACJI,
+    ZAKONCZONE,
 
     /** Zgłoszenie zweryfikowane i zamknięte. */
     ZAMKNIETE,

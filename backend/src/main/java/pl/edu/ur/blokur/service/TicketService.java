@@ -301,7 +301,7 @@ public class TicketService {
     }
 
     /**
-     * Zamyka zgłoszenie będące w stanie ZAKONCZONE_DO_WERYFIKACJI. Generuje protokół PDF i zapisuje
+     * Zamyka zgłoszenie będące w stanie ZAKONCZONE. Generuje protokół PDF i zapisuje
      * jako nowy Document. Operacja dostępna tylko dla zarządcy.
      *
      * @param ticketId identyfikator zgłoszenia
@@ -324,9 +324,9 @@ public class TicketService {
                     "Brak uprawnień. Tylko zarządca może zamknąć zgłoszenie.");
         }
 
-        if (ticket.getStatus() != TicketStatus.ZAKONCZONE_DO_WERYFIKACJI) {
+        if (ticket.getStatus() != TicketStatus.ZAKONCZONE) {
             throw new BusinessValidationException(
-                    "Zgłoszenie musi mieć status ZAKONCZONE_DO_WERYFIKACJI, aby mogło zostać"
+                    "Zgłoszenie musi mieć status ZAKONCZONE, aby mogło zostać"
                             + " zamknięte.");
         }
 
@@ -551,12 +551,12 @@ public class TicketService {
                     "Zgłoszenie musi mieć status W_REALIZACJI, aby można było je zakończyć.");
         }
 
-        ticket.setStatus(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
+        ticket.setStatus(TicketStatus.ZAKONCZONE);
         ticket.setWorkDescription(request.getWorkDescription());
 
         TicketHistory history = new TicketHistory();
         history.setTicket(ticket);
-        history.setStatus("ZAKONCZONE_DO_WERYFIKACJI");
+        history.setStatus("ZAKONCZONE");
         history.setChangedBy(conservator);
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
@@ -677,8 +677,8 @@ public class TicketService {
         dto.setAuthorName(row[5] != null ? row[5].toString() : null);
         dto.setAssignedToName(row[6] != null ? row[6].toString() : null);
         dto.setLocationLabel(row[7] != null ? row[7].toString() : null);
-        dto.setCreatedAt(row[8] != null ? ((java.sql.Timestamp) row[8]).toLocalDateTime() : null);
-        dto.setClosedAt(row[9] != null ? ((java.sql.Timestamp) row[9]).toLocalDateTime() : null);
+        dto.setCreatedAt(parseDateTime(row[8]));
+        dto.setClosedAt(parseDateTime(row[9]));
 
         Integer slaHours = row[10] != null ? ((Number) row[10]).intValue() : null;
         if (slaHours != null && dto.getCreatedAt() != null) {
@@ -688,5 +688,15 @@ public class TicketService {
         }
 
         return dto;
+    }
+
+    private LocalDateTime parseDateTime(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.sql.Timestamp) {
+            return ((java.sql.Timestamp) obj).toLocalDateTime();
+        } else if (obj instanceof java.time.LocalDateTime) {
+            return (java.time.LocalDateTime) obj;
+        }
+        throw new IllegalArgumentException("Nieznany format daty: " + obj.getClass());
     }
 }

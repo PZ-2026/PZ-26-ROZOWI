@@ -143,7 +143,7 @@ public class TicketController {
 
     /**
      * Zmienia status zgłoszenia z walidacją state-machine. Dostępne dla KONSERWATORA (własne
-     * zgłoszenia: W_REALIZACJI, WSTRZYMANO, ZAKONCZONE_DO_WERYFIKACJI) i ZARZĄDCY.
+     * zgłoszenia: W_REALIZACJI, WSTRZYMANO, ZAKONCZONE) i ZARZĄDCY.
      *
      * @param id identyfikator zgłoszenia
      * @param request nowy status i opcjonalny komentarz

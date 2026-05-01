@@ -41,7 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.AppUserDto
-import pl.edu.ur.blokur.dtos.TicketDto
+import pl.edu.ur.blokur.dtos.TicketDetailDto
 import pl.edu.ur.blokur.dtos.TicketStatus
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
@@ -53,7 +53,6 @@ import pl.edu.ur.blokur.ui.theme.SuccessGreen
 import pl.edu.ur.blokur.ui.views.tickets.components.AssignConservatorSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ConservatorActionSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ManagerRejectSheet
-import pl.edu.ur.blokur.ui.views.tickets.components.TicketTimeline
 import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketDetailsListState
 import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
@@ -83,7 +82,7 @@ fun TicketDetailsContent(
 
 @Composable
 private fun TicketDetailsSuccessContent(
-    ticket: TicketDto,
+    ticket: TicketDetailDto,
     conservators: List<AppUserDto>,
     currentUserRole: String,
     onAssignConservator: (AppUserDto, String) -> Unit,
@@ -106,7 +105,7 @@ private fun TicketDetailsSuccessContent(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatusBadge(text = presentation.label, dotColor = presentation.color)
-                TagBadge(text = ticket.category.name)
+                TagBadge(text = ticket.categoryName)
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -132,31 +131,58 @@ private fun TicketDetailsSuccessContent(
             ) {
                 MetadataRow(Icons.Rounded.Article, "Numer zgłoszenia", ticket.ticketNumber)
                 Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
-                MetadataRow(Icons.Rounded.Person, "Zgłaszający", ticket.author.fullName)
-                val location = buildString {
-                    ticket.building?.let { append(it.address) }
-                    ticket.staircase?.let { append(" • Klatka ${it.label}") }
-                    ticket.apartment?.let { append(" • Mieszkanie ${it.number}") }
-                }
-                if (location.isNotBlank()) {
+                MetadataRow(Icons.Rounded.Person, "Zgłaszający", ticket.authorName)
+                
+                ticket.locationLabel?.takeIf { it.isNotBlank() }?.let { location ->
                     Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.Place, "Lokalizacja", location)
                 }
-                ticket.assignedTo?.let {
+
+                ticket.assignedToName?.let {
                     Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
-                    MetadataRow(Icons.Rounded.Person, "Przypisany konserwator", it.fullName)
+                    MetadataRow(Icons.Rounded.Person, "Przypisany konserwator", it)
                 }
+
                 Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                 MetadataRow(Icons.Rounded.CalendarToday, "Data utworzenia", formatDateTime(ticket.createdAt))
+
+                ticket.updatedAt?.let {
+                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    MetadataRow(Icons.Rounded.CalendarToday, "Ostatnia aktualizacja", formatDateTime(it))
+                }
+
+                ticket.closedAt?.let {
+                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    MetadataRow(Icons.Rounded.CheckCircle, "Data zamknięcia", formatDateTime(it))
+                }
+                
+                ticket.plannedVisitAt?.let {
+                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    MetadataRow(Icons.Rounded.CalendarToday, "Planowana wizyta", formatDateTime(it))
+                }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "Historia zgłoszenia",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                TicketTimeline(history = ticket.history)
+            ticket.internalNote?.takeIf { it.isNotBlank() }?.let { note ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Notatka wewnętrzna",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
 
             Spacer(Modifier.height(100.dp))
@@ -171,7 +197,7 @@ private fun TicketDetailsSuccessContent(
             horizontalAlignment = Alignment.End
         ) {
             when (currentUserRole) {
-                "ADMINISTRATOR" -> {
+                "ZARZADCA" -> {
                     when (ticket.status) {
                         TicketStatus.NOWE -> {
                             TicketFab(

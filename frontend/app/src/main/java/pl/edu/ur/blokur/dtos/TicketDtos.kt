@@ -4,6 +4,41 @@ enum class TicketStatus {
     NOWE, ZAPLANOWANO, W_REALIZACJI, WSTRZYMANO, ZAKONCZONE, ZAMKNIETE, ODRZUCONE
 }
 
+data class TicketSummaryDto(
+    val id: String,
+    val ticketNumber: String,
+    val title: String,
+    val status: TicketStatus,
+    val categoryName: String,
+    val authorName: String,
+    val assignedToName: String?,
+    val locationLabel: String?,
+    val createdAt: String,
+    val closedAt: String?,
+    val slaBreached: Boolean
+)
+
+data class TicketDetailDto(
+    val id: String,
+    val ticketNumber: String,
+    val title: String,
+    val description: String,
+    val status: TicketStatus,
+    val categoryName: String,
+    val categoryId: String,
+    val authorName: String,
+    val authorId: String,
+    val assignedToName: String?,
+    val assignedToId: String?,
+    val locationLabel: String?,
+    val apartmentId: String?,
+    val plannedVisitAt: String?,
+    val internalNote: String?,
+    val createdAt: String,
+    val updatedAt: String?,
+    val closedAt: String?
+)
+
 data class AppUserDto(
     val firstName: String,
     val lastName: String,
@@ -12,46 +47,3 @@ data class AppUserDto(
 ) {
     val fullName: String get() = "$firstName $lastName"
 }
-
-data class TicketCategoryDto(
-    val name: String
-)
-
-data class BuildingDto(
-    val name: String,
-    val address: String
-)
-
-data class StaircaseDto(
-    val label: String
-)
-
-data class ApartmentDto(
-    val number: String
-)
-
-data class TicketHistoryDto(
-    val status: TicketStatus,
-    val changedBy: AppUserDto,
-    val comment: String?,
-    val createdAt: String
-)
-
-data class TicketDto(
-    val id: Int,
-    val ticketNumber: String,
-    val title: String,
-    val description: String,
-    val status: TicketStatus,
-    val category: TicketCategoryDto,
-    val author: AppUserDto,
-    val assignedTo: AppUserDto?,
-    val apartment: ApartmentDto?,
-    val staircase: StaircaseDto?,
-    val building: BuildingDto?,
-    val isDeleted: Boolean,
-    val createdAt: String,
-    val closedAt: String?,
-    val images: List<String>,
-    val history: List<TicketHistoryDto>
-)

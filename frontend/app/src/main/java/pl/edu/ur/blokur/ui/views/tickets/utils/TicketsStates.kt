@@ -1,16 +1,17 @@
 package pl.edu.ur.blokur.ui.views.tickets.utils
 
 import pl.edu.ur.blokur.dtos.AppUserDto
-import pl.edu.ur.blokur.dtos.TicketDto
+import pl.edu.ur.blokur.dtos.TicketDetailDto
+import pl.edu.ur.blokur.dtos.TicketSummaryDto
 
 sealed interface TicketsListState {
     data object Loading : TicketsListState
     data class Error(val message: String) : TicketsListState
-    data class Success(val tickets: List<TicketDto>, val currentUserRole: String = "MIESZKANIEC") : TicketsListState
+    data class Success(val tickets: List<TicketSummaryDto>, val currentUserRole: String = "MIESZKANIEC") : TicketsListState
 }
 
 sealed interface TicketsScreenEvent {
-    data class NavigateToDetails(val ticketId: Int) : TicketsScreenEvent
+    data class NavigateToDetails(val ticketId: String) : TicketsScreenEvent
     data object NavigateToCreate : TicketsScreenEvent
 }
 
@@ -18,7 +19,7 @@ sealed interface TicketDetailsListState {
     data object Loading : TicketDetailsListState
     data class Error(val message: String) : TicketDetailsListState
     data class Success(
-        val ticket: TicketDto,
+        val ticket: TicketDetailDto,
         val availableConservators: List<AppUserDto> = emptyList(),
         val currentUserRole: String = "MIESZKANIEC"
     ) : TicketDetailsListState
