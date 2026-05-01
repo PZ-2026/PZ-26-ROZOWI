@@ -41,7 +41,7 @@ import androidx.compose.foundation.verticalScroll
 @Composable
 fun TicketsScreen(
     viewModel: TicketsViewModel,
-    onNavigateToDetails: (Int) -> Unit,
+    onNavigateToDetails: (String) -> Unit,
     onNavigateToCreate: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()

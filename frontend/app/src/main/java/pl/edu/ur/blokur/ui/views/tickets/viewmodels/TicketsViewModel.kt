@@ -44,7 +44,7 @@ class TicketsViewModel @Inject constructor(
         }
     }
 
-    fun onTicketClicked(ticketId: Int) {
+    fun onTicketClicked(ticketId: String) {
         viewModelScope.launch {
             _events.send(TicketsScreenEvent.NavigateToDetails(ticketId))
         }

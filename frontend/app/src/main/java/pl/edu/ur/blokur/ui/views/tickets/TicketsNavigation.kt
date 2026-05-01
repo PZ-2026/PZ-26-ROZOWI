@@ -18,7 +18,7 @@ sealed interface TicketRoutes : AppRoute {
     data object List : TicketRoutes
 
     @Serializable
-    data class Details(val ticketId: Int) : TicketRoutes
+    data class Details(val ticketId: String) : TicketRoutes
 
     @Serializable
     data object Create : TicketRoutes
