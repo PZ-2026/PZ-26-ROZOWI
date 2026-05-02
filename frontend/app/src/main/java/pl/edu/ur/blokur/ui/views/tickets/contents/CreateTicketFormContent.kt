@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -31,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import pl.edu.ur.blokur.dtos.CategoryDto
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
 import pl.edu.ur.blokur.ui.views.tickets.utils.CreateTicketFormState
 import pl.edu.ur.blokur.ui.views.tickets.utils.CreateTicketSubmitState
@@ -40,7 +42,8 @@ import pl.edu.ur.blokur.ui.views.tickets.utils.CreateTicketSubmitState
 fun CreateTicketFormContent(
     formState: CreateTicketFormState,
     submitState: CreateTicketSubmitState,
-    categories: List<String>,
+    categories: List<CategoryDto>,
+    categoriesLoading: Boolean,
     onFormChanged: (CreateTicketFormState) -> Unit,
     onSubmitClicked: () -> Unit,
     modifier: Modifier = Modifier
@@ -63,30 +66,55 @@ fun CreateTicketFormContent(
         )
 
         FormLabel("Kategoria")
-        ExposedDropdownMenuBox(
-            expanded = formState.isCategoryExpanded,
-            onExpandedChange = { onFormChanged(formState.copy(isCategoryExpanded = it)) }
-        ) {
-            OutlinedTextField(
-                value = formState.selectedCategory.ifBlank { "Wybierz kategorię" },
-                onValueChange = {},
-                readOnly = true,
-                enabled = !isSubmitting,
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = formState.isCategoryExpanded) },
-                shape = RoundedCornerShape(12.dp)
-            )
-            ExposedDropdownMenu(
-                expanded = formState.isCategoryExpanded,
-                onDismissRequest = { onFormChanged(formState.copy(isCategoryExpanded = false)) }
+        if (categoriesLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
             ) {
-                categories.forEach { category ->
-                    DropdownMenuItem(
-                        text = { Text(category) },
-                        onClick = {
-                            onFormChanged(formState.copy(selectedCategory = category, isCategoryExpanded = false))
-                        }
-                    )
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+        } else {
+            ExposedDropdownMenuBox(
+                expanded = formState.isCategoryExpanded,
+                onExpandedChange = { onFormChanged(formState.copy(isCategoryExpanded = it)) }
+            ) {
+                OutlinedTextField(
+                    value = formState.selectedCategoryName.ifBlank { "Wybierz kategorię" },
+                    onValueChange = {},
+                    readOnly = true,
+                    enabled = !isSubmitting,
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = formState.isCategoryExpanded) },
+                    shape = RoundedCornerShape(12.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = formState.isCategoryExpanded,
+                    onDismissRequest = { onFormChanged(formState.copy(isCategoryExpanded = false)) }
+                ) {
+                    categories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category.name) },
+                            onClick = {
+                                onFormChanged(
+                                    formState.copy(
+                                        selectedCategoryId = category.id,
+                                        selectedCategoryName = category.name,
+                                        isCategoryExpanded = false
+                                    )
+                                )
+                            }
+                        )
+                    }
+                    if (categories.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("Brak dostępnych kategorii", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            onClick = { onFormChanged(formState.copy(isCategoryExpanded = false)) }
+                        )
+                    }
                 }
             }
         }
@@ -120,16 +148,25 @@ fun CreateTicketFormContent(
             onClick = onSubmitClicked,
             modifier = Modifier.fillMaxWidth().height(54.dp),
             enabled = formState.title.isNotBlank()
-                    && formState.selectedCategory.isNotBlank()
+                    && formState.selectedCategoryId.isNotBlank()
                     && formState.description.isNotBlank()
-                    && !isSubmitting,
+                    && !isSubmitting
+                    && !categoriesLoading,
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text(
-                text = if (isSubmitting) "Wysyłanie..." else "Zgłoś usterkę",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            if (isSubmitting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "Zgłoś usterkę",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -169,7 +206,8 @@ private fun CreateTicketFormIdlePreview() {
         CreateTicketFormContent(
             formState = CreateTicketFormState(),
             submitState = CreateTicketSubmitState.Idle,
-            categories = listOf("Hydraulika", "Elektryka", "Inne"),
+            categories = listOf(CategoryDto("1", "Hydraulika"), CategoryDto("2", "Elektryka")),
+            categoriesLoading = false,
             onFormChanged = {},
             onSubmitClicked = {}
         )
@@ -178,12 +216,13 @@ private fun CreateTicketFormIdlePreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun CreateTicketFormSubmittingPreview() {
+private fun CreateTicketFormLoadingCategoriesPreview() {
     PreviewTheme {
         CreateTicketFormContent(
-            formState = CreateTicketFormState(title = "Brak wody", selectedCategory = "Hydraulika", description = "Opis..."),
-            submitState = CreateTicketSubmitState.Submitting,
-            categories = listOf("Hydraulika", "Elektryka"),
+            formState = CreateTicketFormState(),
+            submitState = CreateTicketSubmitState.Idle,
+            categories = emptyList(),
+            categoriesLoading = true,
             onFormChanged = {},
             onSubmitClicked = {}
         )

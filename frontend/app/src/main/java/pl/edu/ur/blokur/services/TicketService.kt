@@ -24,16 +24,49 @@ class TicketService @Inject constructor(
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
+    suspend fun getCategories(): List<CategoryDto> {
+        return runCatching {
+            val response = api.getCategories()
+            handleResponse(response, "Błąd podczas pobierania kategorii")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
+    suspend fun createTicket(request: CreateTicketRequest): TicketDetailDto {
+        return runCatching {
+            val response = api.createTicket(request)
+            if (!response.isSuccessful) {
+                val message = when (response.code()) {
+                    400 -> "Błąd walidacji danych."
+                    403 -> "Brak uprawnień. Upewnij się, że masz przypisany lokal."
+                    422 -> "Niezgodność danych z regułami biznesowymi."
+                    else -> "Błąd podczas tworzenia zgłoszenia (Kod: ${response.code()})"
+                }
+                throw Exception(message)
+            }
+            response.body() ?: throw Exception("Pusta odpowiedź z serwera")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
     suspend fun getCurrentUserRole(): String {
         return tokenStorage.getUserRole() ?: "GOSC"
     }
 
-    // Pozostawione mockowe funkcje w celach kompatybilności z formularzami, które jeszcze nie mają API
-    suspend fun getAvailableConservators(): List<AppUserDto> =
-        emptyList()
+    suspend fun getAvailableConservators(): List<ConservatorDto> {
+        return runCatching {
+            val response = api.getConservators()
+            handleResponse(response, "Błąd podczas pobierania konserwatorów")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
 
-    suspend fun getCategories(): List<String> =
-        listOf("Hydraulika", "Elektryka", "Domofony", "Części wspólne", "Winda", "Inne")
+    suspend fun assignTicket(ticketId: String, conservatorId: String, plannedVisitAt: String): TicketDetailDto {
+        return runCatching {
+            val response = api.assignTicket(
+                ticketId,
+                TicketAssignRequest(assignedTo = conservatorId, plannedVisitAt = plannedVisitAt)
+            )
+            handleResponse(response, "Błąd podczas przypisywania konserwatora")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
 
     private fun <T> handleResponse(response: retrofit2.Response<T>, defaultErrorMessage: String): T {
         if (!response.isSuccessful) {
@@ -49,3 +82,4 @@ class TicketService @Inject constructor(
         return response.body() ?: throw Exception("Pusta odpowiedź z serwera")
     }
 }
+

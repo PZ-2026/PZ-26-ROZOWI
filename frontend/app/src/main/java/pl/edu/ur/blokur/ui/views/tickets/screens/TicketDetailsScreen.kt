@@ -48,7 +48,10 @@ fun TicketDetailsScreen(
                     snackbarHostState.showSnackbar("Zgłoszenie odrzucone")
                 is TicketDetailsScreenEvent.ConservatorAction ->
                     snackbarHostState.showSnackbar("Zaktualizowano status zgłoszenia")
-                is TicketDetailsScreenEvent.ShowSnackbar -> Unit
+                is TicketDetailsScreenEvent.ShowSnackbar ->
+                    snackbarHostState.showSnackbar("Konserwator został przypisany pomyślnie")
+                is TicketDetailsScreenEvent.ShowError ->
+                    snackbarHostState.showSnackbar("Błąd: ${event.message}")
             }
         }
     }
@@ -71,7 +74,7 @@ fun TicketDetailsScreen(
         TicketDetailsContent(
             state = state,
             onAssignConservator = { conservator, scheduledAt ->
-                viewModel.onAssignConservator(conservator.email, scheduledAt)
+                viewModel.onAssignConservator(conservator.id, scheduledAt)
             },
             onRejectTicket = viewModel::onRejectTicket,
             onConservatorAction = viewModel::onConservatorAction,

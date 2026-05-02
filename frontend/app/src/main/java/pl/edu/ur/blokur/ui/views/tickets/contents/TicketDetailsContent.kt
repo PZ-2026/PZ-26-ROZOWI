@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.AppUserDto
+import pl.edu.ur.blokur.dtos.ConservatorDto
 import pl.edu.ur.blokur.dtos.TicketDetailDto
 import pl.edu.ur.blokur.dtos.TicketStatus
 import pl.edu.ur.blokur.ui.components.EmptyState
@@ -60,7 +60,7 @@ import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
 @Composable
 fun TicketDetailsContent(
     state: TicketDetailsListState,
-    onAssignConservator: (AppUserDto, String) -> Unit,
+    onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     modifier: Modifier = Modifier
@@ -83,9 +83,9 @@ fun TicketDetailsContent(
 @Composable
 private fun TicketDetailsSuccessContent(
     ticket: TicketDetailDto,
-    conservators: List<AppUserDto>,
+    conservators: List<ConservatorDto>,
     currentUserRole: String,
-    onAssignConservator: (AppUserDto, String) -> Unit,
+    onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     modifier: Modifier = Modifier

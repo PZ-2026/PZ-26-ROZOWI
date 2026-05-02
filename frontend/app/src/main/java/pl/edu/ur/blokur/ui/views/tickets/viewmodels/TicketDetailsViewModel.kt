@@ -61,10 +61,21 @@ class TicketDetailsViewModel @Inject constructor(
         viewModelScope.launch { _events.send(TicketDetailsScreenEvent.NavigateBack) }
     }
 
-    fun onAssignConservator(conservatorEmail: String, scheduledAt: String) {
+    fun onAssignConservator(conservatorId: String, plannedVisitAt: String) {
+        val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
-            _events.send(TicketDetailsScreenEvent.AssignConservator(conservatorEmail, scheduledAt))
-            loadTicket()
+            runCatching {
+                ticketService.assignTicket(
+                    ticketId = currentState.ticket.id,
+                    conservatorId = conservatorId,
+                    plannedVisitAt = plannedVisitAt
+                )
+            }.onSuccess {
+                loadTicket()
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+            }.onFailure { e ->
+                _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd przypisywania"))
+            }
         }
     }
 
