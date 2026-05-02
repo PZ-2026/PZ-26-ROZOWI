@@ -4,6 +4,33 @@ enum class TicketStatus {
     NOWE, ZAPLANOWANO, W_REALIZACJI, WSTRZYMANO, ZAKONCZONE, ZAMKNIETE, ODRZUCONE
 }
 
+data class CategoryDto(
+    val id: String,
+    val name: String
+)
+
+data class CreateTicketRequest(
+    val title: String,
+    val description: String,
+    val categoryId: String
+)
+
+data class ConservatorDto(
+    val id: String,
+    val firstName: String,
+    val lastName: String,
+    val email: String,
+    val phone: String?,
+    val activeTicketsCount: Long
+) {
+    val fullName: String get() = "$firstName $lastName"
+}
+
+data class TicketAssignRequest(
+    val assignedTo: String,
+    val plannedVisitAt: String
+)
+
 data class TicketSummaryDto(
     val id: String,
     val ticketNumber: String,

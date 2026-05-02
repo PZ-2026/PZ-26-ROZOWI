@@ -48,7 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.AppUserDto
+import pl.edu.ur.blokur.dtos.ConservatorDto
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -57,14 +57,14 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssignConservatorSheet(
-    conservators: List<AppUserDto>,
+    conservators: List<ConservatorDto>,
     onDismissRequest: () -> Unit,
-    onAssign: (AppUserDto, String) -> Unit
+    onAssign: (ConservatorDto, String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
     var step by remember { mutableStateOf(1) }
-    var selected by remember { mutableStateOf<AppUserDto?>(null) }
+    var selected by remember { mutableStateOf<ConservatorDto?>(null) }
 
     var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
     var selectedHour by remember { mutableStateOf<Int?>(null) }
@@ -95,6 +95,18 @@ fun AssignConservatorSheet(
         if (selectedHour != null && selectedMinute != null)
             String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
         else "Wybierz godzinę"
+    }
+    // Format ISO dla backendu (LocalDateTime)
+    val isoDateTime = remember(selectedDateMillis, selectedHour, selectedMinute) {
+        if (selectedDateMillis != null && selectedHour != null && selectedMinute != null) {
+            val cal = Calendar.getInstance().apply {
+                timeInMillis = selectedDateMillis!!
+                set(Calendar.HOUR_OF_DAY, selectedHour!!)
+                set(Calendar.MINUTE, selectedMinute!!)
+                set(Calendar.SECOND, 0)
+            }
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(cal.time)
+        } else null
     }
 
     val isTimeValid by remember(selectedDateMillis, selectedHour, selectedMinute) {
@@ -235,7 +247,12 @@ fun AssignConservatorSheet(
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(conservator.fullName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                                Text("Specjalista ds. usterek", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                val ticketsLabel = when (conservator.activeTicketsCount) {
+                                    0L -> "Brak aktywnych zleceń"
+                                    1L -> "1 aktywne zlecenie"
+                                    else -> "${conservator.activeTicketsCount} aktywne zlecenia"
+                                }
+                                Text(ticketsLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             if (isSelected) Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.primary)
                         }
@@ -243,7 +260,7 @@ fun AssignConservatorSheet(
                 }
 
                 Button(
-                    onClick = { selected?.let { onAssign(it, "$formattedDate o $formattedTime") } },
+                    onClick = { selected?.let { onAssign(it, isoDateTime ?: "") } },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     enabled = selected != null,
                     shape = RoundedCornerShape(16.dp)

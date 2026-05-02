@@ -1,6 +1,6 @@
 package pl.edu.ur.blokur.ui.views.tickets.utils
 
-import pl.edu.ur.blokur.dtos.AppUserDto
+import pl.edu.ur.blokur.dtos.ConservatorDto
 import pl.edu.ur.blokur.dtos.TicketDetailDto
 import pl.edu.ur.blokur.dtos.TicketSummaryDto
 
@@ -20,7 +20,7 @@ sealed interface TicketDetailsListState {
     data class Error(val message: String) : TicketDetailsListState
     data class Success(
         val ticket: TicketDetailDto,
-        val availableConservators: List<AppUserDto> = emptyList(),
+        val availableConservators: List<ConservatorDto> = emptyList(),
         val currentUserRole: String = "MIESZKANIEC"
     ) : TicketDetailsListState
 }
@@ -34,13 +34,15 @@ sealed interface TicketDetailsScreenEvent {
     data class RejectTicket(val reason: String) : TicketDetailsScreenEvent
     data class ConservatorAction(val type: ConservatorActionType, val comment: String, val pause: Boolean = false) : TicketDetailsScreenEvent
     data object ShowSnackbar : TicketDetailsScreenEvent
+    data class ShowError(val message: String) : TicketDetailsScreenEvent
 }
 
 
 data class CreateTicketFormState(
     val title: String = "",
     val description: String = "",
-    val selectedCategory: String = "",
+    val selectedCategoryId: String = "",
+    val selectedCategoryName: String = "",
     val isCategoryExpanded: Boolean = false
 )
 
@@ -53,6 +55,7 @@ sealed interface CreateTicketSubmitState {
 
 sealed interface CreateTicketScreenEvent {
     data object NavigateBack : CreateTicketScreenEvent
+    data class ShowSuccess(val ticketNumber: String) : CreateTicketScreenEvent
 }
 
 typealias TicketsState = TicketsListState
