@@ -7,8 +7,21 @@ import pl.edu.ur.blokur.dtos.TicketSummaryDto
 sealed interface TicketsListState {
     data object Loading : TicketsListState
     data class Error(val message: String) : TicketsListState
-    data class Success(val tickets: List<TicketSummaryDto>, val currentUserRole: String = "MIESZKANIEC") : TicketsListState
+    data class Success(
+        val allTickets: List<TicketSummaryDto>,
+        val filteredTickets: List<TicketSummaryDto>,
+        val currentUserRole: String = "MIESZKANIEC",
+        val filterState: TicketFilterState = TicketFilterState()
+    ) : TicketsListState {
+        // Alias dla kompatybilności wstecznej
+        val tickets: List<TicketSummaryDto> get() = filteredTickets
+    }
 }
+
+data class TicketFilterState(
+    val searchQuery: String = "",
+    val selectedStatus: String = ""  // pusty = wszystkie
+)
 
 sealed interface TicketsScreenEvent {
     data class NavigateToDetails(val ticketId: String) : TicketsScreenEvent
