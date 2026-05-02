@@ -87,6 +87,11 @@ object NetworkModule {
     fun provideTicketApiService(@Named("main") retrofit: Retrofit): TicketApiService =
         retrofit.create(TicketApiService::class.java)
 
+    @Provides
+    @Singleton
+    fun provideCategoryApiService(@Named("main") retrofit: Retrofit): CategoryApiService =
+        retrofit.create(CategoryApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }

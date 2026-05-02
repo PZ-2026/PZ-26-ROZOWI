@@ -18,6 +18,8 @@ import pl.edu.ur.blokur.ui.views.profile.ProfileRoutes
 import pl.edu.ur.blokur.ui.views.profile.profileGraph
 import pl.edu.ur.blokur.ui.views.properties.PropertyRoutes
 import pl.edu.ur.blokur.ui.views.properties.propertiesGraph
+import pl.edu.ur.blokur.ui.views.categories.CategoryRoutes
+import pl.edu.ur.blokur.ui.views.categories.categoriesGraph
 import pl.edu.ur.blokur.ui.views.tickets.TicketRoutes
 import pl.edu.ur.blokur.ui.views.tickets.ticketsGraph
 
@@ -65,6 +67,7 @@ fun AppNavHost(
                 profileGraph(bottomNavController)
                 ticketsGraph(bottomNavController)
                 propertiesGraph(bottomNavController)
+                categoriesGraph(bottomNavController)
             }
         )
     }
