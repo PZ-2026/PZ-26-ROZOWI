@@ -19,7 +19,8 @@ enum class NavBarOption {
     TICKETS,
     PROPERTIES,
     USERS,
-    CATEGORIES
+    CATEGORIES,
+    INSPECTIONS
 }
 
 data class BottomNavItem(
@@ -40,6 +41,7 @@ val bottomNavItems = listOf(
 val zarzadcaNavItems = listOf(
     BottomNavItem("Zgłoszenia", Icons.Outlined.Build, NavBarOption.TICKETS),
     BottomNavItem("Nieruchomości", Icons.Outlined.Domain, NavBarOption.PROPERTIES),
+    BottomNavItem("Przeglądy", Icons.Outlined.Build, NavBarOption.INSPECTIONS),
     BottomNavItem("Użytkownicy", Icons.Outlined.People, NavBarOption.USERS),
     BottomNavItem("Kategorie", Icons.Outlined.Settings, NavBarOption.CATEGORIES),
     BottomNavItem("Profil", Icons.Outlined.AccountCircle, NavBarOption.PROFILE)
