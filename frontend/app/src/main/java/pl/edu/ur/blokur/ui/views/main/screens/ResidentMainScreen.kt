@@ -57,6 +57,7 @@ fun ResidentMainScreen(
         is ResidentMainState.ViewingProperties -> "Nieruchomości"
         is ResidentMainState.ViewingUsers -> "Użytkownicy"
         is ResidentMainState.ViewingCategories -> "Kategorie zgłoszeń"
+        is ResidentMainState.ViewingResolutions -> "Uchwały i głosowania"
         is ResidentMainState.Error -> "Błąd"
         else -> "Blokur"
     }

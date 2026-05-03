@@ -12,6 +12,7 @@ sealed interface ResidentMainState {
     data object ViewingProperties : ResidentMainState
     data object ViewingUsers : ResidentMainState
     data object ViewingCategories : ResidentMainState
+    data object ViewingResolutions : ResidentMainState
 }
 
 sealed interface ResidentMainEvent {

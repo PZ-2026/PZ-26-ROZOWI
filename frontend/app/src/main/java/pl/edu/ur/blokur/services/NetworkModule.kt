@@ -97,14 +97,16 @@ object NetworkModule {
     fun provideAdminUserApiService(@Named("main") retrofit: Retrofit): AdminUserApiService =
         retrofit.create(AdminUserApiService::class.java)
 
-<<<<<<< HEAD
     @Provides
     @Singleton
     fun provideFinancialApiService(@Named("main") retrofit: Retrofit): FinancialApiService =
         retrofit.create(FinancialApiService::class.java)
 
-=======
->>>>>>> dev
+    @Provides
+    @Singleton
+    fun provideResolutionApiService(@Named("main") retrofit: Retrofit): ResolutionApiService =
+        retrofit.create(ResolutionApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }

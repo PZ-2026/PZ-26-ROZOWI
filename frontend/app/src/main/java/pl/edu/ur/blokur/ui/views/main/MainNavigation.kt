@@ -27,6 +27,7 @@ fun NavGraphBuilder.mainGraph(
     propertiesRoute: AppRoute,
     usersRoute: AppRoute,
     categoriesRoute: AppRoute,
+    resolutionsRoute: AppRoute,
     nestedGraphs: NavGraphBuilder.(NavController) -> Unit
 ) {
     composable<MainRoutes.Main> {
@@ -45,6 +46,7 @@ fun NavGraphBuilder.mainGraph(
                     NavBarOption.PROPERTIES -> propertiesRoute
                     NavBarOption.USERS -> usersRoute
                     NavBarOption.CATEGORIES -> categoriesRoute
+                    NavBarOption.RESOLUTIONS -> resolutionsRoute
                 }
                 bottomNavController.navigate(route) {
                     popUpTo(bottomNavController.graph.startDestinationId) {
