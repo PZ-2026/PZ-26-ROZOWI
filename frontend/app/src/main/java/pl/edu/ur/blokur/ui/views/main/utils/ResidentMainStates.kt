@@ -10,6 +10,8 @@ sealed interface ResidentMainState {
     data object ViewingProfile : ResidentMainState
     data object ViewingTickets : ResidentMainState
     data object ViewingProperties : ResidentMainState
+    data object ViewingUsers : ResidentMainState
+    data object ViewingCategories : ResidentMainState
 }
 
 sealed interface ResidentMainEvent {

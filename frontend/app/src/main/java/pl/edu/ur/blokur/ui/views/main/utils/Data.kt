@@ -6,6 +6,8 @@ import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Domain
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import pl.edu.ur.blokur.dtos.UserRole
 
@@ -15,7 +17,9 @@ enum class NavBarOption {
     FINANCES,
     PROFILE,
     TICKETS,
-    PROPERTIES
+    PROPERTIES,
+    USERS,
+    CATEGORIES
 }
 
 data class BottomNavItem(
@@ -32,12 +36,12 @@ val bottomNavItems = listOf(
     BottomNavItem("Profil", Icons.Outlined.AccountCircle, NavBarOption.PROFILE)
 )
 
-/** Zestaw zakładek – dla zarządcy (z nieruchomościami). */
+/** Zestaw zakładek – dla zarządcy (z nieruchomościami, użytkownikami i kategoriami). */
 val zarzadcaNavItems = listOf(
     BottomNavItem("Zgłoszenia", Icons.Outlined.Build, NavBarOption.TICKETS),
     BottomNavItem("Nieruchomości", Icons.Outlined.Domain, NavBarOption.PROPERTIES),
-    BottomNavItem("Finanse", Icons.Outlined.DateRange, NavBarOption.FINANCES),
-    BottomNavItem("Ogłoszenia", Icons.Outlined.Notifications, NavBarOption.ANNOUNCEMENTS),
+    BottomNavItem("Użytkownicy", Icons.Outlined.People, NavBarOption.USERS),
+    BottomNavItem("Kategorie", Icons.Outlined.Settings, NavBarOption.CATEGORIES),
     BottomNavItem("Profil", Icons.Outlined.AccountCircle, NavBarOption.PROFILE)
 )
 
