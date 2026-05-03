@@ -94,6 +94,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideAdminUserApiService(@Named("main") retrofit: Retrofit): AdminUserApiService =
+        retrofit.create(AdminUserApiService::class.java)
+
+    @Provides
+    @Singleton
     fun provideFinancialApiService(@Named("main") retrofit: Retrofit): FinancialApiService =
         retrofit.create(FinancialApiService::class.java)
 
