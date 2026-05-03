@@ -22,6 +22,8 @@ import pl.edu.ur.blokur.ui.views.categories.CategoryRoutes
 import pl.edu.ur.blokur.ui.views.categories.categoriesGraph
 import pl.edu.ur.blokur.ui.views.tickets.TicketRoutes
 import pl.edu.ur.blokur.ui.views.tickets.ticketsGraph
+import pl.edu.ur.blokur.ui.views.users.UserRoutes
+import pl.edu.ur.blokur.ui.views.users.usersGraph
 
 /**
  * Globalny host nawigacyjny łączący wszystkie grafy funkcjonalności.
@@ -61,6 +63,8 @@ fun AppNavHost(
             profileRoute = ProfileRoutes.Main,
             ticketsRoute = TicketRoutes.List,
             propertiesRoute = PropertyRoutes.Tree,
+            usersRoute = UserRoutes.List,
+            categoriesRoute = CategoryRoutes.List,
             nestedGraphs = { bottomNavController ->
                 announcementsGraph(bottomNavController)
                 financesGraph(bottomNavController)
@@ -68,6 +72,7 @@ fun AppNavHost(
                 ticketsGraph(bottomNavController)
                 propertiesGraph(bottomNavController)
                 categoriesGraph(bottomNavController)
+                usersGraph(bottomNavController)
             }
         )
     }

@@ -56,6 +56,8 @@ class ResidentMainViewModel @Inject constructor(
                 NavBarOption.PROFILE -> ResidentMainState.ViewingProfile
                 NavBarOption.TICKETS -> ResidentMainState.ViewingTickets
                 NavBarOption.PROPERTIES -> ResidentMainState.ViewingProperties
+                NavBarOption.USERS -> ResidentMainState.ViewingUsers
+                NavBarOption.CATEGORIES -> ResidentMainState.ViewingCategories
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import kotlinx.serialization.Serializable
 import pl.edu.ur.blokur.ui.navigation.AppRoute
 import pl.edu.ur.blokur.ui.views.categories.CategoryRoutes
+import pl.edu.ur.blokur.ui.views.users.UserRoutes
 import pl.edu.ur.blokur.ui.views.tickets.screens.CreateTicketScreen
 import pl.edu.ur.blokur.ui.views.tickets.screens.TicketDetailsScreen
 import pl.edu.ur.blokur.ui.views.tickets.screens.TicketsScreen
@@ -32,7 +33,8 @@ fun NavGraphBuilder.ticketsGraph(navController: NavController) {
             viewModel = viewModel,
             onNavigateToDetails = { ticketId -> navController.navigate(TicketRoutes.Details(ticketId)) },
             onNavigateToCreate = { navController.navigate(TicketRoutes.Create) },
-            onNavigateToCategories = { navController.navigate(CategoryRoutes.List) }
+            onNavigateToCategories = { navController.navigate(CategoryRoutes.List) },
+            onNavigateToUsers = { navController.navigate(UserRoutes.List) }
         )
     }
 
