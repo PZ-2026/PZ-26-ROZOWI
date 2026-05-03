@@ -11,14 +11,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -43,7 +38,8 @@ fun TicketsScreen(
     viewModel: TicketsViewModel,
     onNavigateToDetails: (String) -> Unit,
     onNavigateToCreate: () -> Unit,
-    onNavigateToCategories: () -> Unit = {}
+    onNavigateToCategories: () -> Unit = {},
+    onNavigateToUsers: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -62,25 +58,13 @@ fun TicketsScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val isManager = (state as? TicketsListState.Success)?.currentUserRole == "ZARZADCA"
             TopAppBar(
                 title = {
-                    Text(
+                    androidx.compose.material3.Text(
                         "Zgłoszenia",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
-                },
-                actions = {
-                    if (isManager) {
-                        IconButton(onClick = onNavigateToCategories) {
-                            Icon(
-                                Icons.Rounded.Settings,
-                                contentDescription = "Zarządzaj kategoriami",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
