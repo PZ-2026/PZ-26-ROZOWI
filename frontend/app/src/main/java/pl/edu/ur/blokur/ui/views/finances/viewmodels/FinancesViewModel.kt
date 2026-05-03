@@ -53,4 +53,8 @@ class FinancesViewModel @Inject constructor(
     fun onNavigateToDocuments() {
         viewModelScope.launch { _events.send(FinancesEvent.NavigateToDocuments) }
     }
+
+    fun onNavigateToLedger() {
+        viewModelScope.launch { _events.send(FinancesEvent.NavigateToLedger) }
+    }
 }

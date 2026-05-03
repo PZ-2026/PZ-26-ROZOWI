@@ -92,6 +92,11 @@ object NetworkModule {
     fun provideCategoryApiService(@Named("main") retrofit: Retrofit): CategoryApiService =
         retrofit.create(CategoryApiService::class.java)
 
+    @Provides
+    @Singleton
+    fun provideFinancialApiService(@Named("main") retrofit: Retrofit): FinancialApiService =
+        retrofit.create(FinancialApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }
