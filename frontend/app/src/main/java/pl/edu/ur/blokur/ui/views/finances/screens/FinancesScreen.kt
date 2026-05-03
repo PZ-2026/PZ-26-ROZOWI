@@ -23,7 +23,8 @@ import pl.edu.ur.blokur.ui.views.finances.viewmodels.FinancesViewModel
 fun FinancesScreen(
     viewModel: FinancesViewModel,
     onNavigateToTransactions: () -> Unit,
-    onNavigateToDocuments: () -> Unit
+    onNavigateToDocuments: () -> Unit,
+    onNavigateToLedger: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -32,6 +33,7 @@ fun FinancesScreen(
             when (event) {
                 FinancesEvent.NavigateToTransactions -> onNavigateToTransactions()
                 FinancesEvent.NavigateToDocuments -> onNavigateToDocuments()
+                FinancesEvent.NavigateToLedger -> onNavigateToLedger()
             }
         }
     }
@@ -44,6 +46,7 @@ fun FinancesScreen(
             state = state,
             onNavigateToTransactions = viewModel::onNavigateToTransactions,
             onNavigateToDocuments = viewModel::onNavigateToDocuments,
+            onNavigateToLedger = viewModel::onNavigateToLedger,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

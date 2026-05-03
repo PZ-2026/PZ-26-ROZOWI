@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.History
@@ -37,6 +38,7 @@ fun FinancesOverviewContent(
     state: FinancesState,
     onNavigateToTransactions: () -> Unit,
     onNavigateToDocuments: () -> Unit,
+    onNavigateToLedger: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when (state) {
@@ -49,6 +51,12 @@ fun FinancesOverviewContent(
             Spacer(modifier = Modifier.height(8.dp))
             BalanceCard(balance = state.balance)
             Text("Przejdź do", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            FinancesNavItem(
+                icon = Icons.Rounded.AccountBalanceWallet,
+                title = "Kartoteka finansowa",
+                subtitle = "Historia wpłat i saldo Twojego lokalu w czasie rzeczywistym",
+                onClick = onNavigateToLedger
+            )
             FinancesNavItem(
                 icon = Icons.Rounded.History,
                 title = "Historia transakcji",

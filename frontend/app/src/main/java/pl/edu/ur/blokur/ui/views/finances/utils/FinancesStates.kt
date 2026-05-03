@@ -17,4 +17,5 @@ sealed interface FinancesState {
 sealed interface FinancesEvent {
     data object NavigateToTransactions : FinancesEvent
     data object NavigateToDocuments : FinancesEvent
+    data object NavigateToLedger : FinancesEvent
 }
