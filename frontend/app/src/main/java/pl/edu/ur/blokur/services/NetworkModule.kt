@@ -104,6 +104,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideResolutionApiService(@Named("main") retrofit: Retrofit): ResolutionApiService =
+        retrofit.create(ResolutionApiService::class.java)
+
     fun provideInspectionApiService(@Named("main") retrofit: Retrofit): InspectionApiService =
         retrofit.create(InspectionApiService::class.java)
 

@@ -24,6 +24,8 @@ import pl.edu.ur.blokur.ui.views.tickets.TicketRoutes
 import pl.edu.ur.blokur.ui.views.tickets.ticketsGraph
 import pl.edu.ur.blokur.ui.views.users.UserRoutes
 import pl.edu.ur.blokur.ui.views.users.usersGraph
+import pl.edu.ur.blokur.ui.views.resolutions.ResolutionRoutes
+import pl.edu.ur.blokur.ui.views.resolutions.resolutionsGraph
 import pl.edu.ur.blokur.ui.views.inspections.InspectionRoutes
 import pl.edu.ur.blokur.ui.views.inspections.inspectionsGraph
 
@@ -69,6 +71,7 @@ fun AppNavHost(
             propertiesRoute = PropertyRoutes.Tree,
             usersRoute = UserRoutes.List,
             categoriesRoute = CategoryRoutes.List,
+            resolutionsRoute = ResolutionRoutes.List,
             inspectionsRoute = InspectionRoutes.List,
             nestedGraphs = { bottomNavController ->
                 announcementsGraph(bottomNavController)
@@ -78,6 +81,7 @@ fun AppNavHost(
                 propertiesGraph(bottomNavController)
                 categoriesGraph(bottomNavController)
                 usersGraph(bottomNavController)
+                resolutionsGraph(bottomNavController)
                 inspectionsGraph(bottomNavController)
                 metersGraph(bottomNavController)
             }

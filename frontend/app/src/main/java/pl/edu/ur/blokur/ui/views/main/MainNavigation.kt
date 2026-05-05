@@ -27,6 +27,7 @@ fun NavGraphBuilder.mainGraph(
     propertiesRoute: AppRoute,
     usersRoute: AppRoute,
     categoriesRoute: AppRoute,
+    resolutionsRoute: AppRoute,
     inspectionsRoute: AppRoute,
     nestedGraphs: NavGraphBuilder.(NavController) -> Unit
 ) {
@@ -46,6 +47,7 @@ fun NavGraphBuilder.mainGraph(
                     NavBarOption.PROPERTIES -> propertiesRoute
                     NavBarOption.USERS -> usersRoute
                     NavBarOption.CATEGORIES -> categoriesRoute
+                    NavBarOption.RESOLUTIONS -> resolutionsRoute
                     NavBarOption.INSPECTIONS -> inspectionsRoute
                 }
                 bottomNavController.navigate(route) {
