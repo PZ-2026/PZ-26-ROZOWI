@@ -21,7 +21,7 @@ enum class NavBarOption {
     PROPERTIES,
     USERS,
     CATEGORIES,
-    RESOLUTIONS
+    RESOLUTIONS,
     INSPECTIONS
 }
 
