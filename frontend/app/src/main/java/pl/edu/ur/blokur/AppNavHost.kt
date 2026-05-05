@@ -24,6 +24,7 @@ import pl.edu.ur.blokur.ui.views.tickets.TicketRoutes
 import pl.edu.ur.blokur.ui.views.tickets.ticketsGraph
 import pl.edu.ur.blokur.ui.views.users.UserRoutes
 import pl.edu.ur.blokur.ui.views.users.usersGraph
+import pl.edu.ur.blokur.ui.views.meters.metersGraph
 
 /**
  * Globalny host nawigacyjny łączący wszystkie grafy funkcjonalności.
@@ -73,6 +74,7 @@ fun AppNavHost(
                 propertiesGraph(bottomNavController)
                 categoriesGraph(bottomNavController)
                 usersGraph(bottomNavController)
+                metersGraph(bottomNavController)
             }
         )
     }
