@@ -39,7 +39,8 @@ data class CreateMeterFormState(
     val installationDate: String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
     val isSubmitting: Boolean = false
 ) {
-    val isValid: Boolean get() = serialNumber.isNotBlank() && installationDate.isNotBlank()
+    val isValid: Boolean get() = serialNumber.isNotBlank() && 
+            installationDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}$"))
 }
 
 @HiltViewModel
@@ -125,7 +126,9 @@ data class CreateReadingFormState(
     val readingDate: String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
     val isSubmitting: Boolean = false
 ) {
-    val isValid: Boolean get() = value.isNotBlank() && readingDate.isNotBlank() && value.toDoubleOrNull() != null
+    val isValid: Boolean get() = value.isNotBlank() && 
+            readingDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}$")) && 
+            value.replace(",", ".").toDoubleOrNull() != null
 }
 
 @HiltViewModel
