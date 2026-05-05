@@ -27,6 +27,8 @@ import pl.edu.ur.blokur.ui.views.users.usersGraph
 import pl.edu.ur.blokur.ui.views.inspections.InspectionRoutes
 import pl.edu.ur.blokur.ui.views.inspections.inspectionsGraph
 
+import pl.edu.ur.blokur.ui.views.meters.metersGraph
+
 /**
  * Globalny host nawigacyjny łączący wszystkie grafy funkcjonalności.
  */
@@ -77,6 +79,7 @@ fun AppNavHost(
                 categoriesGraph(bottomNavController)
                 usersGraph(bottomNavController)
                 inspectionsGraph(bottomNavController)
+                metersGraph(bottomNavController)
             }
         )
     }
