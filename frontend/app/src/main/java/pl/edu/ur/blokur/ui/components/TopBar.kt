@@ -20,6 +20,7 @@ import pl.edu.ur.blokur.ui.theme.PreviewTheme
 @Composable
 fun TopBar(
     title: String = "TOP BAR",
+    navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     TopAppBar(
@@ -30,6 +31,7 @@ fun TopBar(
                 color = MaterialTheme.colorScheme.onBackground
             )
         },
+        navigationIcon = navigationIcon,
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background,

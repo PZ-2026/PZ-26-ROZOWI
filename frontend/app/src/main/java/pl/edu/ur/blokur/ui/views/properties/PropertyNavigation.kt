@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import pl.edu.ur.blokur.ui.navigation.AppRoute
 import pl.edu.ur.blokur.ui.views.properties.screens.PropertyTreeScreen
 import pl.edu.ur.blokur.ui.views.properties.viewmodels.PropertyTreeViewModel
+import pl.edu.ur.blokur.ui.views.meters.MeterRoutes
 
 sealed interface PropertyRoutes : AppRoute {
     @Serializable
@@ -17,6 +18,11 @@ sealed interface PropertyRoutes : AppRoute {
 fun NavGraphBuilder.propertiesGraph(navController: NavController) {
     composable<PropertyRoutes.Tree> {
         val viewModel: PropertyTreeViewModel = hiltViewModel()
-        PropertyTreeScreen(viewModel = viewModel)
+        PropertyTreeScreen(
+            viewModel = viewModel,
+            onNavigateToMeters = { apartmentId ->
+                navController.navigate(MeterRoutes.List(apartmentId))
+            }
+        )
     }
 }

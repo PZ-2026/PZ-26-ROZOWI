@@ -26,6 +26,10 @@ import pl.edu.ur.blokur.ui.views.users.UserRoutes
 import pl.edu.ur.blokur.ui.views.users.usersGraph
 import pl.edu.ur.blokur.ui.views.resolutions.ResolutionRoutes
 import pl.edu.ur.blokur.ui.views.resolutions.resolutionsGraph
+import pl.edu.ur.blokur.ui.views.inspections.InspectionRoutes
+import pl.edu.ur.blokur.ui.views.inspections.inspectionsGraph
+
+import pl.edu.ur.blokur.ui.views.meters.metersGraph
 
 /**
  * Globalny host nawigacyjny łączący wszystkie grafy funkcjonalności.
@@ -68,6 +72,7 @@ fun AppNavHost(
             usersRoute = UserRoutes.List,
             categoriesRoute = CategoryRoutes.List,
             resolutionsRoute = ResolutionRoutes.List,
+            inspectionsRoute = InspectionRoutes.List,
             nestedGraphs = { bottomNavController ->
                 announcementsGraph(bottomNavController)
                 financesGraph(bottomNavController)
@@ -77,6 +82,8 @@ fun AppNavHost(
                 categoriesGraph(bottomNavController)
                 usersGraph(bottomNavController)
                 resolutionsGraph(bottomNavController)
+                inspectionsGraph(bottomNavController)
+                metersGraph(bottomNavController)
             }
         )
     }
