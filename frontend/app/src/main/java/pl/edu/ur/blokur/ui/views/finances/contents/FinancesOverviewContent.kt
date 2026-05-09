@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,6 +40,8 @@ fun FinancesOverviewContent(
     onNavigateToTransactions: () -> Unit,
     onNavigateToDocuments: () -> Unit,
     onNavigateToLedger: () -> Unit = {},
+    onNavigateToBalances: () -> Unit = {},
+    isManager: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     when (state) {
@@ -69,6 +72,14 @@ fun FinancesOverviewContent(
                 subtitle = "Rozliczenia, faktury i zawiadomienia zarządcy",
                 onClick = onNavigateToDocuments
             )
+            if (isManager) {
+                FinancesNavItem(
+                    icon = Icons.Rounded.Warning,
+                    title = "Monitorowanie zaległości",
+                    subtitle = "Zestawienie sald i zaległości wszystkich lokali",
+                    onClick = onNavigateToBalances
+                )
+            }
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

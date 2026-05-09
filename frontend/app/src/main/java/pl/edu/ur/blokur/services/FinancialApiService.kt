@@ -1,5 +1,6 @@
 package pl.edu.ur.blokur.services
 
+import pl.edu.ur.blokur.dtos.ApartmentBalanceItemDto
 import pl.edu.ur.blokur.dtos.ApartmentTransactionsDto
 import pl.edu.ur.blokur.dtos.CreateTransactionRequest
 import pl.edu.ur.blokur.dtos.FinancialTransactionDto
@@ -8,6 +9,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 /** Retrofit interface dla transakcji finansowych lokalu. */
 interface FinancialApiService {
@@ -22,4 +24,13 @@ interface FinancialApiService {
         @Path("apartmentId") apartmentId: String,
         @Body request: CreateTransactionRequest
     ): Response<FinancialTransactionDto>
+
+    /** GET /api/admin/apartments/balances */
+    @GET("api/admin/apartments/balances")
+    suspend fun getApartmentBalances(
+        @Query("propertyId") propertyId: String? = null,
+        @Query("minDebt") minDebt: String? = null,
+        @Query("minDaysOverdue") minDaysOverdue: Long? = null,
+        @Query("sort") sort: String? = null
+    ): Response<List<ApartmentBalanceItemDto>>
 }

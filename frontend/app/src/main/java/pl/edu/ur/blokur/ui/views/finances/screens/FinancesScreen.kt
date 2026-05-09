@@ -10,6 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
@@ -24,9 +27,15 @@ fun FinancesScreen(
     viewModel: FinancesViewModel,
     onNavigateToTransactions: () -> Unit,
     onNavigateToDocuments: () -> Unit,
-    onNavigateToLedger: () -> Unit = {}
+    onNavigateToLedger: () -> Unit = {},
+    onNavigateToBalances: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
+    var isManager by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isManager = viewModel.isManager()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -34,6 +43,7 @@ fun FinancesScreen(
                 FinancesEvent.NavigateToTransactions -> onNavigateToTransactions()
                 FinancesEvent.NavigateToDocuments -> onNavigateToDocuments()
                 FinancesEvent.NavigateToLedger -> onNavigateToLedger()
+                FinancesEvent.NavigateToBalances -> onNavigateToBalances()
             }
         }
     }
@@ -47,6 +57,8 @@ fun FinancesScreen(
             onNavigateToTransactions = viewModel::onNavigateToTransactions,
             onNavigateToDocuments = viewModel::onNavigateToDocuments,
             onNavigateToLedger = viewModel::onNavigateToLedger,
+            onNavigateToBalances = viewModel::onNavigateToBalances,
+            isManager = isManager,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

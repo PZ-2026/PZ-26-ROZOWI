@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.dtos.UserRole
+import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.FinancesService
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesEvent
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesState
@@ -17,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FinancesViewModel @Inject constructor(
-    private val financesService: FinancesService
+    private val financesService: FinancesService,
+    private val authService: AuthService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<FinancesState>(FinancesState.Loading)
@@ -46,6 +49,9 @@ class FinancesViewModel @Inject constructor(
         }
     }
 
+    suspend fun isManager(): Boolean =
+        authService.getCurrentUserRole() == UserRole.ZARZADCA
+
     fun onNavigateToTransactions() {
         viewModelScope.launch { _events.send(FinancesEvent.NavigateToTransactions) }
     }
@@ -56,5 +62,9 @@ class FinancesViewModel @Inject constructor(
 
     fun onNavigateToLedger() {
         viewModelScope.launch { _events.send(FinancesEvent.NavigateToLedger) }
+    }
+
+    fun onNavigateToBalances() {
+        viewModelScope.launch { _events.send(FinancesEvent.NavigateToBalances) }
     }
 }
