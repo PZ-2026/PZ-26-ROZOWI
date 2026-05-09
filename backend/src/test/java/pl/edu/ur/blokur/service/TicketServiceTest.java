@@ -619,7 +619,7 @@ class TicketServiceTest {
         @Test
         @DisplayName("closeTicket — zamyka zgloszenie i generuje PDF")
         void shouldCloseTicket() {
-            sampleTicket.setStatus(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
+            sampleTicket.setStatus(TicketStatus.ZAKONCZONE);
 
             when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(sampleTicket));
             when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
@@ -803,7 +803,7 @@ class TicketServiceTest {
             TicketDetailDto result =
                     ticketService.completeWork(ticketId, request, KONSERWATOR_EMAIL);
 
-            assertThat(result.getStatus()).isEqualTo("ZAKONCZONE_DO_WERYFIKACJI");
+            assertThat(result.getStatus()).isEqualTo("ZAKONCZONE");
             assertThat(sampleTicket.getWorkDescription()).isEqualTo("Wymieniono uszczelkę");
             verify(ticketHistoryRepository).save(any(TicketHistory.class));
         }

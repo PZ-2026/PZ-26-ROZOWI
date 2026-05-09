@@ -66,10 +66,10 @@ class TicketStateMachineTest {
         }
 
         @Test
-        @DisplayName("W_REALIZACJI → ZAKONCZONE_DO_WERYFIKACJI")
+        @DisplayName("W_REALIZACJI → ZAKONCZONE")
         void wRealizacjiToZakonczone() {
             stateMachine.validateTransition(
-                    TicketStatus.W_REALIZACJI, TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
+                    TicketStatus.W_REALIZACJI, TicketStatus.ZAKONCZONE);
         }
 
         @Test
@@ -85,17 +85,17 @@ class TicketStateMachineTest {
         }
 
         @Test
-        @DisplayName("ZAKONCZONE_DO_WERYFIKACJI → ZAMKNIETE")
+        @DisplayName("ZAKONCZONE → ZAMKNIETE")
         void zakonczoneToZamkniete() {
             stateMachine.validateTransition(
-                    TicketStatus.ZAKONCZONE_DO_WERYFIKACJI, TicketStatus.ZAMKNIETE);
+                    TicketStatus.ZAKONCZONE, TicketStatus.ZAMKNIETE);
         }
 
         @Test
-        @DisplayName("ZAKONCZONE_DO_WERYFIKACJI → W_REALIZACJI (zwrot do realizacji)")
+        @DisplayName("ZAKONCZONE → W_REALIZACJI (zwrot do realizacji)")
         void zakonczoneToWRealizacji() {
             stateMachine.validateTransition(
-                    TicketStatus.ZAKONCZONE_DO_WERYFIKACJI, TicketStatus.W_REALIZACJI);
+                    TicketStatus.ZAKONCZONE, TicketStatus.W_REALIZACJI);
         }
     }
 
@@ -160,12 +160,12 @@ class TicketStateMachineTest {
         }
 
         @Test
-        @DisplayName("ZAKONCZONE_DO_WERYFIKACJI → ODRZUCONE — niedozwolone")
+        @DisplayName("ZAKONCZONE → ODRZUCONE — niedozwolone")
         void zakonczoneToOdrzucone() {
             assertThatThrownBy(
                             () ->
                                     stateMachine.validateTransition(
-                                            TicketStatus.ZAKONCZONE_DO_WERYFIKACJI,
+                                            TicketStatus.ZAKONCZONE,
                                             TicketStatus.ODRZUCONE))
                     .isInstanceOf(BusinessValidationException.class);
         }
@@ -202,13 +202,13 @@ class TicketStateMachineTest {
         }
 
         @Test
-        @DisplayName("W_REALIZACJI — zwraca WSTRZYMANO i ZAKONCZONE_DO_WERYFIKACJI")
+        @DisplayName("W_REALIZACJI — zwraca WSTRZYMANO i ZAKONCZONE")
         void wRealizacjiReturnsCorrectSet() {
             Set<TicketStatus> allowed =
                     stateMachine.getAllowedNextStatuses(TicketStatus.W_REALIZACJI);
             assertThat(allowed)
                     .containsExactlyInAnyOrder(
-                            TicketStatus.WSTRZYMANO, TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
+                            TicketStatus.WSTRZYMANO, TicketStatus.ZAKONCZONE);
         }
     }
 }
