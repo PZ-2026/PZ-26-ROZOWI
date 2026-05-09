@@ -13,13 +13,13 @@ import org.springframework.stereotype.Service;
 
 /**
  * Serwis do generowania i walidacji tokenów JWT. Tokeny są podpisywane algorytmem HMAC-SHA256 i
- * ważne przez 24 godziny.
+ * ważne przez 8 godzin.
  */
 @Service
 public class JwtService {
 
     private static final String SECRET_KEY = "ToJestBardzoTajnyKluczDoGenerowaniaTokenowJwT!123";
-    private static final long EXPIRATION_TIME = 86400000L;
+    private static final long EXPIRATION_TIME = 28_800_000L;
     private static final int REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 
     private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());

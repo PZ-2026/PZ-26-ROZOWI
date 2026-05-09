@@ -158,7 +158,7 @@ SELECT 'ZGL/2026/002', 'Przepalona żarówka', 'Brak światła na 2. piętrze w 
 
 -- Zakończone zgłoszenie
 INSERT INTO tickets (ticket_number, title, description, status, category_id, author_id, building_id, closed_at)
-SELECT 'ZGL/2026/003', 'Naprawa domofonu', 'Domofon przy wejściu głównym nie dzwonił.', 'ZAKONCZONE',
+SELECT 'ZGL/2026/003', 'Naprawa domofonu', 'Domofon przy wejściu głównym nie dzwonił.', 'ZAKONCZONE_DO_WERYFIKACJI',
 (SELECT id FROM ticket_categories WHERE name = 'Domofony i Monitoring'),
 (SELECT id FROM users WHERE email = 'piotr.wisniewski@wp.pl'),
 (SELECT id FROM buildings WHERE name = 'Rezydencja Parkowa'),

@@ -1,0 +1,8 @@
+-- Zmiana nazwy statusu ZAKONCZONE → ZAKONCZONE_DO_WERYFIKACJI (WNF-03)
+UPDATE tickets
+SET status = 'ZAKONCZONE_DO_WERYFIKACJI'
+WHERE status = 'ZAKONCZONE';
+
+UPDATE ticket_history
+SET status = 'ZAKONCZONE_DO_WERYFIKACJI'
+WHERE status = 'ZAKONCZONE';

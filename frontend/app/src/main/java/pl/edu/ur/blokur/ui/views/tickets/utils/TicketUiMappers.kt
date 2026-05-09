@@ -14,7 +14,7 @@ fun TicketStatus.toPresentation(): StatusPresentation = when (this) {
     TicketStatus.ZAPLANOWANO -> StatusPresentation("Zaplanowano", InfoBlue)
     TicketStatus.W_REALIZACJI -> StatusPresentation("W realizacji", WarningOrange)
     TicketStatus.WSTRZYMANO -> StatusPresentation("Wstrzymano", WarningOrange)
-    TicketStatus.ZAKONCZONE -> StatusPresentation("Zakończone", SuccessGreen)
+    TicketStatus.ZAKONCZONE_DO_WERYFIKACJI -> StatusPresentation("Zakończone do weryfikacji", SuccessGreen)
     TicketStatus.ZAMKNIETE -> StatusPresentation("Zamknięte", SuccessGreen)
     TicketStatus.ODRZUCONE -> StatusPresentation("Odrzucone", ErrorRed)
 }
