@@ -16,8 +16,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Filtr HTTP implementujący rate limiting metodą sliding window dla endpointów publicznych
- * /api/auth. Limit: 60 żądań na minutę per IP. Przekroczenie skutkuje odpowiedzią HTTP 429 z
- * nagłówkiem Retry-After informującym o czasie oczekiwania w sekundach.
+ * /api/auth. Limit: 60 żądań na minutę per IP, obejmuje: /api/auth/login,
+ * /api/auth/forgot-password oraz /api/auth/reset-password. Przekroczenie skutkuje odpowiedzią HTTP
+ * 429 z nagłówkiem Retry-After informującym o czasie oczekiwania w sekundach.
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -26,7 +27,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     static final long WINDOW_MS = 60_000L;
 
     private static final Set<String> RATE_LIMITED_PATHS =
-            Set.of("/api/auth/login", "/api/auth/forgot-password");
+            Set.of("/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password");
 
     private final Map<String, Deque<Long>> requestTimestamps = new ConcurrentHashMap<>();
 

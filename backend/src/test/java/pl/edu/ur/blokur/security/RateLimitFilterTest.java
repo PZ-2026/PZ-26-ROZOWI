@@ -140,6 +140,68 @@ class RateLimitFilterTest {
     }
 
     @Nested
+    @DisplayName("rate limiting /api/auth/reset-password")
+    class ResetPasswordRateLimit {
+
+        @Test
+        @DisplayName("60 żądań na reset-password z tego samego IP przechodzi bez blokady")
+        void allowsUpToLimit() throws Exception {
+            FilterChain chain = mock(FilterChain.class);
+            String ip = "10.0.0.20";
+
+            for (int i = 0; i < RateLimitFilter.MAX_REQUESTS; i++) {
+                MockHttpServletRequest req = buildRequest("/api/auth/reset-password", ip);
+                MockHttpServletResponse response = new MockHttpServletResponse();
+                filter.doFilterInternal(req, response, chain);
+                assertThat(response.getStatus())
+                        .as("żądanie %d powinno przejść", i + 1)
+                        .isEqualTo(200);
+            }
+        }
+
+        @Test
+        @DisplayName("61. żądanie na reset-password zwraca 429 z nagłówkiem Retry-After")
+        void blocksAfterLimit() throws Exception {
+            FilterChain chain = mock(FilterChain.class);
+            String ip = "10.0.0.21";
+
+            for (int i = 0; i < RateLimitFilter.MAX_REQUESTS; i++) {
+                MockHttpServletRequest req = buildRequest("/api/auth/reset-password", ip);
+                filter.doFilterInternal(req, new MockHttpServletResponse(), chain);
+            }
+
+            MockHttpServletRequest blockedRequest = buildRequest("/api/auth/reset-password", ip);
+            MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+            FilterChain blockedChain = mock(FilterChain.class);
+
+            filter.doFilterInternal(blockedRequest, blockedResponse, blockedChain);
+
+            assertThat(blockedResponse.getStatus()).isEqualTo(429);
+            assertThat(blockedResponse.getHeader("Retry-After")).isNotNull();
+            verify(blockedChain, never()).doFilter(blockedRequest, blockedResponse);
+        }
+
+        @Test
+        @DisplayName("reset-password współdzieli licznik z login dla tego samego IP")
+        void resetPasswordSharesCounterWithLogin() throws Exception {
+            FilterChain chain = mock(FilterChain.class);
+            String ip = "10.0.0.22";
+
+            for (int i = 0; i < RateLimitFilter.MAX_REQUESTS; i++) {
+                MockHttpServletRequest req = buildRequest("/api/auth/login", ip);
+                filter.doFilterInternal(req, new MockHttpServletResponse(), chain);
+            }
+
+            MockHttpServletRequest resetRequest = buildRequest("/api/auth/reset-password", ip);
+            MockHttpServletResponse resetResponse = new MockHttpServletResponse();
+
+            filter.doFilterInternal(resetRequest, resetResponse, mock(FilterChain.class));
+
+            assertThat(resetResponse.getStatus()).isEqualTo(429);
+        }
+    }
+
+    @Nested
     @DisplayName("resolveClientIp")
     class ResolveClientIp {
 

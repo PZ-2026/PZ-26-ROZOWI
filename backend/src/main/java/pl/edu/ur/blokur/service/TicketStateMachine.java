@@ -12,7 +12,7 @@ import pl.edu.ur.blokur.models.TicketStatus;
  * Silnik state-machine dla statusów zgłoszenia. Definiuje dozwolone przejścia między statusami i
  * waliduje każdą próbę zmiany przed jej wykonaniem.
  *
- * <p>Cykl życia: NOWE → ZAPLANOWANO → W_REALIZACJI → ZAKONCZONE → ZAMKNIETE.
+ * <p>Cykl życia: NOWE → ZAPLANOWANO → W_REALIZACJI → ZAKONCZONE_DO_WERYFIKACJI → ZAMKNIETE.
  * Alternatywne ścieżki: WSTRZYMANO (oczekiwanie) lub ODRZUCONE (zakończenie negatywne).
  */
 @Component
@@ -34,14 +34,14 @@ public class TicketStateMachine {
 
         ALLOWED_TRANSITIONS.put(
                 TicketStatus.W_REALIZACJI,
-                EnumSet.of(TicketStatus.WSTRZYMANO, TicketStatus.ZAKONCZONE));
+                EnumSet.of(TicketStatus.WSTRZYMANO, TicketStatus.ZAKONCZONE_DO_WERYFIKACJI));
 
         ALLOWED_TRANSITIONS.put(
                 TicketStatus.WSTRZYMANO,
                 EnumSet.of(TicketStatus.W_REALIZACJI, TicketStatus.ODRZUCONE));
 
         ALLOWED_TRANSITIONS.put(
-                TicketStatus.ZAKONCZONE,
+                TicketStatus.ZAKONCZONE_DO_WERYFIKACJI,
                 EnumSet.of(TicketStatus.ZAMKNIETE, TicketStatus.W_REALIZACJI));
 
         ALLOWED_TRANSITIONS.put(TicketStatus.ZAMKNIETE, EnumSet.noneOf(TicketStatus.class));

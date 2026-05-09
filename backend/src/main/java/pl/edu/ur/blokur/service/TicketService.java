@@ -324,9 +324,9 @@ public class TicketService {
                     "Brak uprawnień. Tylko zarządca może zamknąć zgłoszenie.");
         }
 
-        if (ticket.getStatus() != TicketStatus.ZAKONCZONE) {
+        if (ticket.getStatus() != TicketStatus.ZAKONCZONE_DO_WERYFIKACJI) {
             throw new BusinessValidationException(
-                    "Zgłoszenie musi mieć status ZAKONCZONE, aby mogło zostać"
+                    "Zgłoszenie musi mieć status ZAKONCZONE_DO_WERYFIKACJI, aby mogło zostać"
                             + " zamknięte.");
         }
 
@@ -551,12 +551,12 @@ public class TicketService {
                     "Zgłoszenie musi mieć status W_REALIZACJI, aby można było je zakończyć.");
         }
 
-        ticket.setStatus(TicketStatus.ZAKONCZONE);
+        ticket.setStatus(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
         ticket.setWorkDescription(request.getWorkDescription());
 
         TicketHistory history = new TicketHistory();
         history.setTicket(ticket);
-        history.setStatus("ZAKONCZONE");
+        history.setStatus("ZAKONCZONE_DO_WERYFIKACJI");
         history.setChangedBy(conservator);
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
