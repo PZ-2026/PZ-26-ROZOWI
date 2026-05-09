@@ -21,8 +21,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import pl.edu.ur.blokur.dto.ApartmentBalanceResponse;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 
 /**
@@ -133,6 +135,78 @@ public class PdfGeneratorService {
                 }
             }
         }
+    }
+
+    /**
+     * Generuje zestawienie sald i zaległości lokali w formacie PDF.
+     *
+     * @param rows przefiltrowane i posortowane salda lokali
+     * @return wygenerowany plik PDF jako tablica bajtów
+     * @throws RuntimeException w przypadku błędu generowania PDF
+     */
+    public byte[] generateBalancesReport(List<ApartmentBalanceResponse> rows) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(outputStream);
+        PdfDocument pdfDocument = new PdfDocument(writer);
+        Document document = new Document(pdfDocument);
+
+        PdfFont font = loadUnicodeFont();
+        document.setFont(font);
+
+        document.add(
+                new Paragraph("BLOKUR")
+                        .setBold()
+                        .setFontSize(18f)
+                        .setTextAlignment(TextAlignment.CENTER));
+
+        document.add(
+                new Paragraph("Zestawienie sald i zaległości")
+                        .setBold()
+                        .setFontSize(14f)
+                        .setTextAlignment(TextAlignment.CENTER));
+
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        document.add(
+                new Paragraph("Data wygenerowania: " + today)
+                        .setFontSize(10f)
+                        .setTextAlignment(TextAlignment.RIGHT));
+
+        document.add(new Paragraph("\n"));
+
+        Table table =
+                new Table(UnitValue.createPercentArray(new float[] {30f, 16f, 20f, 16f}))
+                        .useAllAvailableWidth();
+
+        table.addHeaderCell(new Cell().add(new Paragraph("Adres lokalu").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Saldo (PLN)").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Ostatnia wpłata").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Dni zalegania").setBold()));
+
+        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        for (ApartmentBalanceResponse row : rows) {
+            table.addCell(new Cell().add(new Paragraph(row.getAddress())));
+            table.addCell(
+                    new Cell()
+                            .add(new Paragraph(row.getBalance().setScale(2).toPlainString())));
+            table.addCell(
+                    new Cell()
+                            .add(
+                                    new Paragraph(
+                                            row.getLastPaymentDate() != null
+                                                    ? row.getLastPaymentDate().format(dateFmt)
+                                                    : "—")));
+            table.addCell(
+                    new Cell()
+                            .add(
+                                    new Paragraph(
+                                            row.getDaysOverdue() != null
+                                                    ? row.getDaysOverdue().toString()
+                                                    : "—")));
+        }
+
+        document.add(table);
+        document.close();
+        return outputStream.toByteArray();
     }
 
     /**

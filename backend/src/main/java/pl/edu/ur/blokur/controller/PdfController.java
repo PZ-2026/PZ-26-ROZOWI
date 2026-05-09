@@ -1,14 +1,22 @@
 package pl.edu.ur.blokur.controller;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pl.edu.ur.blokur.dto.ApartmentBalanceResponse;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
+import pl.edu.ur.blokur.service.ApartmentBalanceService;
 import pl.edu.ur.blokur.service.PdfGeneratorService;
 
 /** Kontroler REST do generowania dokumentów PDF. */
@@ -17,9 +25,19 @@ import pl.edu.ur.blokur.service.PdfGeneratorService;
 public class PdfController {
 
     private final PdfGeneratorService pdfGeneratorService;
+    private final ApartmentBalanceService apartmentBalanceService;
 
-    public PdfController(PdfGeneratorService pdfGeneratorService) {
+    /**
+     * Tworzy kontroler z wymaganymi zależnościami.
+     *
+     * @param pdfGeneratorService serwis generowania PDF
+     * @param apartmentBalanceService serwis sald i zaległości lokali
+     */
+    public PdfController(
+            PdfGeneratorService pdfGeneratorService,
+            ApartmentBalanceService apartmentBalanceService) {
         this.pdfGeneratorService = pdfGeneratorService;
+        this.apartmentBalanceService = apartmentBalanceService;
     }
 
     /**
@@ -37,6 +55,36 @@ public class PdfController {
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
                 ContentDisposition.inline().filename("protokol-odbioru-prac.pdf").build());
+
+        return ResponseEntity.ok().headers(headers).body(pdfBytes);
+    }
+
+    /**
+     * Generuje zestawienie sald i zaległości lokali jako plik PDF. Akceptuje te same filtry co
+     * endpoint JSON ({@code GET /api/admin/apartments/balances}). Dostęp: ZARZADCA.
+     *
+     * @param propertyId identyfikator nieruchomości (opcjonalny)
+     * @param minDebt minimalna kwota zaległości w PLN (opcjonalny)
+     * @param minDaysOverdue minimalna liczba dni zalegania (opcjonalny)
+     * @param sort kierunek sortowania (opcjonalny, domyślnie {@code debt_desc})
+     * @return plik PDF z zestawieniem
+     */
+    @GetMapping("/balances")
+    @PreAuthorize("hasRole('ZARZADCA')")
+    public ResponseEntity<byte[]> generateBalancesReport(
+            @RequestParam(required = false) UUID propertyId,
+            @RequestParam(required = false) BigDecimal minDebt,
+            @RequestParam(required = false) Long minDaysOverdue,
+            @RequestParam(required = false, defaultValue = "debt_desc") String sort) {
+        boolean sortDesc = !"debt_asc".equalsIgnoreCase(sort);
+        List<ApartmentBalanceResponse> rows =
+                apartmentBalanceService.getBalances(propertyId, minDebt, minDaysOverdue, sortDesc);
+        byte[] pdfBytes = pdfGeneratorService.generateBalancesReport(rows);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(
+                ContentDisposition.inline().filename("zestawienie-zaleglosci.pdf").build());
 
         return ResponseEntity.ok().headers(headers).body(pdfBytes);
     }

@@ -63,3 +63,16 @@ data class CreateTransactionRequest(
     @SerializedName("description") val description: String,
     @SerializedName("transactionDate") val transactionDate: String  // "YYYY-MM-DD"
 )
+
+// ─── Admin balances — GET /api/admin/apartments/balances ──────────────────────
+
+/** Saldo pojedynczego lokalu w zestawieniu zaległości zarządcy. */
+data class ApartmentBalanceItemDto(
+    @SerializedName("apartmentId") val apartmentId: String,
+    @SerializedName("address") val address: String,
+    @SerializedName("balance") val balance: BigDecimal,
+    @SerializedName("lastPaymentDate") val lastPaymentDate: String?,   // "YYYY-MM-DD" lub null
+    @SerializedName("daysOverdue") val daysOverdue: Long?
+) {
+    val isOverdue: Boolean get() = balance < BigDecimal.ZERO
+}
