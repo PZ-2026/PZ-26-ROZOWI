@@ -64,7 +64,7 @@ private val ALL_STATUS_CHIPS = listOf(
     StatusChip(TicketStatus.ZAPLANOWANO, "Zaplanowano", InfoBlue),
     StatusChip(TicketStatus.W_REALIZACJI, "W realizacji", WarningOrange),
     StatusChip(TicketStatus.WSTRZYMANO, "Wstrzymano", WarningOrange),
-    StatusChip(TicketStatus.ZAKONCZONE, "Zakończone", SuccessGreen),
+    StatusChip(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI, "Do weryfikacji", SuccessGreen),
     StatusChip(TicketStatus.ZAMKNIETE, "Zamknięte", SuccessGreen),
     StatusChip(TicketStatus.ODRZUCONE, "Odrzucone", ErrorRed),
 )
