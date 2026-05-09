@@ -23,22 +23,22 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final ApartmentRepository apartmentRepository;
-    private final PasswordResetService passwordResetService;
+    private final InvitationService invitationService;
 
     /**
      * Tworzy serwis z wymaganymi zależnościami.
      *
      * @param userRepository repozytorium użytkowników
      * @param apartmentRepository repozytorium mieszkań
-     * @param passwordResetService serwis do wysyłki zaproszeń z linkiem do ustawienia hasła
+     * @param invitationService serwis do wysyłki zaproszeń z linkiem do ustawienia hasła (72 h)
      */
     public AdminUserService(
             UserRepository userRepository,
             ApartmentRepository apartmentRepository,
-            PasswordResetService passwordResetService) {
+            InvitationService invitationService) {
         this.userRepository = userRepository;
         this.apartmentRepository = apartmentRepository;
-        this.passwordResetService = passwordResetService;
+        this.invitationService = invitationService;
     }
 
     /**
@@ -111,7 +111,7 @@ public class AdminUserService {
         savedUser.getUserApartments().add(userApartment);
 
         User finalUser = userRepository.save(savedUser);
-        passwordResetService.inviteUser(finalUser);
+        invitationService.inviteUser(finalUser);
         return finalUser;
     }
 

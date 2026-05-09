@@ -15,8 +15,8 @@ import pl.edu.ur.blokur.repository.PasswordResetTokenRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
 /**
- * Serwis obsługujący reset hasła użytkownika oraz wysyłanie zaproszeń dla nowo utworzonych kont.
- * Generuje jednorazowe tokeny i wysyła wiadomości e-mail z linkiem do ustawienia hasła.
+ * Serwis obsługujący reset hasła użytkownika. Generuje jednorazowy token z TTL 1 h i wysyła
+ * wiadomość e-mail z linkiem do ustawienia nowego hasła.
  */
 @Service
 public class PasswordResetService {
@@ -100,19 +100,6 @@ public class PasswordResetService {
         tokenRepository.delete(resetToken);
     }
 
-    /**
-     * Wysyła nowo utworzonemu użytkownikowi wiadomość powitalną z linkiem do ustawienia hasła
-     * (ważny 72h).
-     *
-     * @param user użytkownik do zaproszenia
-     */
-    public void inviteUser(User user) {
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiry = LocalDateTime.now().plusHours(72);
-        tokenRepository.save(new PasswordResetToken(user, token, expiry));
-        sendInvitationEmail(user.getEmail(), user.getFirstName(), token);
-    }
-
     @Async
     protected void sendResetEmail(String email, String token) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -127,28 +114,6 @@ public class PasswordResetService {
                         + token
                         + "\n\n"
                         + "Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość.");
-        mailSender.send(message);
-    }
-
-    @Async
-    protected void sendInvitationEmail(String email, String firstName, String token) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(email);
-        message.setSubject("Blokur – witamy w systemie!");
-        message.setText(
-                "Cześć "
-                        + firstName
-                        + "!\n\n"
-                        + "Administrator utworzył dla Ciebie konto w aplikacji Blokur.\n\n"
-                        + "Kliknij poniższy link, aby ustawić swoje hasło (link ważny przez 72"
-                        + " godziny):\n"
-                        + resetBaseUrl
-                        + "?token="
-                        + token
-                        + "\n\n"
-                        + "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z"
-                        + " administratorem.");
         mailSender.send(message);
     }
 }

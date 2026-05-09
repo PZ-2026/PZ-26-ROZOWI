@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.edu.ur.blokur.controller.AuthController;
+import pl.edu.ur.blokur.service.InvitationService;
 import pl.edu.ur.blokur.service.LoginAttemptService;
 import pl.edu.ur.blokur.service.PasswordResetService;
 import pl.edu.ur.blokur.service.RefreshTokenService;
@@ -40,6 +41,7 @@ class RateLimitIntegrationTest {
     @MockitoBean private LoginAttemptService loginAttemptService;
     @MockitoBean private RefreshTokenService refreshTokenService;
     @MockitoBean private PasswordResetService passwordResetService;
+    @MockitoBean private InvitationService invitationService;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
 
     private static final String LOGIN_BODY =

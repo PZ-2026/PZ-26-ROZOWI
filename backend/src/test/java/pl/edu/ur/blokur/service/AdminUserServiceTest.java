@@ -37,7 +37,7 @@ class AdminUserServiceTest {
 
     @Mock private ApartmentRepository apartmentRepository;
 
-    @Mock private PasswordResetService passwordResetService;
+    @Mock private InvitationService invitationService;
 
     @InjectMocks private AdminUserService adminUserService;
 
@@ -229,7 +229,7 @@ class AdminUserServiceTest {
 
             User result = adminUserService.createUser(request);
 
-            verify(passwordResetService).inviteUser(result);
+            verify(invitationService).inviteUser(result);
         }
 
         @Test
@@ -284,7 +284,7 @@ class AdminUserServiceTest {
 
             assertThatThrownBy(() -> adminUserService.createUser(request));
 
-            verify(passwordResetService, never()).inviteUser(any());
+            verify(invitationService, never()).inviteUser(any());
         }
     }
 
