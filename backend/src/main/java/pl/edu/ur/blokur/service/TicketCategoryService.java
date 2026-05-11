@@ -34,7 +34,7 @@ public class TicketCategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> getActiveCategories() {
         return categoryRepository.findByIsActiveTrue().stream()
-                .map(c -> new CategoryResponse(c.getId(), c.getName()))
+                .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getSlaHours()))
                 .toList();
     }
 

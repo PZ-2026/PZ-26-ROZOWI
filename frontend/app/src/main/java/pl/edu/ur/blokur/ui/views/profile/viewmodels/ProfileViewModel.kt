@@ -11,12 +11,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.dtos.UserRole
+import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileEvent
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileViewModel @Inject constructor() : ViewModel() {
+class ProfileViewModel @Inject constructor(
+    private val authService: AuthService
+) : ViewModel() {
+
+    /** Zwraca true jeśli zalogowany użytkownik ma rolę ZARZADCA. */
+    suspend fun isManager(): Boolean =
+        authService.getCurrentUserRole() == UserRole.ZARZADCA
 
     private val _state = MutableStateFlow<ProfileState>(ProfileState.Data())
     val state: StateFlow<ProfileState> = _state.asStateFlow()

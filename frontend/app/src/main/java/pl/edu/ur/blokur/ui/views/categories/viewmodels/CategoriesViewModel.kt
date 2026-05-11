@@ -112,4 +112,24 @@ class CategoriesViewModel @Inject constructor(
                 }
         }
     }
+
+    fun setSla(id: String, hours: Int) {
+        val current = _state.value as? CategoriesUiState.Success ?: return
+        viewModelScope.launch {
+            _state.value = current.copy(isSubmitting = true)
+            runCatching { categoryService.setSla(id, hours) }
+                .onSuccess {
+                    _state.value = CategoriesUiState.Success(
+                        categories = current.categories.map {
+                            if (it.id == id) it.copy(slaHours = hours) else it
+                        }
+                    )
+                    _events.send(CategoriesEvent.ShowSnackbar("SLA ustawione na $hours godz."))
+                }
+                .onFailure { e ->
+                    _state.value = current.copy(isSubmitting = false)
+                    _events.send(CategoriesEvent.ShowSnackbar(e.message ?: "Błąd ustawiania SLA"))
+                }
+        }
+    }
 }

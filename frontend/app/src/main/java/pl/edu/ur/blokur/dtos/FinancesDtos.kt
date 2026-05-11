@@ -76,3 +76,19 @@ data class ApartmentBalanceItemDto(
 ) {
     val isOverdue: Boolean get() = balance < BigDecimal.ZERO
 }
+
+// ─── CSV Import — POST /api/finance/import ───────────────────────────────────
+
+/** Wynik masowego importu transakcji z CSV. */
+data class CsvImportResultDto(
+    @SerializedName("importedCount") val importedCount: Int,
+    @SerializedName("errorCount") val errorCount: Int,
+    @SerializedName("errors") val errors: List<CsvImportErrorDto>
+)
+
+/** Szczegół błędu w jednym wierszu CSV. */
+data class CsvImportErrorDto(
+    @SerializedName("line") val line: Int,
+    @SerializedName("message") val message: String
+)
+

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +42,7 @@ fun FinancesOverviewContent(
     onNavigateToDocuments: () -> Unit,
     onNavigateToLedger: () -> Unit = {},
     onNavigateToBalances: () -> Unit = {},
+    onNavigateToCsvImport: () -> Unit = {},
     isManager: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -78,6 +80,12 @@ fun FinancesOverviewContent(
                     title = "Monitorowanie zaległości",
                     subtitle = "Zestawienie sald i zaległości wszystkich lokali",
                     onClick = onNavigateToBalances
+                )
+                FinancesNavItem(
+                    icon = Icons.Rounded.Upload,
+                    title = "Import CSV wpłat",
+                    subtitle = "Masowe wgrywanie transakcji z pliku CSV",
+                    onClick = onNavigateToCsvImport
                 )
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -122,3 +130,4 @@ private fun FinancesOverviewLoadingPreview() {
 private fun FinancesOverviewErrorPreview() {
     PreviewTheme { FinancesOverviewContent(FinancesState.Error("Błąd sieci"), {}, {}) }
 }
+
