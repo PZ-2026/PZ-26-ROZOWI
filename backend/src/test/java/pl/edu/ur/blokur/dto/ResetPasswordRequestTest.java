@@ -68,8 +68,7 @@ class ResetPasswordRequestTest {
             assertThat(violations)
                     .anyMatch(
                             v ->
-                                    v.getMessage()
-                                            .contains("wielką literę")
+                                    v.getMessage().contains("wielką literę")
                                             && v.getMessage().contains("cyfrę"));
         }
 
@@ -80,8 +79,7 @@ class ResetPasswordRequestTest {
             assertThat(violations)
                     .anyMatch(
                             v ->
-                                    v.getMessage()
-                                            .contains("wielką literę")
+                                    v.getMessage().contains("wielką literę")
                                             && v.getMessage().contains("cyfrę"));
         }
 
@@ -95,7 +93,8 @@ class ResetPasswordRequestTest {
                                     v ->
                                             v.getPropertyPath().toString().equals("newPassword")
                                                     && (v.getMessage().contains("wielką literę")
-                                                            || v.getMessage().contains("8 znaków")));
+                                                            || v.getMessage()
+                                                                    .contains("8 znaków")));
             assertThat(hasPatternOrSizeViolation).isTrue();
         }
     }
@@ -108,14 +107,16 @@ class ResetPasswordRequestTest {
         @DisplayName("null — naruszenie @NotBlank")
         void rejectsNullPassword() {
             Set<ConstraintViolation<ResetPasswordRequest>> violations = validate(null);
-            assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("newPassword"));
+            assertThat(violations)
+                    .anyMatch(v -> v.getPropertyPath().toString().equals("newPassword"));
         }
 
         @Test
         @DisplayName("pusty string — naruszenie @NotBlank")
         void rejectsBlankPassword() {
             Set<ConstraintViolation<ResetPasswordRequest>> violations = validate("");
-            assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("newPassword"));
+            assertThat(violations)
+                    .anyMatch(v -> v.getPropertyPath().toString().equals("newPassword"));
         }
     }
 }

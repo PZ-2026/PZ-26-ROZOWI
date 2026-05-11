@@ -301,8 +301,8 @@ public class TicketService {
     }
 
     /**
-     * Zamyka zgłoszenie będące w stanie ZAKONCZONE. Generuje protokół PDF i zapisuje
-     * jako nowy Document. Operacja dostępna tylko dla zarządcy.
+     * Zamyka zgłoszenie będące w stanie ZAKONCZONE. Generuje protokół PDF i zapisuje jako nowy
+     * Document. Operacja dostępna tylko dla zarządcy.
      *
      * @param ticketId identyfikator zgłoszenia
      * @param username email zalogowanego użytkownika

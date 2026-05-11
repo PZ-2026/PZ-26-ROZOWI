@@ -11,8 +11,8 @@ import pl.edu.ur.blokur.models.Apartment;
 public interface ApartmentRepository extends JpaRepository<Apartment, UUID> {
 
     /**
-     * Pobiera wszystkie lokale należące do wskazanej nieruchomości wraz z klatką i budynkiem
-     * (FETCH JOIN zapobiega N+1).
+     * Pobiera wszystkie lokale należące do wskazanej nieruchomości wraz z klatką i budynkiem (FETCH
+     * JOIN zapobiega N+1).
      *
      * @param propertyId identyfikator nieruchomości
      * @return lista lokali w danej nieruchomości

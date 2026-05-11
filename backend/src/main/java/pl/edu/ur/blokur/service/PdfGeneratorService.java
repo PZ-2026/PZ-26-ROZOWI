@@ -186,8 +186,7 @@ public class PdfGeneratorService {
         for (ApartmentBalanceResponse row : rows) {
             table.addCell(new Cell().add(new Paragraph(row.getAddress())));
             table.addCell(
-                    new Cell()
-                            .add(new Paragraph(row.getBalance().setScale(2).toPlainString())));
+                    new Cell().add(new Paragraph(row.getBalance().setScale(2).toPlainString())));
             table.addCell(
                     new Cell()
                             .add(

@@ -182,5 +182,4 @@ class PasswordResetServiceTest {
             assertThat(testUser.getPasswordHash()).isNotEqualTo("staryHash");
         }
     }
-
 }
