@@ -66,6 +66,7 @@ class TicketServiceTest {
     @Mock private PdfGeneratorService pdfGeneratorService;
     @Mock private TicketStateMachine ticketStateMachine;
     @Mock private BusinessHoursCalculator businessHoursCalculator;
+    @Mock private PushNotificationService pushNotificationService;
 
     @InjectMocks private TicketService ticketService;
 

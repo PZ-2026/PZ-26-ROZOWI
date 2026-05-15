@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -50,6 +51,7 @@ public class TicketService {
     private final PdfGeneratorService pdfGeneratorService;
     private final TicketStateMachine ticketStateMachine;
     private final BusinessHoursCalculator businessHoursCalculator;
+    private final PushNotificationService pushNotificationService;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -60,7 +62,8 @@ public class TicketService {
             DocumentRepository documentRepository,
             PdfGeneratorService pdfGeneratorService,
             TicketStateMachine ticketStateMachine,
-            BusinessHoursCalculator businessHoursCalculator) {
+            BusinessHoursCalculator businessHoursCalculator,
+            PushNotificationService pushNotificationService) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -70,6 +73,7 @@ public class TicketService {
         this.pdfGeneratorService = pdfGeneratorService;
         this.ticketStateMachine = ticketStateMachine;
         this.businessHoursCalculator = businessHoursCalculator;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -297,7 +301,16 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        TicketDetailDto result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            pushNotificationService.send(
+                    ticket.getAuthor().getId(),
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Zgłoszenie zaplanowano",
+                    "Twoje zgłoszenie \"" + ticket.getTitle() + "\" zostało zaplanowane.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "ZAPLANOWANO"));
+        }
+        return result;
     }
 
     /**
@@ -402,7 +415,23 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        TicketDetailDto result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            UUID authorId = ticket.getAuthor().getId();
+            pushNotificationService.send(
+                    authorId,
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Zgłoszenie zamknięte",
+                    "Zgłoszenie \"" + ticket.getTitle() + "\" zostało zamknięte.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "ZAMKNIETE"));
+            pushNotificationService.send(
+                    authorId,
+                    PushNotificationService.EVENT_NOWY_DOKUMENT,
+                    "Nowy dokument",
+                    "Protokół odbioru dla zgłoszenia \"" + ticket.getTitle() + "\" jest dostępny.",
+                    Map.of("ticketId", ticket.getId().toString(), "type", "PROTOKOL"));
+        }
+        return result;
     }
 
     @Transactional
@@ -436,7 +465,16 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        TicketDetailDto result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            pushNotificationService.send(
+                    ticket.getAuthor().getId(),
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Zgłoszenie odrzucone",
+                    "Twoje zgłoszenie \"" + ticket.getTitle() + "\" zostało odrzucone.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "ODRZUCONE"));
+        }
+        return result;
     }
 
     @Transactional
@@ -475,7 +513,16 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        TicketDetailDto result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            pushNotificationService.send(
+                    ticket.getAuthor().getId(),
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Prace w toku",
+                    "Prace przy zgłoszeniu \"" + ticket.getTitle() + "\" zostały rozpoczęte.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "W_REALIZACJI"));
+        }
+        return result;
     }
 
     @Transactional
@@ -520,7 +567,19 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        TicketDetailDto result = mapToDetail(ticketRepository.save(ticket));
+        // Powiadomienie zarządców o wstrzymaniu zgłoszenia
+        List<UUID> managerIds = userRepository.findManagerIds();
+        pushNotificationService.sendToUsers(
+                managerIds,
+                PushNotificationService.EVENT_WSTRZYMANIE,
+                "Zgłoszenie wstrzymane",
+                "Zgłoszenie \""
+                        + ticket.getTitle()
+                        + "\" zostało wstrzymane. Powód: "
+                        + request.getReason(),
+                Map.of("ticketId", ticket.getId().toString(), "status", "WSTRZYMANO"));
+        return result;
     }
 
     @Transactional
@@ -561,7 +620,20 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        TicketDetailDto result = mapToDetail(ticketRepository.save(ticket));
+        // Powiadomienie zarządców o gotowości zgłoszenia do weryfikacji
+        List<UUID> managerIds = userRepository.findManagerIds();
+        pushNotificationService.sendToUsers(
+                managerIds,
+                PushNotificationService.EVENT_ZMIANA_STATUSU,
+                "Zgłoszenie do weryfikacji",
+                "Zgłoszenie \"" + ticket.getTitle() + "\" oczekuje na weryfikację.",
+                Map.of(
+                        "ticketId",
+                        ticket.getId().toString(),
+                        "status",
+                        "ZAKONCZONE_DO_WERYFIKACJI"));
+        return result;
     }
 
     @Transactional

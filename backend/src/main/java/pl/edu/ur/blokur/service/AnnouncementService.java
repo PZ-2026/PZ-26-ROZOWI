@@ -6,12 +6,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,6 +46,7 @@ public class AnnouncementService {
     private final BuildingRepository buildingRepository;
     private final StaircaseRepository staircaseRepository;
     private final ApartmentRepository apartmentRepository;
+    private final PushNotificationService pushNotificationService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -58,18 +59,21 @@ public class AnnouncementService {
      * @param buildingRepository repozytorium budynków
      * @param staircaseRepository repozytorium klatek
      * @param apartmentRepository repozytorium lokali
+     * @param pushNotificationService serwis powiadomień PUSH
      */
     public AnnouncementService(
             AnnouncementRepository announcementRepository,
             UserRepository userRepository,
             BuildingRepository buildingRepository,
             StaircaseRepository staircaseRepository,
-            ApartmentRepository apartmentRepository) {
+            ApartmentRepository apartmentRepository,
+            PushNotificationService pushNotificationService) {
         this.announcementRepository = announcementRepository;
         this.userRepository = userRepository;
         this.buildingRepository = buildingRepository;
         this.staircaseRepository = staircaseRepository;
         this.apartmentRepository = apartmentRepository;
+        this.pushNotificationService = pushNotificationService;
     }
 
     /**
@@ -299,18 +303,52 @@ public class AnnouncementService {
     }
 
     /**
-     * Wysyła powiadomienia PUSH do adresatów ogłoszenia (asynchronicznie). Obecnie loguje
-     * informację — implementacja PUSH wymaga integracji z FCM/APNs.
+     * Wysyła powiadomienia PUSH do adresatów ogłoszenia (asynchronicznie przez FCM).
      *
      * @param announcement zapisane ogłoszenie
      */
-    @Async
     public void sendPushNotificationsAsync(Announcement announcement) {
         logger.info(
                 "Wysyłanie powiadomień PUSH dla ogłoszenia: {} (typ zasięgu: {})",
                 announcement.getId(),
                 announcement.getTargetType());
-        // TODO: Integracja z Firebase Cloud Messaging lub Apple Push Notification Service
+
+        List<UUID> recipientIds = resolveRecipientIds(announcement);
+        if (recipientIds.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> data =
+                Map.of("announcementId", announcement.getId().toString(), "type", "OGLOSZENIE");
+        pushNotificationService.sendToUsers(
+                recipientIds,
+                PushNotificationService.EVENT_OGLOSZENIE,
+                announcement.getTitle(),
+                announcement.getContent(),
+                data);
+    }
+
+    private List<UUID> resolveRecipientIds(Announcement announcement) {
+        AnnouncementTargetType targetType = announcement.getTargetType();
+        if (targetType == null || targetType == AnnouncementTargetType.WSZYSCY) {
+            return userRepository.findAllResidentIds();
+        }
+        switch (targetType) {
+            case BUDYNEK:
+                if (announcement.getTargetBuilding() == null) return List.of();
+                return userRepository.findUserIdsByBuildingId(
+                        announcement.getTargetBuilding().getId());
+            case KLATKA:
+                if (announcement.getTargetStaircase() == null) return List.of();
+                return userRepository.findUserIdsByStaircaseId(
+                        announcement.getTargetStaircase().getId());
+            case NIERUCHOMOSC:
+                if (announcement.getTargetApartment() == null) return List.of();
+                return userRepository.findUserIdsByApartmentId(
+                        announcement.getTargetApartment().getId());
+            default:
+                return List.of();
+        }
     }
 
     /**
