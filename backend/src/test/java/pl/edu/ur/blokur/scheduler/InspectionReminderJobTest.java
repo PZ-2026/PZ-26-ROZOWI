@@ -29,7 +29,8 @@ import pl.edu.ur.blokur.service.PushNotificationService;
 
 /**
  * Testy jednostkowe dla {@link InspectionReminderJob}. Weryfikują poprawność doboru odbiorców
- * powiadomień na podstawie scopeType przeglądu oraz obsługę pustych okien czasowych.
+ * powiadomień na podstawie scopeType przeglądu, obsługę pustych okien czasowych oraz idempotentność
+ * (flagi notified_24h / notified_7d).
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InspectionReminderJob — przypomnienia o przeglądach")
@@ -229,6 +230,83 @@ class InspectionReminderJobTest {
                             anyString(),
                             anyString(),
                             anyMap());
+        }
+    }
+
+    // =======================================================
+    // Idempotentność (flagi notified_24h / notified_7d)
+    // =======================================================
+
+    @Nested
+    @DisplayName("Idempotentność — flagi notified_24h / notified_7d")
+    class IdempotencyTests {
+
+        @Test
+        @DisplayName("Przegląd z notified_24h=true — pomija wysyłkę i nie zapisuje ponownie")
+        void shouldSkipAlreadyNotified24h() {
+            Inspection inspection = buildInspection(ScopeType.BUDYNEK);
+            inspection.setNotified24h(true);
+
+            when(inspectionRepository.findByScheduledAtBetween(any(), any()))
+                    .thenReturn(List.of(inspection))
+                    .thenReturn(List.of());
+
+            reminderJob.sendReminders();
+
+            verify(pushNotificationService, never())
+                    .sendToUsers(anyList(), anyString(), anyString(), anyString(), anyMap());
+            verify(inspectionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Przegląd z notified_7d=true — pomija wysyłkę i nie zapisuje ponownie")
+        void shouldSkipAlreadyNotified7d() {
+            Inspection inspection = buildInspection(ScopeType.KLATKA);
+            inspection.setNotified7d(true);
+
+            when(inspectionRepository.findByScheduledAtBetween(any(), any()))
+                    .thenReturn(List.of())
+                    .thenReturn(List.of(inspection));
+
+            reminderJob.sendReminders();
+
+            verify(pushNotificationService, never())
+                    .sendToUsers(anyList(), anyString(), anyString(), anyString(), anyMap());
+            verify(inspectionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Przegląd z notified_24h=false — po wysłaniu zapisuje inspection z flagą true")
+        void shouldMarkNotified24hAfterSending() {
+            Inspection inspection = buildInspection(ScopeType.BUDYNEK);
+            List<UUID> userIds = List.of(UUID.randomUUID());
+
+            when(inspectionRepository.findByScheduledAtBetween(any(), any()))
+                    .thenReturn(List.of(inspection))
+                    .thenReturn(List.of());
+            when(userRepository.findUserIdsByBuildingId(scopeId)).thenReturn(userIds);
+
+            reminderJob.sendReminders();
+
+            verify(inspectionRepository).save(inspection);
+            org.assertj.core.api.Assertions.assertThat(inspection.isNotified24h()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Przegląd z notified_7d=false — po wysłaniu zapisuje inspection z flagą true")
+        void shouldMarkNotified7dAfterSending() {
+            Inspection inspection = buildInspection(ScopeType.KLATKA);
+            List<UUID> userIds = List.of(UUID.randomUUID());
+
+            when(inspectionRepository.findByScheduledAtBetween(any(), any()))
+                    .thenReturn(List.of())
+                    .thenReturn(List.of(inspection));
+            when(userRepository.findUserIdsByStaircaseId(scopeId)).thenReturn(userIds);
+
+            reminderJob.sendReminders();
+
+            verify(inspectionRepository).save(inspection);
+            org.assertj.core.api.Assertions.assertThat(inspection.isNotified7d()).isTrue();
         }
     }
 }

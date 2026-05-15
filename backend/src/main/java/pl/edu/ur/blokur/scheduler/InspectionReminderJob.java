@@ -5,10 +5,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.models.Inspection;
 import pl.edu.ur.blokur.models.ScopeType;
 import pl.edu.ur.blokur.repository.InspectionRepository;
@@ -53,17 +56,26 @@ public class InspectionReminderJob {
     public void sendReminders() {
         LocalDate today = LocalDate.now();
 
-        sendRemindersForWindow(today.plusDays(1), "24h");
-        sendRemindersForWindow(today.plusDays(7), "7 dni");
+        sendRemindersForWindow(
+                today.plusDays(1), "24h", Inspection::isNotified24h, i -> i.setNotified24h(true));
+        sendRemindersForWindow(
+                today.plusDays(7), "7 dni", Inspection::isNotified7d, i -> i.setNotified7d(true));
     }
 
     /**
-     * Pobiera przeglądy zaplanowane na podany dzień i inicjuje wysyłkę powiadomień.
+     * Pobiera przeglądy zaplanowane na podany dzień i inicjuje wysyłkę powiadomień. Pomija
+     * przeglądy, dla których flaga idempotentności jest już ustawiona.
      *
      * @param targetDate dzień, dla którego wyszukujemy przeglądy
      * @param label etykieta okna czasowego (do logowania)
+     * @param alreadyNotified predykat sprawdzający flagę idempotentności
+     * @param markNotified konsumer ustawiający flagę po wysłaniu
      */
-    private void sendRemindersForWindow(LocalDate targetDate, String label) {
+    private void sendRemindersForWindow(
+            LocalDate targetDate,
+            String label,
+            Predicate<Inspection> alreadyNotified,
+            Consumer<Inspection> markNotified) {
         LocalDateTime from = targetDate.atStartOfDay();
         LocalDateTime to = targetDate.plusDays(1).atStartOfDay();
 
@@ -80,17 +92,27 @@ public class InspectionReminderJob {
                 targetDate);
 
         for (Inspection inspection : upcoming) {
-            sendPushNotification(inspection, label);
+            if (alreadyNotified.test(inspection)) {
+                log.debug(
+                        "Przegląd '{}' — powiadomienie {} już wysłane, pomijam.",
+                        inspection.getTitle(),
+                        label);
+                continue;
+            }
+            sendPushNotification(inspection, label, markNotified);
         }
     }
 
     /**
-     * Wysyła powiadomienie PUSH do mieszkańców w zasięgu przeglądu.
+     * Wysyła powiadomienie PUSH do mieszkańców w zasięgu przeglądu i ustawia flagę idempotentności.
      *
      * @param inspection przegląd, dla którego wysyłane jest powiadomienie
      * @param timeLabel etykieta czasowa przypomnienia (np. "24h", "7 dni")
+     * @param markNotified konsumer ustawiający flagę po wysłaniu
      */
-    private void sendPushNotification(Inspection inspection, String timeLabel) {
+    @Transactional
+    void sendPushNotification(
+            Inspection inspection, String timeLabel, Consumer<Inspection> markNotified) {
         List<UUID> recipientIds = resolveRecipientIds(inspection);
         if (recipientIds.isEmpty()) {
             log.debug(
@@ -117,6 +139,9 @@ public class InspectionReminderJob {
 
         pushNotificationService.sendToUsers(
                 recipientIds, PushNotificationService.EVENT_PRZEGLAD, title, body, data);
+
+        markNotified.accept(inspection);
+        inspectionRepository.save(inspection);
     }
 
     private List<UUID> resolveRecipientIds(Inspection inspection) {

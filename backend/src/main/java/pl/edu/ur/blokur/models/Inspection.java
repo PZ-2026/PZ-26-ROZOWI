@@ -46,6 +46,14 @@ public class Inspection {
     @Column(name = "scope_id", nullable = false)
     private UUID scopeId;
 
+    @Column(name = "notified_24h", nullable = false)
+    @ColumnDefault("false")
+    private boolean notified24h = false;
+
+    @Column(name = "notified_7d", nullable = false)
+    @ColumnDefault("false")
+    private boolean notified7d = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
@@ -161,6 +169,42 @@ public class Inspection {
      */
     public void setScopeId(UUID scopeId) {
         this.scopeId = scopeId;
+    }
+
+    /**
+     * Zwraca flagę informującą, czy powiadomienie 24-godzinne zostało już wysłane.
+     *
+     * @return {@code true} jeśli powiadomienie 24h zostało wysłane
+     */
+    public boolean isNotified24h() {
+        return notified24h;
+    }
+
+    /**
+     * Ustawia flagę powiadomienia 24-godzinnego.
+     *
+     * @param notified24h {@code true} po wysłaniu powiadomienia 24h
+     */
+    public void setNotified24h(boolean notified24h) {
+        this.notified24h = notified24h;
+    }
+
+    /**
+     * Zwraca flagę informującą, czy powiadomienie 7-dniowe zostało już wysłane.
+     *
+     * @return {@code true} jeśli powiadomienie 7d zostało wysłane
+     */
+    public boolean isNotified7d() {
+        return notified7d;
+    }
+
+    /**
+     * Ustawia flagę powiadomienia 7-dniowego.
+     *
+     * @param notified7d {@code true} po wysłaniu powiadomienia 7d
+     */
+    public void setNotified7d(boolean notified7d) {
+        this.notified7d = notified7d;
     }
 
     /**
