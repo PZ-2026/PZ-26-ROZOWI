@@ -3,12 +3,17 @@ package pl.edu.ur.blokur.scheduler;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import pl.edu.ur.blokur.models.Inspection;
+import pl.edu.ur.blokur.models.ScopeType;
 import pl.edu.ur.blokur.repository.InspectionRepository;
+import pl.edu.ur.blokur.repository.UserRepository;
+import pl.edu.ur.blokur.service.PushNotificationService;
 
 /**
  * Job uruchamiany codziennie o 8:00, który wykrywa przeglądy techniczne zaplanowane za dokładnie 7
@@ -20,14 +25,23 @@ public class InspectionReminderJob {
     private static final Logger log = LoggerFactory.getLogger(InspectionReminderJob.class);
 
     private final InspectionRepository inspectionRepository;
+    private final UserRepository userRepository;
+    private final PushNotificationService pushNotificationService;
 
     /**
-     * Tworzy instancję joba z wymaganym repozytorium przeglądów.
+     * Tworzy instancję joba z wymaganymi zależnościami.
      *
      * @param inspectionRepository repozytorium przeglądów technicznych
+     * @param userRepository repozytorium użytkowników
+     * @param pushNotificationService serwis powiadomień PUSH
      */
-    public InspectionReminderJob(InspectionRepository inspectionRepository) {
+    public InspectionReminderJob(
+            InspectionRepository inspectionRepository,
+            UserRepository userRepository,
+            PushNotificationService pushNotificationService) {
         this.inspectionRepository = inspectionRepository;
+        this.userRepository = userRepository;
+        this.pushNotificationService = pushNotificationService;
     }
 
     /**
@@ -77,14 +91,49 @@ public class InspectionReminderJob {
      * @param timeLabel etykieta czasowa przypomnienia (np. "24h", "7 dni")
      */
     private void sendPushNotification(Inspection inspection, String timeLabel) {
-        // TODO: zaimplementować wysyłkę powiadomień PUSH do mieszkańców w zasięgu przeglądu.
-        // Zasięg określony przez inspection.getScopeType() i inspection.getScopeId().
-        // Powiadomienie: "Przegląd '%s' zaplanowany za %s (%s)".
-        log.debug(
-                "TODO PUSH: przegląd='{}', zasięg={}:{}, za={}",
-                inspection.getTitle(),
-                inspection.getScopeType(),
-                inspection.getScopeId(),
-                timeLabel);
+        List<UUID> recipientIds = resolveRecipientIds(inspection);
+        if (recipientIds.isEmpty()) {
+            log.debug(
+                    "Brak odbiorców dla przeglądu '{}' (zasięg={}:{})",
+                    inspection.getTitle(),
+                    inspection.getScopeType(),
+                    inspection.getScopeId());
+            return;
+        }
+
+        String title = "Przypomnienie o przeglądzie";
+        String body =
+                String.format(
+                        "Przegląd '%s' zaplanowany za %s (%s).",
+                        inspection.getTitle(),
+                        timeLabel,
+                        inspection.getScheduledAt().toLocalDate());
+        Map<String, String> data =
+                Map.of(
+                        "inspectionId",
+                        inspection.getId().toString(),
+                        "scheduledAt",
+                        inspection.getScheduledAt().toString());
+
+        pushNotificationService.sendToUsers(
+                recipientIds, PushNotificationService.EVENT_PRZEGLAD, title, body, data);
+    }
+
+    private List<UUID> resolveRecipientIds(Inspection inspection) {
+        ScopeType scopeType = inspection.getScopeType();
+        UUID scopeId = inspection.getScopeId();
+        if (scopeType == null || scopeId == null) {
+            return List.of();
+        }
+        switch (scopeType) {
+            case BUDYNEK:
+                return userRepository.findUserIdsByBuildingId(scopeId);
+            case KLATKA:
+                return userRepository.findUserIdsByStaircaseId(scopeId);
+            case NIERUCHOMOSC:
+                return userRepository.findUserIdsByPropertyId(scopeId);
+            default:
+                return List.of();
+        }
     }
 }
