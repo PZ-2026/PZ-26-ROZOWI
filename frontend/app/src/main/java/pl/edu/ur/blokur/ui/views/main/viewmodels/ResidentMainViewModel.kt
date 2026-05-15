@@ -60,6 +60,7 @@ class ResidentMainViewModel @Inject constructor(
                 NavBarOption.CATEGORIES -> ResidentMainState.ViewingCategories
                 NavBarOption.RESOLUTIONS -> ResidentMainState.ViewingResolutions
                 NavBarOption.INSPECTIONS -> ResidentMainState.ViewingInspections
+                NavBarOption.NOTIFICATIONS -> ResidentMainState.ViewingNotifications
             }
         }
     }

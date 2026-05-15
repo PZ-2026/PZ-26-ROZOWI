@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.edu.ur.blokur.repository.NotificationConfigRepository;
 import pl.edu.ur.blokur.repository.NotificationSettingRepository;
 import pl.edu.ur.blokur.repository.UserDeviceRepository;
 
@@ -34,17 +35,29 @@ public class PushNotificationService {
 
     private final UserDeviceRepository userDeviceRepository;
     private final NotificationSettingRepository notificationSettingRepository;
+    private final NotificationConfigRepository notificationConfigRepository;
 
+    /**
+     * Tworzy instancję serwisu.
+     *
+     * @param userDeviceRepository repozytorium urządzeń użytkowników
+     * @param notificationSettingRepository repozytorium per-użytkownikowych ustawień powiadomień
+     * @param notificationConfigRepository repozytorium globalnej konfiguracji typów powiadomień
+     */
     public PushNotificationService(
             UserDeviceRepository userDeviceRepository,
-            NotificationSettingRepository notificationSettingRepository) {
+            NotificationSettingRepository notificationSettingRepository,
+            NotificationConfigRepository notificationConfigRepository) {
         this.userDeviceRepository = userDeviceRepository;
         this.notificationSettingRepository = notificationSettingRepository;
+        this.notificationConfigRepository = notificationConfigRepository;
     }
 
     /**
-     * Wysyła powiadomienie PUSH asynchronicznie do wielu użytkowników. Respektuje
-     * notification_settings — użytkownicy z wyłączonym typem zdarzenia nie otrzymują powiadomienia.
+     * Wysyła powiadomienie PUSH asynchronicznie do wielu użytkowników. Najpierw sprawdza globalną
+     * konfigurację (notification_config), a następnie per-użytkownikowe ustawienia
+     * (notification_settings). Użytkownicy z wyłączonym typem zdarzenia nie otrzymują
+     * powiadomienia.
      *
      * @param userIds lista identyfikatorów użytkowników
      * @param eventType typ zdarzenia (stała EVENT_*)
@@ -63,6 +76,10 @@ public class PushNotificationService {
         if (userIds == null || userIds.isEmpty()) {
             return;
         }
+        if (!isGloballyEnabled(eventType)) {
+            log.debug("Typ powiadomienia '{}' globalnie wyłączony — pomijam wysyłkę.", eventType);
+            return;
+        }
         for (UUID userId : userIds) {
             if (isEnabled(userId, eventType)) {
                 sendToUser(userId, title, body, data);
@@ -71,8 +88,9 @@ public class PushNotificationService {
     }
 
     /**
-     * Wysyła powiadomienie PUSH asynchronicznie do pojedynczego użytkownika. Respektuje
-     * notification_settings.
+     * Wysyła powiadomienie PUSH asynchronicznie do pojedynczego użytkownika. Najpierw sprawdza
+     * globalną konfigurację (notification_config), a następnie per-użytkownikowe ustawienia
+     * (notification_settings).
      *
      * @param userId identyfikator użytkownika
      * @param eventType typ zdarzenia
@@ -85,6 +103,10 @@ public class PushNotificationService {
     public void send(
             UUID userId, String eventType, String title, String body, Map<String, String> data) {
         if (userId == null) {
+            return;
+        }
+        if (!isGloballyEnabled(eventType)) {
+            log.debug("Typ powiadomienia '{}' globalnie wyłączony — pomijam wysyłkę.", eventType);
             return;
         }
         if (isEnabled(userId, eventType)) {
@@ -125,6 +147,13 @@ public class PushNotificationService {
                 log.error("Błąd wysyłki FCM (token: {}): {}", token, e.getMessage());
             }
         }
+    }
+
+    private boolean isGloballyEnabled(String eventType) {
+        return notificationConfigRepository
+                .findByEventType(eventType)
+                .map(c -> c.isEnabled())
+                .orElse(true);
     }
 
     private boolean isEnabled(UUID userId, String eventType) {

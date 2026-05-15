@@ -28,6 +28,8 @@ import pl.edu.ur.blokur.ui.views.resolutions.ResolutionRoutes
 import pl.edu.ur.blokur.ui.views.resolutions.resolutionsGraph
 import pl.edu.ur.blokur.ui.views.inspections.InspectionRoutes
 import pl.edu.ur.blokur.ui.views.inspections.inspectionsGraph
+import pl.edu.ur.blokur.ui.views.notifications.NotificationRoutes
+import pl.edu.ur.blokur.ui.views.notifications.notificationsGraph
 
 import pl.edu.ur.blokur.ui.views.meters.metersGraph
 
@@ -73,6 +75,7 @@ fun AppNavHost(
             categoriesRoute = CategoryRoutes.List,
             resolutionsRoute = ResolutionRoutes.List,
             inspectionsRoute = InspectionRoutes.List,
+            notificationsRoute = NotificationRoutes.Settings,
             nestedGraphs = { bottomNavController ->
                 announcementsGraph(bottomNavController)
                 financesGraph(bottomNavController)
@@ -84,6 +87,7 @@ fun AppNavHost(
                 resolutionsGraph(bottomNavController)
                 inspectionsGraph(bottomNavController)
                 metersGraph(bottomNavController)
+                notificationsGraph()
             }
         )
     }
