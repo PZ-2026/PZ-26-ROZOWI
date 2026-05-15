@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pl.edu.ur.blokur.models.NotificationSetting;
+import pl.edu.ur.blokur.repository.NotificationConfigRepository;
 import pl.edu.ur.blokur.repository.NotificationSettingRepository;
 import pl.edu.ur.blokur.repository.UserDeviceRepository;
 
@@ -33,6 +34,7 @@ class PushNotificationServiceTest {
 
     @Mock private UserDeviceRepository userDeviceRepository;
     @Mock private NotificationSettingRepository notificationSettingRepository;
+    @Mock private NotificationConfigRepository notificationConfigRepository;
 
     @InjectMocks private PushNotificationService pushNotificationService;
 
