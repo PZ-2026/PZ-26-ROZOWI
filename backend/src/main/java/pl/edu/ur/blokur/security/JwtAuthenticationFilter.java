@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,7 +28,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Przetwarza żądanie HTTP: wyciąga token Bearer z nagłówka Authorization, waliduje go i ustawia
-     * uwierzytelnienie w SecurityContextHolder.
+     * uwierzytelnienie w SecurityContextHolder. Jeżeli token jest prawidłowy, umieszcza nazwę
+     * użytkownika w MDC pod kluczem {@code userId}, skąd odczytuje ją {@link RequestLoggingFilter}.
      *
      * @param request żądanie HTTP
      * @param response odpowiedź HTTP
@@ -53,6 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String role = jwtService.extractRole(token);
 
             if (username != null && role != null) {
+                MDC.put("userId", username);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 username,

@@ -70,9 +70,9 @@ public class SecurityConfig {
     }
 
     /**
-     * Tworzy enkoder haseł oparty na algorytmie BCrypt z kosztem 12. Używany zarówno do
-     * weryfikacji haseł przy logowaniu, jak i do hashowania nowych haseł. Koszt 12 spełnia
-     * minimalne wymagania specyfikacji bezpieczeństwa (WNF-03).
+     * Tworzy enkoder haseł oparty na algorytmie BCrypt z kosztem 12. Używany zarówno do weryfikacji
+     * haseł przy logowaniu, jak i do hashowania nowych haseł. Koszt 12 spełnia minimalne wymagania
+     * specyfikacji bezpieczeństwa (WNF-03).
      *
      * @return {@link PasswordEncoder} BCrypt z kosztem 12
      */

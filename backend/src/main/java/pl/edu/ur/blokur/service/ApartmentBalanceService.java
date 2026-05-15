@@ -43,6 +43,7 @@ public class ApartmentBalanceService {
      * Zwraca zestawienie sald lokali z opcjonalnym filtrowaniem i sortowaniem.
      *
      * <p>Filtry:
+     *
      * <ul>
      *   <li>{@code propertyId} — ogranicza wyniki do lokali danej nieruchomości
      *   <li>{@code minDebt} — pokazuje tylko lokale z zaległością co najmniej {@code minDebt} PLN
@@ -61,10 +62,7 @@ public class ApartmentBalanceService {
      */
     @Transactional(readOnly = true)
     public List<ApartmentBalanceResponse> getBalances(
-            UUID propertyId,
-            BigDecimal minDebt,
-            Long minDaysOverdue,
-            boolean sortDesc) {
+            UUID propertyId, BigDecimal minDebt, Long minDaysOverdue, boolean sortDesc) {
 
         List<Apartment> apartments =
                 propertyId != null
@@ -111,13 +109,13 @@ public class ApartmentBalanceService {
 
     private ApartmentBalanceResponse toResponse(
             Apartment apt, Map<UUID, LocalDate> lastPaymentDates, LocalDate today) {
-        String address =
-                apt.getStaircase().getBuilding().getAddress() + " m. " + apt.getNumber();
+        String address = apt.getStaircase().getBuilding().getAddress() + " m. " + apt.getNumber();
         BigDecimal balance =
                 apt.getCurrentBalance() != null ? apt.getCurrentBalance() : BigDecimal.ZERO;
         LocalDate lastPayment = lastPaymentDates.get(apt.getId());
         Long daysOverdue = lastPayment != null ? ChronoUnit.DAYS.between(lastPayment, today) : null;
-        return new ApartmentBalanceResponse(apt.getId(), address, balance, lastPayment, daysOverdue);
+        return new ApartmentBalanceResponse(
+                apt.getId(), address, balance, lastPayment, daysOverdue);
     }
 
     private boolean passesDebtFilter(ApartmentBalanceResponse r, BigDecimal minDebt) {
