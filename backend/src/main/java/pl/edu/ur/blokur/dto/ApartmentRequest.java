@@ -4,8 +4,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import lombok.Data;
 
 /** DTO z danymi lokalu przesyłanymi przez klienta (tworzenie i aktualizacja). */
+@Data
 public class ApartmentRequest {
 
     @NotBlank(message = "Numer lokalu nie może być pusty")

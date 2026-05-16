@@ -4,8 +4,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import lombok.Data;
 
 /** DTO z danymi transakcji finansowej przesyłanymi przez klienta. */
+@Data
 public class FinancialTransactionRequest {
 
     @NotBlank(message = "Typ transakcji jest wymagany")
@@ -27,38 +29,6 @@ public class FinancialTransactionRequest {
         this.type = type;
         this.amount = amount;
         this.description = description;
-        this.transactionDate = transactionDate;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public LocalDate getTransactionDate() {
-        return transactionDate;
-    }
-
-    public void setTransactionDate(LocalDate transactionDate) {
         this.transactionDate = transactionDate;
     }
 }
