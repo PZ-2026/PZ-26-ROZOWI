@@ -29,7 +29,7 @@ public class TicketNumberGenerator {
      */
     public String generate() {
         int year = LocalDate.now().getYear();
-        AtomicInteger counter = countersByYear.computeIfAbsent(year, y -> new AtomicInteger(0));
+        var counter = countersByYear.computeIfAbsent(year, y -> new AtomicInteger(0));
         int next = counter.incrementAndGet();
         return String.format("ZGL-%d-%04d", year, next);
     }

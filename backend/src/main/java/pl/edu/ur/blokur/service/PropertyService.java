@@ -2,7 +2,6 @@ package pl.edu.ur.blokur.service;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
@@ -81,7 +80,7 @@ public class PropertyService {
      */
     @Transactional
     public PropertyResponse update(UUID id, PropertyRequest request) {
-        Property property =
+        var property =
                 propertyRepository
                         .findById(id)
                         .orElseThrow(
@@ -122,7 +121,7 @@ public class PropertyService {
      */
     @Transactional(readOnly = true)
     public PropertyResponse getById(UUID id) {
-        Property property =
+        var property =
                 propertyRepository
                         .findById(id)
                         .orElseThrow(
@@ -146,7 +145,7 @@ public class PropertyService {
      */
     @Transactional
     public PropertyResponse uploadLogo(UUID id, MultipartFile file) {
-        Property property =
+        var property =
                 propertyRepository
                         .findById(id)
                         .orElseThrow(
@@ -154,7 +153,7 @@ public class PropertyService {
                                         new NotFoundException(
                                                 "Nieruchomość o ID " + id + " nie istnieje"));
 
-        String contentType = file.getContentType();
+        var contentType = file.getContentType();
         if (!"image/png".equals(contentType) && !"image/jpeg".equals(contentType)) {
             throw new BusinessValidationException(
                     "Logo musi być plikiem PNG lub JPEG (przesłany typ: " + contentType + ")");
@@ -164,12 +163,12 @@ public class PropertyService {
             throw new BusinessValidationException("Logo nie może przekraczać 2 MB");
         }
 
-        String extension = "image/png".equals(contentType) ? "png" : "jpg";
-        Path logoDir = Paths.get(uploadDir, "logos");
+        var extension = "image/png".equals(contentType) ? "png" : "jpg";
+        var logoDir = Paths.get(uploadDir, "logos");
 
         try {
             Files.createDirectories(logoDir);
-            Path logoPath = logoDir.resolve(id + "." + extension);
+            var logoPath = logoDir.resolve(id + "." + extension);
             Files.copy(file.getInputStream(), logoPath, StandardCopyOption.REPLACE_EXISTING);
             property.setLogoPath(logoPath.toString());
         } catch (IOException e) {

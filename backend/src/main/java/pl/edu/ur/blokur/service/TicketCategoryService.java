@@ -46,9 +46,9 @@ public class TicketCategoryService {
      */
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
-        TicketCategory category = new TicketCategory();
+        var category = new TicketCategory();
         category.setName(request.getName());
-        TicketCategory saved = categoryRepository.save(category);
+        var saved = categoryRepository.save(category);
         return new CategoryResponse(saved.getId(), saved.getName());
     }
 
@@ -62,7 +62,7 @@ public class TicketCategoryService {
      */
     @Transactional
     public CategoryResponse updateCategory(UUID id, CategoryRequest request) {
-        TicketCategory category =
+        var category =
                 categoryRepository
                         .findById(id)
                         .orElseThrow(
@@ -82,7 +82,7 @@ public class TicketCategoryService {
      */
     @Transactional
     public void setSlaHours(UUID id, SlaRequest request) {
-        TicketCategory category =
+        var category =
                 categoryRepository
                         .findById(id)
                         .orElseThrow(
@@ -100,7 +100,7 @@ public class TicketCategoryService {
      */
     @Transactional
     public void deactivateCategory(UUID id) {
-        TicketCategory category =
+        var category =
                 categoryRepository
                         .findById(id)
                         .orElseThrow(

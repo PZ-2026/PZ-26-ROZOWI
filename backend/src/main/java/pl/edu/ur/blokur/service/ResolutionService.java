@@ -21,12 +21,10 @@ import pl.edu.ur.blokur.dto.ResolutionDetailDto;
 import pl.edu.ur.blokur.dto.ResolutionDto;
 import pl.edu.ur.blokur.dto.ResolutionOptionDto;
 import pl.edu.ur.blokur.dto.ResolutionOptionResultDto;
-import pl.edu.ur.blokur.models.Building;
 import pl.edu.ur.blokur.models.Resolution;
 import pl.edu.ur.blokur.models.ResolutionOption;
 import pl.edu.ur.blokur.models.ResolutionVote;
 import pl.edu.ur.blokur.models.User;
-import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.BuildingRepository;
 import pl.edu.ur.blokur.repository.ResolutionOptionRepository;
 import pl.edu.ur.blokur.repository.ResolutionRepository;
@@ -80,7 +78,7 @@ public class ResolutionService {
      *     wskazanej uchwały
      */
     public void castVote(UUID resolutionId, CastVoteRequest request, String username) {
-        Resolution resolution =
+        var resolution =
                 resolutionRepository
                         .findById(resolutionId)
                         .orElseThrow(
@@ -89,7 +87,7 @@ public class ResolutionService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Uchwała o podanym identyfikatorze nie istnieje."));
 
-        ResolutionOption option =
+        var option =
                 resolutionOptionRepository
                         .findById(request.getOptionId())
                         .orElseThrow(
@@ -103,7 +101,7 @@ public class ResolutionService {
                     HttpStatus.BAD_REQUEST, "Wybrana opcja nie należy do wskazanej uchwały.");
         }
 
-        User voter =
+        var voter =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(
@@ -112,7 +110,7 @@ public class ResolutionService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Użytkownik nie został odnaleziony."));
 
-        ResolutionVote vote = new ResolutionVote();
+        var vote = new ResolutionVote();
         vote.setResolution(resolution);
         vote.setOption(option);
         vote.setVoter(voter);
@@ -132,7 +130,7 @@ public class ResolutionService {
      * @param username adres e-mail twórcy uchwały
      */
     public void createResolution(CreateResolutionRequest request, String username) {
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(
@@ -145,7 +143,7 @@ public class ResolutionService {
                     HttpStatus.FORBIDDEN, "Tylko zarządca może tworzyć uchwały.");
         }
 
-        Building building =
+        var building =
                 buildingRepository
                         .findById(request.getTargetBuildingId())
                         .orElseThrow(
@@ -153,7 +151,7 @@ public class ResolutionService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND, "Budynek nie istnieje."));
 
-        Resolution resolution = new Resolution();
+        var resolution = new Resolution();
         resolution.setTitle(request.getTitle());
         resolution.setDescription(request.getDescription());
         resolution.setEndDate(request.getEndDate());
@@ -178,7 +176,7 @@ public class ResolutionService {
      * @return lista DTO uchwał
      */
     public List<ResolutionDto> getResolutionsForUser(String username) {
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(
@@ -193,7 +191,7 @@ public class ResolutionService {
         } else {
             UUID buildingId = null;
             if (user.getUserApartments() != null && !user.getUserApartments().isEmpty()) {
-                UserApartment ua = user.getUserApartments().get(0);
+                var ua = user.getUserApartments().get(0);
                 if (ua.getApartment() != null
                         && ua.getApartment().getStaircase() != null
                         && ua.getApartment().getStaircase().getBuilding() != null) {
@@ -222,7 +220,7 @@ public class ResolutionService {
                                     r.getBuilding().getId(),
                                     authorName);
                         })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -254,7 +252,7 @@ public class ResolutionService {
         if (!"ZARZADCA".equals(user.getRole())) {
             UUID buildingId = null;
             if (user.getUserApartments() != null && !user.getUserApartments().isEmpty()) {
-                UserApartment ua = user.getUserApartments().get(0);
+                var ua = user.getUserApartments().get(0);
                 if (ua.getApartment() != null
                         && ua.getApartment().getStaircase() != null
                         && ua.getApartment().getStaircase().getBuilding() != null) {
@@ -266,17 +264,16 @@ public class ResolutionService {
             }
         }
 
-        List<ResolutionOption> optionsEntities =
-                resolutionOptionRepository.findByResolutionId(resolutionId);
-        List<ResolutionOptionDto> options =
+        var optionsEntities = resolutionOptionRepository.findByResolutionId(resolutionId);
+        var options =
                 optionsEntities.stream()
                         .map(o -> new ResolutionOptionDto(o.getId(), o.getOptionText()))
                         .collect(Collectors.toList());
 
-        boolean hasVoted =
+        var hasVoted =
                 resolutionVoteRepository.existsByResolutionIdAndVoterId(resolutionId, user.getId());
-        boolean endDatePassed = LocalDateTime.now().isAfter(resolution.getEndDate());
-        boolean isZarzadca = "ZARZADCA".equals(user.getRole());
+        var endDatePassed = LocalDateTime.now().isAfter(resolution.getEndDate());
+        var isZarzadca = "ZARZADCA".equals(user.getRole());
 
         List<ResolutionOptionResultDto> results = null;
 
@@ -290,10 +287,10 @@ public class ResolutionService {
                                                     o.getOptionText(),
                                                     resolutionVoteRepository.countByOptionId(
                                                             o.getId())))
-                            .collect(Collectors.toList());
+                            .toList();
         }
 
-        String authorName =
+        var authorName =
                 resolution.getAuthor() != null
                         ? resolution.getAuthor().getFirstName()
                                 + " "
@@ -320,7 +317,7 @@ public class ResolutionService {
      * @return tablica bajtów reprezentująca plik PDF
      */
     public byte[] generateResolutionReport(UUID resolutionId, String username) {
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(
@@ -333,7 +330,7 @@ public class ResolutionService {
                     HttpStatus.FORBIDDEN, "Tylko zarządca może generować raporty.");
         }
 
-        Resolution resolution =
+        var resolution =
                 resolutionRepository
                         .findById(resolutionId)
                         .orElseThrow(
@@ -346,25 +343,24 @@ public class ResolutionService {
                     HttpStatus.BAD_REQUEST, "Głosowanie jeszcze się nie zakończyło.");
         }
 
-        List<ResolutionOption> optionsEntities =
-                resolutionOptionRepository.findByResolutionId(resolutionId);
+        var optionsEntities = resolutionOptionRepository.findByResolutionId(resolutionId);
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+            var writer = new PdfWriter(baos);
+            var pdf = new PdfDocument(writer);
+            var document = new Document(pdf);
 
             document.add(new Paragraph("Raport z wynikow glosowania").setBold().setFontSize(16));
             document.add(new Paragraph("Tytul: " + resolution.getTitle()));
             document.add(new Paragraph("Data zakonczenia: " + resolution.getEndDate().toString()));
             document.add(new Paragraph(" "));
 
-            Table table = new Table(2);
+            var table = new Table(2);
             table.addHeaderCell("Opcja");
             table.addHeaderCell("Liczba glosow");
 
             long totalVotes = 0;
-            for (ResolutionOption option : optionsEntities) {
+            for (var option : optionsEntities) {
                 long votesCount = resolutionVoteRepository.countByOptionId(option.getId());
                 table.addCell(option.getOptionText());
                 table.addCell(String.valueOf(votesCount));

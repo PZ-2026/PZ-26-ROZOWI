@@ -2,7 +2,6 @@ package pl.edu.ur.blokur.service;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
@@ -59,11 +58,11 @@ public class TicketImageService {
     @Transactional
     public TicketImageDto uploadImage(
             UUID ticketId, MultipartFile file, TicketImageType imageType, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono zgłoszenia"));
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono użytkownika"));
@@ -89,15 +88,15 @@ public class TicketImageService {
         }
 
         try {
-            Path ticketUploadDir = Paths.get(uploadDir, "tickets", ticketId.toString());
+            var ticketUploadDir = Paths.get(uploadDir, "tickets", ticketId.toString());
             if (!Files.exists(ticketUploadDir)) {
                 Files.createDirectories(ticketUploadDir);
             }
 
-            String originalFilename =
+            var originalFilename =
                     file.getOriginalFilename() != null ? file.getOriginalFilename() : "image.jpg";
-            String savedFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-            Path filePath = ticketUploadDir.resolve(savedFilename);
+            var savedFilename = UUID.randomUUID().toString() + "_" + originalFilename;
+            var filePath = ticketUploadDir.resolve(savedFilename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             TicketImage ticketImage = new TicketImage();
@@ -108,7 +107,7 @@ public class TicketImageService {
             ticketImage.setOriginalFilename(originalFilename);
             ticketImage.setUploadedAt(LocalDateTime.now());
 
-            TicketImage savedImage = ticketImageRepository.save(ticketImage);
+            var savedImage = ticketImageRepository.save(ticketImage);
             return mapToDto(savedImage);
 
         } catch (IOException e) {
@@ -125,11 +124,11 @@ public class TicketImageService {
      * @return lista DTO zdjęć
      */
     public List<TicketImageDto> getImagesForTicket(UUID ticketId, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono zgłoszenia"));
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono użytkownika"));
@@ -149,19 +148,19 @@ public class TicketImageService {
      * @return Zasób pliku
      */
     public Resource serveImage(UUID imageId, String username) {
-        TicketImage image =
+        var image =
                 ticketImageRepository
                         .findById(imageId)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono obrazu"));
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono użytkownika"));
 
         validateViewAccess(image.getTicket(), user);
 
-        Path filePath = Paths.get(image.getFilePath());
-        Resource resource = new FileSystemResource(filePath);
+        var filePath = Paths.get(image.getFilePath());
+        var resource = new FileSystemResource(filePath);
 
         if (!resource.exists() || !resource.isReadable()) {
             throw new NotFoundException("Plik nie istnieje lub jest nieczytelny na dysku serwera");
@@ -178,7 +177,7 @@ public class TicketImageService {
         if (file.getSize() > maxSizeBytes) {
             throw new BusinessValidationException("Rozmiar pliku przekracza maksymalne 10 MB.");
         }
-        String contentType = file.getContentType();
+        var contentType = file.getContentType();
         if (contentType == null
                 || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
             throw new BusinessValidationException(
@@ -191,39 +190,47 @@ public class TicketImageService {
             return;
         }
 
-        if (type == TicketImageType.BEFORE) {
-            if (!"MIESZKANIEC".equals(user.getRole())) {
-                throw new BusinessValidationException(
-                        "Tylko mieszkaniec może dodawać zdjęcia BEFORE.");
+        switch (type) {
+            case BEFORE -> {
+                if (!"MIESZKANIEC".equals(user.getRole())) {
+                    throw new BusinessValidationException(
+                            "Tylko mieszkaniec może dodawać zdjęcia BEFORE.");
+                }
+                if (!ticket.getAuthor().getId().equals(user.getId())) {
+                    throw new BusinessValidationException("Brak dostępu do zgłoszenia.");
+                }
             }
-            if (!ticket.getAuthor().getId().equals(user.getId())) {
-                throw new BusinessValidationException("Brak dostępu do zgłoszenia.");
-            }
-        } else if (type == TicketImageType.AFTER) {
-            if (!"KONSERWATOR".equals(user.getRole())) {
-                throw new BusinessValidationException(
-                        "Tylko konserwator może dodawać zdjęcia AFTER.");
-            }
-            if (ticket.getAssignedTo() == null
-                    || !ticket.getAssignedTo().getId().equals(user.getId())) {
-                throw new BusinessValidationException(
-                        "Zgłoszenie nie jest przypisane do tego konserwatora.");
+            case AFTER -> {
+                if (!"KONSERWATOR".equals(user.getRole())) {
+                    throw new BusinessValidationException(
+                            "Tylko konserwator może dodawać zdjęcia AFTER.");
+                }
+                if (ticket.getAssignedTo() == null
+                        || !ticket.getAssignedTo().getId().equals(user.getId())) {
+                    throw new BusinessValidationException(
+                            "Zgłoszenie nie jest przypisane do tego konserwatora.");
+                }
             }
         }
     }
 
     private void validateViewAccess(Ticket ticket, User user) {
-        if ("ZARZADCA".equals(user.getRole())) {
-            return;
-        }
-        if ("MIESZKANIEC".equals(user.getRole())) {
-            if (!ticket.getAuthor().getId().equals(user.getId())) {
-                throw new SecurityException("Brak dostępu do cudzego zgłoszenia.");
+        switch (user.getRole()) {
+            case "ZARZADCA" -> {}
+            case "MIESZKANIEC" -> {
+                if (!ticket.getAuthor().getId().equals(user.getId())) {
+                    throw new SecurityException("Brak dostępu do cudzego zgłoszenia.");
+                }
             }
-        } else if ("KONSERWATOR".equals(user.getRole())) {
-            if (ticket.getAssignedTo() == null
-                    || !ticket.getAssignedTo().getId().equals(user.getId())) {
-                throw new SecurityException("Zgłoszenie nie jest przypisane do tego konserwatora.");
+            case "KONSERWATOR" -> {
+                if (ticket.getAssignedTo() == null
+                        || !ticket.getAssignedTo().getId().equals(user.getId())) {
+                    throw new SecurityException(
+                            "Zgłoszenie nie jest przypisane do tego konserwatora.");
+                }
+            }
+            default -> {
+                throw new SecurityException("Odmowa dostępu: nieznana rola lub brak uprawnień.");
             }
         }
     }

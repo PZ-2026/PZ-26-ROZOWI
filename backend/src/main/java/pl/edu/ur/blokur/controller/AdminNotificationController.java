@@ -55,6 +55,6 @@ public class AdminNotificationController {
     public ResponseEntity<NotificationConfigResponse> update(
             @PathVariable String eventType,
             @Valid @RequestBody UpdateNotificationConfigRequest request) {
-        return ResponseEntity.ok(notificationConfigService.update(eventType, request.enabled()));
+        return ResponseEntity.ok(notificationConfigService.update(eventType, request.getEnabled()));
     }
 }

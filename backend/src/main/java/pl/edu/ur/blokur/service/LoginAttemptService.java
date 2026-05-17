@@ -22,7 +22,7 @@ public class LoginAttemptService {
      * @param email adres e-mail, którym próbowano się zalogować
      */
     public void registerFailedAttempt(String email) {
-        AttemptInfo info = attemptsCache.getOrDefault(email, new AttemptInfo());
+        var info = attemptsCache.getOrDefault(email, new AttemptInfo());
 
         info.incrementAttempts();
 
@@ -50,7 +50,7 @@ public class LoginAttemptService {
      * @return {@code true} jeśli konto jest zablokowane
      */
     public boolean isAccountLocked(String email) {
-        AttemptInfo info = attemptsCache.get(email);
+        var info = attemptsCache.get(email);
 
         if (info == null || info.getLockedUntil() == null) {
             return false;
@@ -71,7 +71,7 @@ public class LoginAttemptService {
      * @return moment wygaśnięcia blokady lub {@code null}, jeśli konto nie jest zablokowane
      */
     public LocalDateTime getLockedUntil(String email) {
-        AttemptInfo info = attemptsCache.get(email);
+        var info = attemptsCache.get(email);
         return info != null ? info.getLockedUntil() : null;
     }
 

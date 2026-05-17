@@ -12,6 +12,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -23,6 +25,8 @@ import org.hibernate.annotations.CreationTimestamp;
 @Table(
         name = "resolution_votes",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"resolution_id", "voter_id"})})
+@Getter
+@Setter
 public class ResolutionVote {
 
     @Id
@@ -49,51 +53,6 @@ public class ResolutionVote {
     private LocalDateTime votedAt;
 
     /**
-     * Zwraca unikalny identyfikator głosu.
-     *
-     * @return Identyfikator UUID
-     */
-    public UUID getId() {
-        return id;
-    }
-
-    /**
-     * Ustawia unikalny identyfikator rekordu oddanego głosu.
-     *
-     * @param id Identyfikator
-     */
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    /**
-     * Zwraca powiązaną uchwałę, na którą został oddany głos.
-     *
-     * @return instancja Resolution
-     */
-    public Resolution getResolution() {
-        return resolution;
-    }
-
-    /**
-     * Ustawia uchwałę, będącą tematem tego oddanego głosu.
-     *
-     * @param resolution uchwała
-     */
-    public void setResolution(Resolution resolution) {
-        this.resolution = resolution;
-    }
-
-    /**
-     * Pobiera wybraną przez użytkownika opcję we wskazanym głosowaniu.
-     *
-     * @return Zaznaczona ResolutionOption
-     */
-    public ResolutionOption getOption() {
-        return option;
-    }
-
-    /**
      * Ustawia którą z dostępnych opcji wybrał głosujący użytkownik.
      *
      * @param option Opcja oddanego głosu
@@ -103,42 +62,5 @@ public class ResolutionVote {
         if (option != null) {
             this.resolution = option.getResolution();
         }
-    }
-
-    /**
-     * Zwraca uzytkownika, do którego przynależy w sposób bezpośredni ten wygenerowany rekord głosu.
-     *
-     * @return instancja głosującego (User)
-     */
-    public User getVoter() {
-        return voter;
-    }
-
-    /**
-     * Ustawia osobę przesyłającą wniosek (osoba, która udokumentowała ten głos).
-     *
-     * @param voter Użytkownik przypisywany z Principal security Context API.
-     */
-    public void setVoter(User voter) {
-        this.voter = voter;
-    }
-
-    /**
-     * Zwraca czas wpłynięcia informacji od Mieszkańca przez API o chęci przydzielenia tego głosu na
-     * zasobie relacyjnym.
-     *
-     * @return LocalDateTime czas dodania
-     */
-    public LocalDateTime getVotedAt() {
-        return votedAt;
-    }
-
-    /**
-     * Ustawia czas stworzenia i poprowadzenia rekordu przez rzutowania na bazie.
-     *
-     * @param votedAt Moment oddania głosu
-     */
-    public void setVotedAt(LocalDateTime votedAt) {
-        this.votedAt = votedAt;
     }
 }

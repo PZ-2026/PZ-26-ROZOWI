@@ -40,26 +40,26 @@ public class TicketCommentService {
      */
     @Transactional
     public TicketCommentDto addComment(UUID ticketId, TicketCommentRequest request, String email) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
 
-        User user =
+        var user =
                 userRepository
                         .findByEmail(email)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
         validateCommentPermissions(ticket, user, request.getCommentType());
 
-        TicketComment comment = new TicketComment();
+        var comment = new TicketComment();
         comment.setTicket(ticket);
         comment.setAuthor(user);
         comment.setContent(request.getContent());
         comment.setCommentType(request.getCommentType());
         comment.setCreatedAt(LocalDateTime.now());
 
-        TicketComment saved = ticketCommentRepository.save(comment);
+        var saved = ticketCommentRepository.save(comment);
 
         return new TicketCommentDto(
                 saved.getId(),
@@ -76,18 +76,17 @@ public class TicketCommentService {
      */
     @Transactional(readOnly = true)
     public List<TicketCommentDto> getComments(UUID ticketId, String email) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
 
-        User user =
+        var user =
                 userRepository
                         .findByEmail(email)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
-        List<TicketCommentDto> allComments =
-                ticketCommentRepository.findCommentsByTicketId(ticketId);
+        var allComments = ticketCommentRepository.findCommentsByTicketId(ticketId);
 
         if ("MIESZKANIEC".equals(user.getRole())) {
             // Mieszkaniec musi być powiązany ze zgłoszeniem (zakładamy najprostszą walidację po
@@ -103,25 +102,28 @@ public class TicketCommentService {
     }
 
     private void validateCommentPermissions(Ticket ticket, User user, TicketCommentType type) {
-        if ("MIESZKANIEC".equals(user.getRole())) {
-            if (type != TicketCommentType.PUBLICZNY) {
-                throw new BusinessValidationException(
-                        "Mieszkaniec może dodawać tylko publiczne komentarze");
+        switch (user.getRole()) {
+            case "MIESZKANIEC" -> {
+                if (type != TicketCommentType.PUBLICZNY) {
+                    throw new BusinessValidationException(
+                            "Mieszkaniec może dodawać tylko publiczne komentarze");
+                }
             }
-            // W idealnym świecie tu też walidujemy czy to zgłoszenie przypisane do jego mieszkania,
-            // np. ticket.getApartment() powiązane z userem.
-        } else if ("KONSERWATOR".equals(user.getRole())) {
-            if (type != TicketCommentType.WEWNETRZNY) {
-                throw new BusinessValidationException(
-                        "Konserwator może dodawać tylko wewnętrzne komentarze");
+            case "KONSERWATOR" -> {
+                if (type != TicketCommentType.WEWNETRZNY) {
+                    throw new BusinessValidationException(
+                            "Konserwator może dodawać tylko wewnętrzne komentarze");
+                }
+                if (ticket.getAssignedTo() == null
+                        || !ticket.getAssignedTo().getId().equals(user.getId())) {
+                    throw new BusinessValidationException(
+                            "Konserwator może dodawać komentarze tylko do własnych zgłoszeń");
+                }
             }
-            if (ticket.getAssignedTo() == null
-                    || !ticket.getAssignedTo().getId().equals(user.getId())) {
-                throw new BusinessValidationException(
-                        "Konserwator może dodawać komentarze tylko do własnych zgłoszeń");
-            }
-        } else if (!"ZARZADCA".equals(user.getRole())) {
-            throw new BusinessValidationException("Brak uprawnień do dodawania komentarzy");
+            case "ZARZADCA" -> {}
+
+            default ->
+                    throw new BusinessValidationException("Brak uprawnień do dodawania komentarza");
         }
     }
 }

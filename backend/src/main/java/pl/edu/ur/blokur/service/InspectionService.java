@@ -2,19 +2,15 @@ package pl.edu.ur.blokur.service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import pl.edu.ur.blokur.dto.InspectionRequest;
 import pl.edu.ur.blokur.dto.InspectionResponse;
 import pl.edu.ur.blokur.exception.NotFoundException;
-import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Building;
 import pl.edu.ur.blokur.models.Inspection;
 import pl.edu.ur.blokur.models.Property;
 import pl.edu.ur.blokur.models.ScopeType;
 import pl.edu.ur.blokur.models.Staircase;
-import pl.edu.ur.blokur.models.User;
-import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.BuildingRepository;
 import pl.edu.ur.blokur.repository.InspectionRepository;
 import pl.edu.ur.blokur.repository.PropertyRepository;
@@ -65,7 +61,7 @@ public class InspectionService {
      * @throws NotFoundException gdy użytkownik lub encja zasięgu nie istnieje
      */
     public InspectionResponse create(InspectionRequest request, String username) {
-        User creator =
+        var creator =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -92,7 +88,7 @@ public class InspectionService {
      * @return lista przeglądów w formie DTO
      */
     public List<InspectionResponse> getAll(String username) {
-        User user = userRepository.findByEmail(username).orElse(null);
+        var user = userRepository.findByEmail(username).orElse(null);
 
         if (user == null) {
             return List.of();
@@ -101,7 +97,7 @@ public class InspectionService {
         if ("ZARZADCA".equals(user.getRole())) {
             return inspectionRepository.findAllByOrderByScheduledAtAsc().stream()
                     .map(this::mapToResponse)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         UUID staircaseId = null;
@@ -109,8 +105,8 @@ public class InspectionService {
         UUID propertyId = null;
 
         if (!user.getUserApartments().isEmpty()) {
-            UserApartment ua = user.getUserApartments().get(0);
-            Apartment apt = ua.getApartment();
+            var ua = user.getUserApartments().get(0);
+            var apt = ua.getApartment();
             if (apt != null) {
                 Staircase sc = apt.getStaircase();
                 if (sc != null) {
@@ -133,7 +129,7 @@ public class InspectionService {
 
         return inspectionRepository.findForUser(staircaseId, buildingId, propertyId).stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -145,7 +141,7 @@ public class InspectionService {
      * @throws NotFoundException gdy przegląd lub encja zasięgu nie istnieje
      */
     public InspectionResponse update(UUID id, InspectionRequest request) {
-        Inspection inspection =
+        var inspection =
                 inspectionRepository
                         .findById(id)
                         .orElseThrow(
