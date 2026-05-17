@@ -62,4 +62,14 @@ class CategoryService @Inject constructor(
             }
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
+
+    /** Ustawia godziny SLA dla kategorii. Dostęp: ZARZADCA. */
+    suspend fun setSla(id: String, hours: Int) {
+        runCatching {
+            val resp = adminApi.setSla(id, SlaRequest(hours))
+            if (!resp.isSuccessful && resp.code() != 204) {
+                throw Exception("Błąd ustawiania SLA (${resp.code()})")
+            }
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
 }

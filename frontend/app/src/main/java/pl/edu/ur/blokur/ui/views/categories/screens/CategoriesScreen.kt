@@ -12,21 +12,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -47,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.CategoryDto
 import pl.edu.ur.blokur.ui.components.EmptyState
@@ -68,6 +73,7 @@ fun CategoriesScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<CategoryDto?>(null) }
     var deactivatingCategory by remember { mutableStateOf<CategoryDto?>(null) }
+    var slaEditingCategory by remember { mutableStateOf<CategoryDto?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -138,6 +144,18 @@ fun CategoriesScreen(
         )
     }
 
+    slaEditingCategory?.let { category ->
+        SlaEditDialog(
+            categoryName = category.name,
+            currentSla = category.slaHours,
+            onDismiss = { slaEditingCategory = null },
+            onConfirm = { hours ->
+                viewModel.setSla(category.id, hours)
+                slaEditingCategory = null
+            }
+        )
+    }
+
     // ── Scaffold ─────────────────────────────────────────────────────────────
 
     Scaffold(
@@ -146,7 +164,7 @@ fun CategoriesScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Kategorie zgłoszeń", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("Kategorie i SLA", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         val count = (state as? CategoriesUiState.Success)?.categories?.size
                         if (count != null) {
                             Text(
@@ -213,7 +231,8 @@ fun CategoriesScreen(
                             CategoryRow(
                                 category = category,
                                 onEdit = { editingCategory = category },
-                                onDeactivate = { deactivatingCategory = category }
+                                onDeactivate = { deactivatingCategory = category },
+                                onEditSla = { slaEditingCategory = category }
                             )
                         }
                     }
@@ -229,7 +248,8 @@ fun CategoriesScreen(
 private fun CategoryRow(
     category: CategoryDto,
     onEdit: () -> Unit,
-    onDeactivate: () -> Unit
+    onDeactivate: () -> Unit,
+    onEditSla: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -256,7 +276,7 @@ private fun CategoryRow(
             )
         }
 
-        // Nazwa
+        // Nazwa + SLA badge
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = category.name,
@@ -264,15 +284,48 @@ private fun CategoryRow(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Text(
-                text = "ID: ${category.id.take(8)}…",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Spacer(Modifier.height(4.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // SLA badge
+                val slaText = category.slaHours?.let { "${it}h SLA" } ?: "Brak SLA"
+                val slaBg = if (category.slaHours != null)
+                    Color(0xFF2563EB).copy(alpha = 0.1f)
+                else
+                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                val slaColor = if (category.slaHours != null)
+                    Color(0xFF2563EB)
+                else
+                    MaterialTheme.colorScheme.error
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(slaBg)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = slaText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = slaColor
+                    )
+                }
+            }
         }
 
         // Akcje
         Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+            IconButton(onClick = onEditSla) {
+                Icon(
+                    Icons.Rounded.Schedule,
+                    contentDescription = "Edytuj SLA",
+                    tint = Color(0xFF2563EB),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             IconButton(onClick = onEdit) {
                 Icon(
                     Icons.Rounded.Edit,
@@ -291,4 +344,75 @@ private fun CategoryRow(
             }
         }
     }
+}
+
+// ── Dialog edycji SLA ────────────────────────────────────────────────────────
+
+@Composable
+private fun SlaEditDialog(
+    categoryName: String,
+    currentSla: Int?,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var slaText by remember { mutableStateOf(currentSla?.toString() ?: "") }
+    val isValid = slaText.toIntOrNull()?.let { it >= 1 } == true
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Rounded.Schedule,
+                contentDescription = null,
+                tint = Color(0xFF2563EB)
+            )
+        },
+        title = { Text("SLA — $categoryName") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Ustaw docelowy czas reakcji w godzinach roboczych. " +
+                    "Przekroczenie tej wartości oznacza naruszenie SLA.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = slaText,
+                    onValueChange = { slaText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Godziny SLA") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = {
+                        Icon(Icons.Rounded.Schedule, null, tint = Color(0xFF2563EB))
+                    },
+                    supportingText = {
+                        if (slaText.isNotEmpty() && !isValid) {
+                            Text("Minimum 1 godzina", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                )
+                if (currentSla != null) {
+                    Text(
+                        "Aktualna wartość: ${currentSla}h",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { slaText.toIntOrNull()?.let { onConfirm(it) } },
+                enabled = isValid
+            ) {
+                Text("Zapisz", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Anuluj") }
+        },
+        shape = RoundedCornerShape(20.dp)
+    )
 }

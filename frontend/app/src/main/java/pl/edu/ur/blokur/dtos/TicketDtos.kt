@@ -6,7 +6,8 @@ enum class TicketStatus {
 
 data class CategoryDto(
     val id: String,
-    val name: String
+    val name: String,
+    val slaHours: Int? = null
 )
 
 data class CreateTicketRequest(

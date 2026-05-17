@@ -25,10 +25,20 @@ import pl.edu.ur.blokur.ui.views.profile.utils.ProfileEvent
 import pl.edu.ur.blokur.ui.views.profile.viewmodels.ProfileViewModel
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel) {
+fun ProfileScreen(
+    viewModel: ProfileViewModel,
+    onNavigateToNotificationSettings: () -> Unit = {},
+    onNavigateToCommunityLogo: () -> Unit = {},
+    onNavigateToDocumentDistribution: () -> Unit = {}
+) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDialog by remember { mutableStateOf(false) }
+    var isManager by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isManager = viewModel.isManager()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -56,6 +66,10 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             },
             onDismissDialog = { showDialog = false },
             onSendNotification = viewModel::sendTestNotification,
+            isManager = isManager,
+            onNavigateToNotificationSettings = onNavigateToNotificationSettings,
+            onNavigateToCommunityLogo = onNavigateToCommunityLogo,
+            onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

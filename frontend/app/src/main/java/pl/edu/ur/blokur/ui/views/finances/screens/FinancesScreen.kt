@@ -28,7 +28,8 @@ fun FinancesScreen(
     onNavigateToTransactions: () -> Unit,
     onNavigateToDocuments: () -> Unit,
     onNavigateToLedger: () -> Unit = {},
-    onNavigateToBalances: () -> Unit = {}
+    onNavigateToBalances: () -> Unit = {},
+    onNavigateToCsvImport: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     var isManager by remember { mutableStateOf(false) }
@@ -58,6 +59,7 @@ fun FinancesScreen(
             onNavigateToDocuments = viewModel::onNavigateToDocuments,
             onNavigateToLedger = viewModel::onNavigateToLedger,
             onNavigateToBalances = viewModel::onNavigateToBalances,
+            onNavigateToCsvImport = onNavigateToCsvImport,
             isManager = isManager,
             modifier = Modifier
                 .fillMaxSize()
@@ -69,3 +71,4 @@ fun FinancesScreen(
         )
     }
 }
+

@@ -10,6 +10,8 @@ import pl.edu.ur.blokur.ui.views.announcements.AnnouncementsRoutes
 import pl.edu.ur.blokur.ui.views.announcements.announcementsGraph
 import pl.edu.ur.blokur.ui.views.auth.AuthRoutes
 import pl.edu.ur.blokur.ui.views.auth.authGraph
+import pl.edu.ur.blokur.ui.views.documents.DocumentRoutes
+import pl.edu.ur.blokur.ui.views.documents.documentsGraph
 import pl.edu.ur.blokur.ui.views.finances.FinancesRoutes
 import pl.edu.ur.blokur.ui.views.finances.financesGraph
 import pl.edu.ur.blokur.ui.views.main.MainRoutes
@@ -30,6 +32,8 @@ import pl.edu.ur.blokur.ui.views.inspections.InspectionRoutes
 import pl.edu.ur.blokur.ui.views.inspections.inspectionsGraph
 import pl.edu.ur.blokur.ui.views.notifications.NotificationRoutes
 import pl.edu.ur.blokur.ui.views.notifications.notificationsGraph
+import pl.edu.ur.blokur.ui.views.settings.SettingsRoutes
+import pl.edu.ur.blokur.ui.views.settings.settingsGraph
 
 import pl.edu.ur.blokur.ui.views.meters.metersGraph
 
@@ -79,7 +83,18 @@ fun AppNavHost(
             nestedGraphs = { bottomNavController ->
                 announcementsGraph(bottomNavController)
                 financesGraph(bottomNavController)
-                profileGraph(bottomNavController)
+                profileGraph(
+                    navController = bottomNavController,
+                    onNavigateToNotificationSettings = {
+                        bottomNavController.navigate(SettingsRoutes.Notifications)
+                    },
+                    onNavigateToCommunityLogo = {
+                        bottomNavController.navigate(SettingsRoutes.CommunityLogo)
+                    },
+                    onNavigateToDocumentDistribution = {
+                        bottomNavController.navigate(DocumentRoutes.Distribution)
+                    }
+                )
                 ticketsGraph(bottomNavController)
                 propertiesGraph(bottomNavController)
                 categoriesGraph(bottomNavController)
@@ -88,7 +103,10 @@ fun AppNavHost(
                 inspectionsGraph(bottomNavController)
                 metersGraph(bottomNavController)
                 notificationsGraph()
+                settingsGraph(bottomNavController)
+                documentsGraph(bottomNavController)
             }
         )
     }
 }
+
