@@ -3,6 +3,7 @@ package pl.edu.ur.blokur.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,7 +36,6 @@ import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Building;
-import pl.edu.ur.blokur.models.Document;
 import pl.edu.ur.blokur.models.Staircase;
 import pl.edu.ur.blokur.models.Ticket;
 import pl.edu.ur.blokur.models.TicketCategory;
@@ -43,7 +43,6 @@ import pl.edu.ur.blokur.models.TicketHistory;
 import pl.edu.ur.blokur.models.TicketStatus;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
-import pl.edu.ur.blokur.repository.DocumentRepository;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
 import pl.edu.ur.blokur.repository.TicketHistoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
@@ -62,7 +61,7 @@ class TicketServiceTest {
     @Mock private TicketCategoryRepository ticketCategoryRepository;
     @Mock private TicketNumberGenerator ticketNumberGenerator;
     @Mock private TicketHistoryRepository ticketHistoryRepository;
-    @Mock private DocumentRepository documentRepository;
+    @Mock private DocumentService documentService;
     @Mock private PdfGeneratorService pdfGeneratorService;
     @Mock private TicketStateMachine ticketStateMachine;
     @Mock private BusinessHoursCalculator businessHoursCalculator;
@@ -633,7 +632,15 @@ class TicketServiceTest {
             assertThat(result.getStatus()).isEqualTo("ZAMKNIETE");
             verify(pdfGeneratorService)
                     .generateWorkAcceptanceProtocol(any(WorkAcceptanceProtocolRequest.class));
-            verify(documentRepository).save(any(Document.class));
+            verify(documentService)
+                    .storeGeneratedDocument(
+                            eq("PROTOKOL"),
+                            org.mockito.ArgumentMatchers.contains(sampleTicket.getTicketNumber()),
+                            any(byte[].class),
+                            eq(zarzadca),
+                            eq(sampleTicket.getApartment()),
+                            eq(sampleTicket),
+                            org.mockito.ArgumentMatchers.isNull());
             verify(ticketHistoryRepository).save(any(TicketHistory.class));
         }
 
