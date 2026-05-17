@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.exception.TokenExpiredException;
 import pl.edu.ur.blokur.models.InvitationToken;
 import pl.edu.ur.blokur.models.User;
@@ -58,8 +59,8 @@ public class InvitationService {
      * @param user nowo utworzony użytkownik
      */
     public void inviteUser(User user) {
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiry = LocalDateTime.now().plusHours(72);
+        var token = UUID.randomUUID().toString();
+        var expiry = LocalDateTime.now().plusHours(72);
         tokenRepository.save(new InvitationToken(user, token, expiry));
         sendInvitationEmail(user.getEmail(), user.getFirstName(), token);
     }
@@ -74,8 +75,9 @@ public class InvitationService {
      * @throws IllegalArgumentException gdy token nie istnieje w bazie
      * @throws TokenExpiredException gdy token wygasł (HTTP 410)
      */
+    @Transactional
     public void acceptInvitation(String token, String newPassword) {
-        InvitationToken invitationToken =
+        var invitationToken =
                 tokenRepository
                         .findByToken(token)
                         .orElseThrow(
@@ -88,7 +90,7 @@ public class InvitationService {
             throw new TokenExpiredException("Token zaproszenia wygasł");
         }
 
-        User user = invitationToken.getUser();
+        var user = invitationToken.getUser();
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 

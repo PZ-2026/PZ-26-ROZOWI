@@ -42,7 +42,7 @@ public class UserDeviceService {
         // Token może być przypisany do innego użytkownika (np. po przelogowaniu) — usuń stary wpis
         userDeviceRepository.findByFcmToken(fcmToken).ifPresent(userDeviceRepository::delete);
 
-        UserDevice device = new UserDevice();
+        var device = new UserDevice();
         device.setUserId(userId);
         device.setFcmToken(fcmToken);
         device.setPlatform(platform);

@@ -11,6 +11,5 @@ import lombok.NonNull;
  */
 @Data
 public class CastVoteRequest {
-    @NonNull
-    private UUID optionId;
+    @NonNull private UUID optionId;
 }

@@ -115,7 +115,7 @@ public class PushNotificationService {
     }
 
     private void sendToUser(UUID userId, String title, String body, Map<String, String> data) {
-        List<String> tokens = userDeviceRepository.findFcmTokensByUserId(userId);
+        var tokens = userDeviceRepository.findFcmTokensByUserId(userId);
         for (String token : tokens) {
             sendMessage(token, title, body, data);
         }
@@ -137,7 +137,7 @@ public class PushNotificationService {
             if (data != null) {
                 builder.putAllData(data);
             }
-            String messageId = FirebaseMessaging.getInstance().send(builder.build());
+            var messageId = FirebaseMessaging.getInstance().send(builder.build());
             log.debug("FCM wysłany: {}", messageId);
         } catch (FirebaseMessagingException e) {
             if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED) {

@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.CreateUserRequest;
 import pl.edu.ur.blokur.dto.UpdateUserRequest;
 import pl.edu.ur.blokur.dto.UserResponse;
-import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
@@ -86,7 +85,7 @@ public class AdminUserService {
             throw new IllegalArgumentException("Podany adres email jest już zajęty.");
         }
 
-        Apartment apartment =
+        var apartment =
                 apartmentRepository
                         .findById(request.getApartmentId())
                         .orElseThrow(
@@ -94,7 +93,7 @@ public class AdminUserService {
                                         new IllegalArgumentException(
                                                 "Lokal o podanym ID nie istnieje."));
 
-        User user = new User();
+        var user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
@@ -103,14 +102,14 @@ public class AdminUserService {
         user.setActive(true);
         user.setCreatedAt(LocalDateTime.now());
 
-        User savedUser = userRepository.save(user);
+        var savedUser = userRepository.save(user);
 
         UserApartment userApartment = new UserApartment();
         userApartment.setUser(savedUser);
         userApartment.setApartment(apartment);
         savedUser.getUserApartments().add(userApartment);
 
-        User finalUser = userRepository.save(savedUser);
+        var finalUser = userRepository.save(savedUser);
         invitationService.inviteUser(finalUser);
         return finalUser;
     }
@@ -128,7 +127,7 @@ public class AdminUserService {
      */
     @Transactional
     public User updateUser(UUID id, UpdateUserRequest request) {
-        User user =
+        var user =
                 userRepository
                         .findById(id)
                         .orElseThrow(
@@ -142,7 +141,7 @@ public class AdminUserService {
         user.setRole(request.getRole());
 
         if (request.getApartmentId() != null) {
-            Apartment apartment =
+            var apartment =
                     apartmentRepository
                             .findById(request.getApartmentId())
                             .orElseThrow(
@@ -168,7 +167,7 @@ public class AdminUserService {
      */
     @Transactional
     public void deactivateUser(UUID id) {
-        User user =
+        var user =
                 userRepository
                         .findById(id)
                         .orElseThrow(
@@ -188,7 +187,7 @@ public class AdminUserService {
      */
     @Transactional
     public void deleteUser(UUID id) {
-        User user =
+        var user =
                 userRepository
                         .findById(id)
                         .orElseThrow(

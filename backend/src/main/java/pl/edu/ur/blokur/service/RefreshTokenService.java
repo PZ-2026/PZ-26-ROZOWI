@@ -38,7 +38,7 @@ public class RefreshTokenService {
      * @return zapisany refresh token
      */
     public RefreshToken createRefreshToken(User user) {
-        RefreshToken token =
+        var token =
                 new RefreshToken(
                         user,
                         jwtService.generateRefreshTokenValue(),
@@ -55,7 +55,7 @@ public class RefreshTokenService {
      * @throws IllegalArgumentException gdy token jest nieprawidłowy, unieważniony lub wygasły
      */
     public TokenPair exchange(String tokenValue) {
-        RefreshToken stored =
+        var stored =
                 refreshTokenRepository
                         .findByToken(tokenValue)
                         .orElseThrow(
@@ -73,9 +73,9 @@ public class RefreshTokenService {
         stored.setRevoked(true);
         refreshTokenRepository.save(stored);
 
-        User user = stored.getUser();
-        String newAccessToken = jwtService.generateToken(user.getEmail(), user.getRole());
-        RefreshToken newRefreshToken = createRefreshToken(user);
+        var user = stored.getUser();
+        var newAccessToken = jwtService.generateToken(user.getEmail(), user.getRole());
+        var newRefreshToken = createRefreshToken(user);
 
         return new TokenPair(newAccessToken, newRefreshToken.getToken(), user.getRole());
     }

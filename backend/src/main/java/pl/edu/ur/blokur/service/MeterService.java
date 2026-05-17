@@ -8,7 +8,6 @@ import pl.edu.ur.blokur.dto.MeterRequest;
 import pl.edu.ur.blokur.dto.MeterResponse;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
-import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Meter;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.MeterRepository;
@@ -36,7 +35,7 @@ public class MeterService {
      */
     @Transactional
     public MeterResponse create(UUID apartmentId, MeterRequest request) {
-        Apartment apartment =
+        var apartment =
                 apartmentRepository
                         .findById(apartmentId)
                         .orElseThrow(
@@ -49,7 +48,7 @@ public class MeterService {
                     "Licznik o numerze seryjnym '" + request.getSerialNumber() + "' już istnieje");
         }
 
-        Meter meter = new Meter();
+        var meter = new Meter();
         meter.setApartment(apartment);
         meter.setSerialNumber(request.getSerialNumber());
         meter.setMediumType(request.getMediumType());
@@ -87,7 +86,7 @@ public class MeterService {
      */
     @Transactional
     public MeterResponse deactivate(UUID meterId) {
-        Meter meter =
+        var meter =
                 meterRepository
                         .findById(meterId)
                         .orElseThrow(

@@ -1,16 +1,14 @@
 package pl.edu.ur.blokur.service;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pl.edu.ur.blokur.dto.DocumentDto;
 import pl.edu.ur.blokur.exception.NotFoundException;
@@ -49,49 +47,35 @@ public class DocumentService {
      * @param userId identyfikator użytkownika wykonującego żądanie
      * @return lista obiektów DocumentDto
      */
+    @Transactional(readOnly = true)
     public List<DocumentDto> getDocuments(
             UUID apartmentId, LocalDate startDate, LocalDate endDate, String type, UUID userId) {
-        User user =
+        var user =
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono użytkownika"));
 
-        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
-        LocalDateTime endDateTime = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
-
-        List<Document> documents;
+        var startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+        var endDateTime = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
 
         if ("ZARZADCA".equals(user.getRole())) {
-            documents =
-                    documentRepository.findAllWithFilters(
-                            apartmentId, type, startDateTime, endDateTime);
-        } else {
-            // MIESZKANIEC
-            if (apartmentId != null && !isApartmentOwnedByUser(user, apartmentId)) {
-                throw new SecurityException("Brak dostępu do podanego mieszkania");
-            }
-            documents =
-                    documentRepository.findByApartmentIdOrOwnerUserId(apartmentId, user.getId());
-            // Zastosowanie dodatkowych filtrów w pamięci dla MIESZKAŃCA (jeśli by podał np. typ i
-            // daty)
-            if (type != null) {
-                documents = documents.stream().filter(d -> type.equals(d.getType())).toList();
-            }
-            if (startDateTime != null) {
-                documents =
-                        documents.stream()
-                                .filter(d -> !d.getCreatedAt().isBefore(startDateTime))
-                                .toList();
-            }
-            if (endDateTime != null) {
-                documents =
-                        documents.stream()
-                                .filter(d -> !d.getCreatedAt().isAfter(endDateTime))
-                                .toList();
-            }
+            return documentRepository
+                    .findAllWithFilters(apartmentId, type, startDateTime, endDateTime)
+                    .stream()
+                    .map(this::mapToDto)
+                    .toList();
         }
 
-        return documents.stream().map(this::mapToDto).collect(Collectors.toList());
+        if (apartmentId != null && !isApartmentOwnedByUser(user, apartmentId)) {
+            throw new SecurityException("Brak dostępu do podanego mieszkania");
+        }
+
+        return documentRepository.findByApartmentIdOrOwnerUserId(apartmentId, user.getId()).stream()
+                .filter(d -> type == null || type.equals(d.getType()))
+                .filter(d -> startDateTime == null || !d.getCreatedAt().isBefore(startDateTime))
+                .filter(d -> endDateTime == null || !d.getCreatedAt().isAfter(endDateTime))
+                .map(this::mapToDto)
+                .toList();
     }
 
     /**
@@ -101,22 +85,24 @@ public class DocumentService {
      * @param userId identyfikator użytkownika
      * @return zasób (Resource) z plikiem PDF
      */
+    @Transactional(readOnly = true)
     public Resource downloadDocument(UUID documentId, UUID userId) {
-        Document document =
+        var document =
                 documentRepository
                         .findById(documentId)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono dokumentu"));
 
-        User user =
+        var user =
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono użytkownika"));
 
         if (!"ZARZADCA".equals(user.getRole())) {
-            boolean isOwner =
+            var isOwner =
                     document.getOwnerUser() != null
-                            && document.getOwnerUser().getId().equals(user.getId());
-            boolean isApartmentOwner =
+                            && document.getOwnerUser().getId().equals(userId);
+
+            var isApartmentOwner =
                     document.getApartment() != null
                             && isApartmentOwnedByUser(user, document.getApartment().getId());
 
@@ -125,8 +111,8 @@ public class DocumentService {
             }
         }
 
-        Path filePath = Paths.get(document.getFileUrl());
-        Resource resource = new FileSystemResource(filePath);
+        var filePath = Paths.get(document.getFileUrl()).normalize();
+        var resource = new FileSystemResource(filePath);
 
         if (!resource.exists() || !resource.isReadable()) {
             throw new NotFoundException("Plik nie istnieje lub jest nieczytelny na dysku serwera");

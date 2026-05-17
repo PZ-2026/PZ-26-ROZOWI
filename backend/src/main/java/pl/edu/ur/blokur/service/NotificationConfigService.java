@@ -55,7 +55,7 @@ public class NotificationConfigService {
      */
     @Transactional
     public NotificationConfigResponse update(String eventType, boolean enabled) {
-        NotificationConfig config =
+        var config =
                 notificationConfigRepository
                         .findByEventType(eventType)
                         .orElseThrow(
@@ -67,7 +67,7 @@ public class NotificationConfigService {
     }
 
     private NotificationConfigResponse toResponse(NotificationConfig config) {
-        String label = EVENT_LABELS.getOrDefault(config.getEventType(), config.getEventType());
+        var label = EVENT_LABELS.getOrDefault(config.getEventType(), config.getEventType());
         return new NotificationConfigResponse(config.getEventType(), config.isEnabled(), label);
     }
 }

@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -64,7 +63,7 @@ public class ApartmentBalanceService {
     public List<ApartmentBalanceResponse> getBalances(
             UUID propertyId, BigDecimal minDebt, Long minDaysOverdue, boolean sortDesc) {
 
-        List<Apartment> apartments =
+        var apartments =
                 propertyId != null
                         ? apartmentRepository.findAllByPropertyId(propertyId)
                         : apartmentRepository.findAllWithBuilding();
@@ -73,47 +72,37 @@ public class ApartmentBalanceService {
             return List.of();
         }
 
-        List<UUID> apartmentIds =
-                apartments.stream().map(Apartment::getId).collect(Collectors.toList());
+        var apartmentIds = apartments.stream().map(Apartment::getId).toList();
 
-        Map<UUID, LocalDate> lastPaymentDates = buildLastPaymentMap(apartmentIds);
+        var lastPaymentDates = buildLastPaymentMap(apartmentIds);
+        var today = LocalDate.now();
 
-        LocalDate today = LocalDate.now();
+        var byDebt = Comparator.comparing(ApartmentBalanceResponse::getBalance);
+        var effectiveComparator = sortDesc ? byDebt : byDebt.reversed();
 
-        List<ApartmentBalanceResponse> results =
-                apartments.stream()
-                        .map(apt -> toResponse(apt, lastPaymentDates, today))
-                        .filter(r -> passesDebtFilter(r, minDebt))
-                        .filter(r -> passesDaysFilter(r, minDaysOverdue))
-                        .collect(Collectors.toList());
-
-        Comparator<ApartmentBalanceResponse> byDebt =
-                Comparator.comparing(ApartmentBalanceResponse::getBalance);
-        results.sort(sortDesc ? byDebt : byDebt.reversed());
-
-        return results;
+        return apartments.stream()
+                .map(apt -> toResponse(apt, lastPaymentDates, today))
+                .filter(r -> passesDebtFilter(r, minDebt))
+                .filter(r -> passesDaysFilter(r, minDaysOverdue))
+                .sorted(effectiveComparator)
+                .toList();
     }
 
     private Map<UUID, LocalDate> buildLastPaymentMap(List<UUID> apartmentIds) {
-        Map<UUID, LocalDate> map = new HashMap<>();
-        transactionRepository
-                .findLastPaymentDatesByApartmentIds(apartmentIds)
-                .forEach(
-                        row -> {
-                            UUID id = (UUID) row[0];
-                            LocalDate date = (LocalDate) row[1];
-                            map.put(id, date);
-                        });
-        return map;
+        return transactionRepository.findLastPaymentDatesByApartmentIds(apartmentIds).stream()
+                .collect(Collectors.toMap(row -> (UUID) row[0], row -> (LocalDate) row[1]));
     }
 
     private ApartmentBalanceResponse toResponse(
             Apartment apt, Map<UUID, LocalDate> lastPaymentDates, LocalDate today) {
-        String address = apt.getStaircase().getBuilding().getAddress() + " m. " + apt.getNumber();
-        BigDecimal balance =
-                apt.getCurrentBalance() != null ? apt.getCurrentBalance() : BigDecimal.ZERO;
-        LocalDate lastPayment = lastPaymentDates.get(apt.getId());
-        Long daysOverdue = lastPayment != null ? ChronoUnit.DAYS.between(lastPayment, today) : null;
+
+        var address =
+                "%s m. %s"
+                        .formatted(apt.getStaircase().getBuilding().getAddress(), apt.getNumber());
+
+        var balance = apt.getCurrentBalance() != null ? apt.getCurrentBalance() : BigDecimal.ZERO;
+        var lastPayment = lastPaymentDates.get(apt.getId());
+        var daysOverdue = lastPayment != null ? ChronoUnit.DAYS.between(lastPayment, today) : null;
         return new ApartmentBalanceResponse(
                 apt.getId(), address, balance, lastPayment, daysOverdue);
     }

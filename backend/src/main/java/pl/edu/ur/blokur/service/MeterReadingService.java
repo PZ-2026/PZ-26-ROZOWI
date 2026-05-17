@@ -9,7 +9,6 @@ import pl.edu.ur.blokur.dto.MeterReadingRequest;
 import pl.edu.ur.blokur.dto.MeterReadingResponse;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
-import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Meter;
 import pl.edu.ur.blokur.models.MeterReading;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
@@ -55,7 +54,7 @@ public class MeterReadingService {
      *     licznik nie należy do lokalu / jest nieaktywny
      */
     public MeterReadingResponse create(UUID apartmentId, MeterReadingRequest request) {
-        Apartment apartment =
+        var apartment =
                 apartmentRepository
                         .findById(apartmentId)
                         .orElseThrow(
@@ -63,7 +62,7 @@ public class MeterReadingService {
                                         new NotFoundException(
                                                 "Lokal o ID " + apartmentId + " nie istnieje"));
 
-        Meter meter = resolveMeterForApartment(request.getMeterId(), apartmentId);
+        var meter = resolveMeterForApartment(request.getMeterId(), apartmentId);
 
         if (!meter.isActive()) {
             throw new BusinessValidationException(
@@ -73,7 +72,7 @@ public class MeterReadingService {
         checkDuplicateOnCreate(request);
         checkRegressionOnCreate(request);
 
-        MeterReading reading = new MeterReading();
+        var reading = new MeterReading();
         reading.setApartment(apartment);
         reading.setMeter(meter);
         reading.setValue(request.getValue());
@@ -95,7 +94,7 @@ public class MeterReadingService {
         if (!apartmentRepository.existsById(apartmentId)) {
             throw new NotFoundException("Lokal o ID " + apartmentId + " nie istnieje");
         }
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("readingDate").descending());
+        var pageable = PageRequest.of(page, size, Sort.by("readingDate").descending());
         return meterReadingRepository
                 .findByApartmentIdAndDeletedFalse(apartmentId, pageable)
                 .map(this::toResponse);
@@ -129,7 +128,7 @@ public class MeterReadingService {
      * @throws BusinessValidationException jeśli nowe dane naruszają reguły biznesowe
      */
     public MeterReadingResponse update(UUID id, MeterReadingRequest request) {
-        MeterReading reading =
+        var reading =
                 meterReadingRepository
                         .findByIdAndDeletedFalse(id)
                         .orElseThrow(
@@ -137,8 +136,8 @@ public class MeterReadingService {
                                         new NotFoundException(
                                                 "Odczyt licznika o ID " + id + " nie istnieje"));
 
-        UUID apartmentId = reading.getApartment().getId();
-        Meter meter = resolveMeterForApartment(request.getMeterId(), apartmentId);
+        var apartmentId = reading.getApartment().getId();
+        var meter = resolveMeterForApartment(request.getMeterId(), apartmentId);
 
         checkDuplicateOnUpdate(request, id);
         checkRegressionOnUpdate(request, id);
@@ -157,7 +156,7 @@ public class MeterReadingService {
      * @throws NotFoundException jeśli odczyt nie istnieje
      */
     public void delete(UUID id) {
-        MeterReading reading =
+        var reading =
                 meterReadingRepository
                         .findByIdAndDeletedFalse(id)
                         .orElseThrow(
@@ -169,7 +168,7 @@ public class MeterReadingService {
     }
 
     private Meter resolveMeterForApartment(UUID meterId, UUID apartmentId) {
-        Meter meter =
+        var meter =
                 meterRepository
                         .findById(meterId)
                         .orElseThrow(
@@ -209,7 +208,7 @@ public class MeterReadingService {
     }
 
     private void checkRegressionOnCreate(MeterReadingRequest request) {
-        MeterReading latest =
+        var latest =
                 meterReadingRepository.findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(
                         request.getMeterId());
 
@@ -229,7 +228,7 @@ public class MeterReadingService {
     }
 
     private void checkRegressionOnUpdate(MeterReadingRequest request, UUID currentId) {
-        MeterReading latest =
+        var latest =
                 meterReadingRepository.findTopByMeterIdAndDeletedFalseOrderByReadingDateDesc(
                         request.getMeterId());
 
@@ -250,7 +249,7 @@ public class MeterReadingService {
     }
 
     private MeterReadingResponse toResponse(MeterReading reading) {
-        Meter meter = reading.getMeter();
+        var meter = reading.getMeter();
         return new MeterReadingResponse(
                 reading.getId(),
                 reading.getApartment().getId(),

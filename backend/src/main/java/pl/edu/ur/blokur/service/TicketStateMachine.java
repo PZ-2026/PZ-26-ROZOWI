@@ -57,8 +57,7 @@ public class TicketStateMachine {
      * @throws BusinessValidationException gdy przejście jest niedozwolone
      */
     public void validateTransition(TicketStatus from, TicketStatus to) {
-        Set<TicketStatus> allowed =
-                ALLOWED_TRANSITIONS.getOrDefault(from, EnumSet.noneOf(TicketStatus.class));
+        var allowed = ALLOWED_TRANSITIONS.getOrDefault(from, EnumSet.noneOf(TicketStatus.class));
         if (!allowed.contains(to)) {
             throw new BusinessValidationException(
                     "Niedozwolona zmiana statusu: " + from.name() + " → " + to.name());
