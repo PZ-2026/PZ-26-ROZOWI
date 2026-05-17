@@ -13,6 +13,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -23,6 +26,9 @@ import org.hibernate.annotations.OnDeleteAction;
  */
 @Entity
 @Table(name = "meters")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Meter {
 
     @Id
@@ -49,52 +55,4 @@ public class Meter {
     @ColumnDefault("true")
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Apartment getApartment() {
-        return apartment;
-    }
-
-    public void setApartment(Apartment apartment) {
-        this.apartment = apartment;
-    }
-
-    public String getSerialNumber() {
-        return serialNumber;
-    }
-
-    public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber;
-    }
-
-    public MediumType getMediumType() {
-        return mediumType;
-    }
-
-    public void setMediumType(MediumType mediumType) {
-        this.mediumType = mediumType;
-    }
-
-    public LocalDate getInstallationDate() {
-        return installationDate;
-    }
-
-    public void setInstallationDate(LocalDate installationDate) {
-        this.installationDate = installationDate;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
 }

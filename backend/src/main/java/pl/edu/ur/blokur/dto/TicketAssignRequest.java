@@ -3,7 +3,9 @@ package pl.edu.ur.blokur.dto;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.Data;
 
+@Data
 public class TicketAssignRequest {
 
     @NotNull(message = "ID konserwatora jest wymagane")
@@ -13,30 +15,4 @@ public class TicketAssignRequest {
     private LocalDateTime plannedVisitAt;
 
     private String internalNote;
-
-    public TicketAssignRequest() {}
-
-    public UUID getAssignedTo() {
-        return assignedTo;
-    }
-
-    public void setAssignedTo(UUID assignedTo) {
-        this.assignedTo = assignedTo;
-    }
-
-    public LocalDateTime getPlannedVisitAt() {
-        return plannedVisitAt;
-    }
-
-    public void setPlannedVisitAt(LocalDateTime plannedVisitAt) {
-        this.plannedVisitAt = plannedVisitAt;
-    }
-
-    public String getInternalNote() {
-        return internalNote;
-    }
-
-    public void setInternalNote(String internalNote) {
-        this.internalNote = internalNote;
-    }
 }

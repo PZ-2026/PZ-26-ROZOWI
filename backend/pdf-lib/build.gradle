@@ -1,0 +1,46 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'pl.edu.ur'
+version = '0.0.1-SNAPSHOT'
+description = 'blokur-pdf-lib'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // iText 7 jako api — konsumenci biblioteki widzą jego API publicznie
+    api 'com.itextpdf:itext7-core:8.0.5'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// Javadoc na Java 21 wymaga włączonych modułów i nie powinien przerywać buildu na ostrzeżeniach
+tasks.named('javadoc') {
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Implementation-Title': project.description,
+                'Implementation-Version': project.version
+        )
+    }
+}

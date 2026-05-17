@@ -7,8 +7,10 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.Data;
 
 /** DTO reprezentujące żądanie utworzenia nowej uchwały. */
+@Data
 public class CreateResolutionRequest {
 
     @NotBlank(message = "Tytuł jest wymagany")
@@ -27,44 +29,4 @@ public class CreateResolutionRequest {
 
     @NotNull(message = "ID budynku jest wymagane")
     private UUID targetBuildingId;
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public List<String> getOptions() {
-        return options;
-    }
-
-    public void setOptions(List<String> options) {
-        this.options = options;
-    }
-
-    public UUID getTargetBuildingId() {
-        return targetBuildingId;
-    }
-
-    public void setTargetBuildingId(UUID targetBuildingId) {
-        this.targetBuildingId = targetBuildingId;
-    }
 }

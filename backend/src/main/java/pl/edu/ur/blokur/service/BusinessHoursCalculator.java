@@ -2,7 +2,6 @@ package pl.edu.ur.blokur.service;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -50,16 +49,16 @@ public class BusinessHoursCalculator {
         }
 
         double totalMinutes = 0;
-        LocalDate date = from.toLocalDate();
-        LocalDate endDate = to.toLocalDate();
+        var date = from.toLocalDate();
+        var endDate = to.toLocalDate();
 
         while (!date.isAfter(endDate)) {
             DayOfWeek dow = date.getDayOfWeek();
             if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) {
-                LocalDateTime dayStart = date.atTime(workStart, 0);
-                LocalDateTime dayEnd = date.atTime(workEnd, 0);
-                LocalDateTime effectiveStart = from.isAfter(dayStart) ? from : dayStart;
-                LocalDateTime effectiveEnd = to.isBefore(dayEnd) ? to : dayEnd;
+                var dayStart = date.atTime(workStart, 0);
+                var dayEnd = date.atTime(workEnd, 0);
+                var effectiveStart = from.isAfter(dayStart) ? from : dayStart;
+                var effectiveEnd = to.isBefore(dayEnd) ? to : dayEnd;
                 if (effectiveEnd.isAfter(effectiveStart)) {
                     totalMinutes += Duration.between(effectiveStart, effectiveEnd).toMinutes();
                 }

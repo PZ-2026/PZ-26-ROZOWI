@@ -48,7 +48,7 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-    implementation 'com.itextpdf:itext7-core:8.0.5'
+    implementation project(':pdf-lib')
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -60,6 +60,11 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     implementation 'org.apache.commons:commons-csv:1.10.0'
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+    implementation 'com.google.firebase:firebase-admin:9.3.0'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {

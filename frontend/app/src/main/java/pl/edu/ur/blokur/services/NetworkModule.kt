@@ -116,6 +116,12 @@ object NetworkModule {
     @Singleton
     fun provideMeterApiService(@Named("main") retrofit: Retrofit): MeterApiService =
         retrofit.create(MeterApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(@Named("main") retrofit: Retrofit): NotificationApiService =
+        retrofit.create(NotificationApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }

@@ -1,13 +1,10 @@
 package pl.edu.ur.blokur.service;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -24,15 +21,10 @@ import pl.edu.ur.blokur.dto.TicketSuspendRequest;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
-import pl.edu.ur.blokur.models.Apartment;
-import pl.edu.ur.blokur.models.Document;
 import pl.edu.ur.blokur.models.Ticket;
-import pl.edu.ur.blokur.models.TicketCategory;
 import pl.edu.ur.blokur.models.TicketHistory;
 import pl.edu.ur.blokur.models.TicketStatus;
 import pl.edu.ur.blokur.models.User;
-import pl.edu.ur.blokur.models.UserApartment;
-import pl.edu.ur.blokur.repository.DocumentRepository;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
 import pl.edu.ur.blokur.repository.TicketHistoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
@@ -46,10 +38,11 @@ public class TicketService {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketNumberGenerator ticketNumberGenerator;
     private final TicketHistoryRepository ticketHistoryRepository;
-    private final DocumentRepository documentRepository;
+    private final DocumentService documentService;
     private final PdfGeneratorService pdfGeneratorService;
     private final TicketStateMachine ticketStateMachine;
     private final BusinessHoursCalculator businessHoursCalculator;
+    private final PushNotificationService pushNotificationService;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -57,31 +50,33 @@ public class TicketService {
             TicketCategoryRepository ticketCategoryRepository,
             TicketNumberGenerator ticketNumberGenerator,
             TicketHistoryRepository ticketHistoryRepository,
-            DocumentRepository documentRepository,
+            DocumentService documentService,
             PdfGeneratorService pdfGeneratorService,
             TicketStateMachine ticketStateMachine,
-            BusinessHoursCalculator businessHoursCalculator) {
+            BusinessHoursCalculator businessHoursCalculator,
+            PushNotificationService pushNotificationService) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketNumberGenerator = ticketNumberGenerator;
         this.ticketHistoryRepository = ticketHistoryRepository;
-        this.documentRepository = documentRepository;
+        this.documentService = documentService;
         this.pdfGeneratorService = pdfGeneratorService;
         this.ticketStateMachine = ticketStateMachine;
         this.businessHoursCalculator = businessHoursCalculator;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void initTicketNumberGenerator() {
-        int year = LocalDate.now().getYear();
-        int lastSeq = ticketRepository.findMaxSequenceForYear(year);
+        var year = LocalDate.now().getYear();
+        var lastSeq = ticketRepository.findMaxSequenceForYear(year);
         ticketNumberGenerator.initYear(year, lastSeq);
     }
 
     @Transactional
     public TicketDetailDto create(TicketRequest request, String username) {
-        User author =
+        var author =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -91,9 +86,9 @@ public class TicketService {
                     "Mieszkaniec nie ma przypisanego lokalu — nie można złożyć zgłoszenia");
         }
 
-        Apartment apartment = author.getUserApartments().get(0).getApartment();
+        var apartment = author.getUserApartments().get(0).getApartment();
 
-        TicketCategory category =
+        var category =
                 ticketCategoryRepository
                         .findById(request.getCategoryId())
                         .orElseThrow(
@@ -103,7 +98,7 @@ public class TicketService {
                                                         + request.getCategoryId()
                                                         + " nie istnieje"));
 
-        Ticket ticket = new Ticket();
+        var ticket = new Ticket();
         ticket.setTicketNumber(ticketNumberGenerator.generate());
         ticket.setTitle(request.getTitle());
         ticket.setDescription(request.getDescription());
@@ -118,12 +113,12 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public List<TicketSummaryDto> getAll(String username, TicketFilterParams filters) {
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
-        String role = user.getRole();
+        var role = user.getRole();
 
         if ("ZARZADCA".equals(role)) {
             return ticketRepository
@@ -138,7 +133,7 @@ public class TicketService {
                             filters.getSearch())
                     .stream()
                     .map(this::mapRawToSummary)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         if ("KONSERWATOR".equals(role)) {
@@ -152,19 +147,19 @@ public class TicketService {
                             filters.getSearch())
                     .stream()
                     .map(this::mapRawToSummary)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         if (user.getUserApartments().isEmpty()) {
             return List.of();
         }
 
-        UserApartment ua = user.getUserApartments().get(0);
-        Apartment apt = ua.getApartment();
-        UUID apartmentId = apt != null ? apt.getId() : null;
-        UUID staircaseId =
+        var ua = user.getUserApartments().get(0);
+        var apt = ua.getApartment();
+        var apartmentId = apt != null ? apt.getId() : null;
+        var staircaseId =
                 (apt != null && apt.getStaircase() != null) ? apt.getStaircase().getId() : null;
-        UUID buildingId =
+        var buildingId =
                 (apt != null
                                 && apt.getStaircase() != null
                                 && apt.getStaircase().getBuilding() != null)
@@ -187,12 +182,12 @@ public class TicketService {
                         filters.getSearch())
                 .stream()
                 .map(this::mapRawToSummary)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public TicketDetailDto getById(UUID ticketId, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(
@@ -200,12 +195,12 @@ public class TicketService {
                                         new NotFoundException(
                                                 "Zgłoszenie o ID " + ticketId + " nie istnieje"));
 
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
-        String role = user.getRole();
+        var role = user.getRole();
 
         if ("ZARZADCA".equals(role)) {
             return mapToDetail(ticket);
@@ -225,11 +220,11 @@ public class TicketService {
                     "Brak dostępu do zgłoszenia — mieszkaniec nie ma przypisanego lokalu");
         }
 
-        Apartment apt = user.getUserApartments().get(0).getApartment();
-        UUID residentApartmentId = apt != null ? apt.getId() : null;
-        UUID residentStaircaseId =
+        var apt = user.getUserApartments().get(0).getApartment();
+        var residentApartmentId = apt != null ? apt.getId() : null;
+        var residentStaircaseId =
                 (apt != null && apt.getStaircase() != null) ? apt.getStaircase().getId() : null;
-        UUID residentBuildingId =
+        var residentBuildingId =
                 (apt != null
                                 && apt.getStaircase() != null
                                 && apt.getStaircase().getBuilding() != null)
@@ -245,7 +240,7 @@ public class TicketService {
                     "Brak dostępu do zgłoszenia — nie dotyczy lokalu tego mieszkańca");
         }
 
-        TicketDetailDto dto = mapToDetail(ticket);
+        var dto = mapToDetail(ticket);
         dto.setInternalNote(null);
         return dto;
     }
@@ -262,11 +257,11 @@ public class TicketService {
     @Transactional
     public TicketDetailDto assignTicket(
             UUID ticketId, TicketAssignRequest request, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
-        User manager =
+        var manager =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -276,7 +271,7 @@ public class TicketService {
                     "Brak uprawnień. Tylko zarządca może przypisać konserwatora.");
         }
 
-        User conservator =
+        var conservator =
                 userRepository
                         .findById(request.getAssignedTo())
                         .orElseThrow(() -> new NotFoundException("Konserwator nie istnieje"));
@@ -297,12 +292,21 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        var result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            pushNotificationService.send(
+                    ticket.getAuthor().getId(),
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Zgłoszenie zaplanowano",
+                    "Twoje zgłoszenie \"" + ticket.getTitle() + "\" zostało zaplanowane.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "ZAPLANOWANO"));
+        }
+        return result;
     }
 
     /**
-     * Zamyka zgłoszenie będące w stanie ZAKONCZONE. Generuje protokół PDF i zapisuje
-     * jako nowy Document. Operacja dostępna tylko dla zarządcy.
+     * Zamyka zgłoszenie będące w stanie ZAKONCZONE. Generuje protokół PDF i zapisuje jako nowy
+     * Document. Operacja dostępna tylko dla zarządcy.
      *
      * @param ticketId identyfikator zgłoszenia
      * @param username email zalogowanego użytkownika
@@ -310,11 +314,11 @@ public class TicketService {
      */
     @Transactional
     public TicketDetailDto closeTicket(UUID ticketId, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
-        User manager =
+        var manager =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -331,17 +335,17 @@ public class TicketService {
         }
 
         // Generowanie PDF
-        String conservatorName =
+        var conservatorName =
                 ticket.getAssignedTo() != null
                         ? ticket.getAssignedTo().getFirstName()
                                 + " "
                                 + ticket.getAssignedTo().getLastName()
                         : "Nieznany";
-        String descriptionToPdf =
+        var descriptionToPdf =
                 ticket.getWorkDescription() != null
                         ? ticket.getWorkDescription()
                         : ticket.getDescription();
-        List<String> beforeImages =
+        var beforeImages =
                 ticket.getImages().stream()
                         .filter(
                                 img ->
@@ -349,7 +353,7 @@ public class TicketService {
                                                 == pl.edu.ur.blokur.models.TicketImageType.BEFORE)
                         .map(pl.edu.ur.blokur.models.TicketImage::getFilePath)
                         .toList();
-        List<String> afterImages =
+        var afterImages =
                 ticket.getImages().stream()
                         .filter(
                                 img ->
@@ -358,7 +362,7 @@ public class TicketService {
                         .map(pl.edu.ur.blokur.models.TicketImage::getFilePath)
                         .toList();
 
-        WorkAcceptanceProtocolRequest pdfRequest =
+        var pdfRequest =
                 new WorkAcceptanceProtocolRequest(
                         ticket.getTicketNumber(),
                         descriptionToPdf,
@@ -366,53 +370,53 @@ public class TicketService {
                         beforeImages,
                         afterImages);
 
-        try {
-            byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(pdfRequest);
-            Path dirPath = Paths.get("uploads/documents");
-            if (!Files.exists(dirPath)) {
-                Files.createDirectories(dirPath);
-            }
-            String fileName =
-                    "protokol-"
-                            + ticket.getTicketNumber()
-                            + "-"
-                            + System.currentTimeMillis()
-                            + ".pdf";
-            Path filePath = dirPath.resolve(fileName);
-            Files.write(filePath, pdfBytes);
-
-            Document document = new Document();
-            document.setType("PROTOKOL");
-            document.setTitle("Protokół odbioru - " + ticket.getTicketNumber());
-            document.setFileUrl(filePath.toString());
-            document.setTicket(ticket);
-            document.setOwnerUser(manager);
-            documentRepository.save(document);
-        } catch (Exception e) {
-            throw new RuntimeException("Błąd podczas generowania i zapisu pliku PDF", e);
-        }
+        byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(pdfRequest);
+        documentService.storeGeneratedDocument(
+                "PROTOKOL",
+                "Protokół odbioru - " + ticket.getTicketNumber(),
+                pdfBytes,
+                manager,
+                ticket.getApartment(),
+                ticket,
+                null);
 
         ticket.setStatus(TicketStatus.ZAMKNIETE);
         ticket.setClosedAt(LocalDateTime.now());
 
-        TicketHistory history = new TicketHistory();
+        var history = new TicketHistory();
         history.setTicket(ticket);
         history.setStatus("ZAMKNIETE");
         history.setChangedBy(manager);
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        var result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            var authorId = ticket.getAuthor().getId();
+            pushNotificationService.send(
+                    authorId,
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Zgłoszenie zamknięte",
+                    "Zgłoszenie \"" + ticket.getTitle() + "\" zostało zamknięte.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "ZAMKNIETE"));
+            pushNotificationService.send(
+                    authorId,
+                    PushNotificationService.EVENT_NOWY_DOKUMENT,
+                    "Nowy dokument",
+                    "Protokół odbioru dla zgłoszenia \"" + ticket.getTitle() + "\" jest dostępny.",
+                    Map.of("ticketId", ticket.getId().toString(), "type", "PROTOKOL"));
+        }
+        return result;
     }
 
     @Transactional
     public TicketDetailDto rejectTicket(
             UUID ticketId, TicketRejectRequest request, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
-        User manager =
+        var manager =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -422,13 +426,12 @@ public class TicketService {
                     "Brak uprawnień. Tylko zarządca może odrzucić zgłoszenie.");
         }
 
-        String currentNote =
-                ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
+        var currentNote = ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
         ticket.setInternalNote(currentNote + "Powód odrzucenia: " + request.getReason());
 
         ticket.setStatus(TicketStatus.ODRZUCONE);
 
-        TicketHistory history = new TicketHistory();
+        var history = new TicketHistory();
         history.setTicket(ticket);
         history.setStatus("ODRZUCONE");
         history.setChangedBy(manager);
@@ -436,16 +439,25 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        TicketDetailDto result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            pushNotificationService.send(
+                    ticket.getAuthor().getId(),
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Zgłoszenie odrzucone",
+                    "Twoje zgłoszenie \"" + ticket.getTitle() + "\" zostało odrzucone.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "ODRZUCONE"));
+        }
+        return result;
     }
 
     @Transactional
     public TicketDetailDto startWork(UUID ticketId, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
-        User conservator =
+        var conservator =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -468,24 +480,33 @@ public class TicketService {
 
         ticket.setStatus(TicketStatus.W_REALIZACJI);
 
-        TicketHistory history = new TicketHistory();
+        var history = new TicketHistory();
         history.setTicket(ticket);
         history.setStatus("W_REALIZACJI");
         history.setChangedBy(conservator);
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        var result = mapToDetail(ticketRepository.save(ticket));
+        if (ticket.getAuthor() != null) {
+            pushNotificationService.send(
+                    ticket.getAuthor().getId(),
+                    PushNotificationService.EVENT_ZMIANA_STATUSU,
+                    "Prace w toku",
+                    "Prace przy zgłoszeniu \"" + ticket.getTitle() + "\" zostały rozpoczęte.",
+                    Map.of("ticketId", ticket.getId().toString(), "status", "W_REALIZACJI"));
+        }
+        return result;
     }
 
     @Transactional
     public TicketDetailDto suspendWork(
             UUID ticketId, TicketSuspendRequest request, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
-        User conservator =
+        var conservator =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -508,11 +529,10 @@ public class TicketService {
 
         ticket.setStatus(TicketStatus.WSTRZYMANO);
 
-        String currentNote =
-                ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
+        var currentNote = ticket.getInternalNote() != null ? ticket.getInternalNote() + "\n" : "";
         ticket.setInternalNote(currentNote + "Wstrzymano prace: " + request.getReason());
 
-        TicketHistory history = new TicketHistory();
+        var history = new TicketHistory();
         history.setTicket(ticket);
         history.setStatus("WSTRZYMANO");
         history.setChangedBy(conservator);
@@ -520,17 +540,29 @@ public class TicketService {
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        var result = mapToDetail(ticketRepository.save(ticket));
+        // Powiadomienie zarządców o wstrzymaniu zgłoszenia
+        var managerIds = userRepository.findManagerIds();
+        pushNotificationService.sendToUsers(
+                managerIds,
+                PushNotificationService.EVENT_WSTRZYMANIE,
+                "Zgłoszenie wstrzymane",
+                "Zgłoszenie \""
+                        + ticket.getTitle()
+                        + "\" zostało wstrzymane. Powód: "
+                        + request.getReason(),
+                Map.of("ticketId", ticket.getId().toString(), "status", "WSTRZYMANO"));
+        return result;
     }
 
     @Transactional
     public TicketDetailDto completeWork(
             UUID ticketId, TicketCompletionRequest request, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
-        User conservator =
+        var conservator =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -554,24 +586,37 @@ public class TicketService {
         ticket.setStatus(TicketStatus.ZAKONCZONE_DO_WERYFIKACJI);
         ticket.setWorkDescription(request.getWorkDescription());
 
-        TicketHistory history = new TicketHistory();
+        var history = new TicketHistory();
         history.setTicket(ticket);
         history.setStatus("ZAKONCZONE_DO_WERYFIKACJI");
         history.setChangedBy(conservator);
         history.setCreatedAt(LocalDateTime.now());
         ticketHistoryRepository.save(history);
 
-        return mapToDetail(ticketRepository.save(ticket));
+        var result = mapToDetail(ticketRepository.save(ticket));
+        // Powiadomienie zarządców o gotowości zgłoszenia do weryfikacji
+        var managerIds = userRepository.findManagerIds();
+        pushNotificationService.sendToUsers(
+                managerIds,
+                PushNotificationService.EVENT_ZMIANA_STATUSU,
+                "Zgłoszenie do weryfikacji",
+                "Zgłoszenie \"" + ticket.getTitle() + "\" oczekuje na weryfikację.",
+                Map.of(
+                        "ticketId",
+                        ticket.getId().toString(),
+                        "status",
+                        "ZAKONCZONE_DO_WERYFIKACJI"));
+        return result;
     }
 
     @Transactional
     public TicketDetailDto changeStatus(
             UUID ticketId, TicketStatusChangeRequest request, String username) {
-        Ticket ticket =
+        var ticket =
                 ticketRepository
                         .findById(ticketId)
                         .orElseThrow(() -> new NotFoundException("Zgłoszenie nie istnieje"));
-        User user =
+        var user =
                 userRepository
                         .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
@@ -586,7 +631,7 @@ public class TicketService {
             throw new BusinessValidationException("Brak uprawnień do zmiany statusu zgłoszenia");
         }
 
-        TicketStatus newStatus = request.getStatus();
+        var newStatus = request.getStatus();
         ticketStateMachine.validateTransition(ticket.getStatus(), newStatus);
 
         recordStatusChange(ticket, newStatus, user, request.getComment());
@@ -601,7 +646,7 @@ public class TicketService {
             ticket.setClosedAt(LocalDateTime.now());
         }
 
-        TicketHistory history = new TicketHistory();
+        var history = new TicketHistory();
         history.setTicket(ticket);
         history.setStatus(newStatus.name());
         history.setChangedBy(changedBy);
@@ -628,7 +673,7 @@ public class TicketService {
     }
 
     private TicketDetailDto mapToDetail(Ticket ticket) {
-        TicketDetailDto dto = new TicketDetailDto();
+        var dto = new TicketDetailDto();
         dto.setId(ticket.getId());
         dto.setTicketNumber(ticket.getTicketNumber());
         dto.setTitle(ticket.getTitle());
@@ -668,7 +713,7 @@ public class TicketService {
     }
 
     private TicketSummaryDto mapRawToSummary(Object[] row) {
-        TicketSummaryDto dto = new TicketSummaryDto();
+        var dto = new TicketSummaryDto();
         dto.setId(row[0] != null ? UUID.fromString(row[0].toString()) : null);
         dto.setTicketNumber(row[1] != null ? row[1].toString() : null);
         dto.setTitle(row[2] != null ? row[2].toString() : null);

@@ -28,6 +28,7 @@ import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.DocumentRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
+import pl.edu.ur.blokur.service.storage.DocumentStorage;
 
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceTest {
@@ -35,6 +36,8 @@ class DocumentServiceTest {
     @Mock private DocumentRepository documentRepository;
 
     @Mock private UserRepository userRepository;
+
+    @Mock private DocumentStorage documentStorage;
 
     @InjectMocks private DocumentService documentService;
 
@@ -124,22 +127,84 @@ class DocumentServiceTest {
     void downloadDocument_Admin_Success() {
         when(documentRepository.findById(document.getId())).thenReturn(Optional.of(document));
         when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+        Resource stubbed =
+                new org.springframework.core.io.FileSystemResource(document.getFileUrl());
+        when(documentStorage.load(document.getFileUrl())).thenReturn(stubbed);
 
         Resource resource = documentService.downloadDocument(document.getId(), admin.getId());
 
         assertNotNull(resource);
         assertTrue(resource.exists());
+        verify(documentStorage).load(document.getFileUrl());
     }
 
     @Test
     void downloadDocument_Resident_Success_IfApartmentMatches() {
         when(documentRepository.findById(document.getId())).thenReturn(Optional.of(document));
         when(userRepository.findById(resident.getId())).thenReturn(Optional.of(resident));
+        Resource stubbed =
+                new org.springframework.core.io.FileSystemResource(document.getFileUrl());
+        when(documentStorage.load(document.getFileUrl())).thenReturn(stubbed);
 
         Resource resource = documentService.downloadDocument(document.getId(), resident.getId());
 
         assertNotNull(resource);
         assertTrue(resource.exists());
+        verify(documentStorage).load(document.getFileUrl());
+    }
+
+    @Test
+    void storeGeneratedDocument_PersistsEntityAndDelegatesToStorage() {
+        byte[] pdfBytes = "%PDF-1.4 test".getBytes();
+        String expectedUrl = tempDir.resolve("documents").resolve("stub.pdf").toString();
+        when(documentStorage.store(eq("documents"), org.mockito.ArgumentMatchers.anyString(),
+                        eq(pdfBytes)))
+                .thenReturn(expectedUrl);
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Document saved =
+                documentService.storeGeneratedDocument(
+                        "PROTOKOL",
+                        "Protokół odbioru ZGL-2026-0001",
+                        pdfBytes,
+                        admin,
+                        apartment,
+                        null,
+                        null);
+
+        assertNotNull(saved);
+        assertEquals("PROTOKOL", saved.getType());
+        assertEquals("Protokół odbioru ZGL-2026-0001", saved.getTitle());
+        assertEquals(expectedUrl, saved.getFileUrl());
+        assertEquals(admin, saved.getOwnerUser());
+        assertEquals(apartment, saved.getApartment());
+        verify(documentStorage)
+                .store(eq("documents"), org.mockito.ArgumentMatchers.anyString(), eq(pdfBytes));
+        verify(documentRepository).save(any(Document.class));
+    }
+
+    @Test
+    void storeGeneratedDocument_SanitizesPolishDiacriticsInFileName() {
+        byte[] pdfBytes = "%PDF".getBytes();
+        when(documentStorage.store(eq("documents"), org.mockito.ArgumentMatchers.anyString(),
+                        any(byte[].class)))
+                .thenAnswer(inv -> "documents/" + inv.getArgument(1, String.class));
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Document saved =
+                documentService.storeGeneratedDocument(
+                        "RAPORT_SALD",
+                        "Zestawienie zaległości — łąka",
+                        pdfBytes,
+                        admin,
+                        null,
+                        null,
+                        null);
+
+        // Sprawdza że ścieżka nie zawiera polskich znaków ani spacji
+        String url = saved.getFileUrl();
+        assertTrue(url.matches("documents/raport_sald-[a-z0-9-]+-\\d+\\.pdf"),
+                "Niespodziewany format URL: " + url);
     }
 
     @Test

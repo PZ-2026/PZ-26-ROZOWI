@@ -72,8 +72,7 @@ class ApartmentBalanceServiceTest {
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, true);
 
             assertThat(result).hasSize(2);
             assertThat(result.get(0).getBalance()).isEqualByComparingTo("-500.00");
@@ -85,8 +84,7 @@ class ApartmentBalanceServiceTest {
         void shouldReturnEmptyListWhenNoApartments() {
             when(apartmentRepository.findAllWithBuilding()).thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, true);
 
             assertThat(result).isEmpty();
         }
@@ -98,8 +96,7 @@ class ApartmentBalanceServiceTest {
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, true);
 
             assertThat(result.get(0).getAddress()).isEqualTo("ul. Testowa 1 m. 1");
         }
@@ -112,8 +109,7 @@ class ApartmentBalanceServiceTest {
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, true);
 
             assertThat(result.get(0).getBalance()).isEqualByComparingTo(BigDecimal.ZERO);
         }
@@ -127,8 +123,7 @@ class ApartmentBalanceServiceTest {
         @DisplayName("Podane propertyId — używa findAllByPropertyId")
         void shouldFilterByPropertyId() {
             UUID propertyId = UUID.randomUUID();
-            when(apartmentRepository.findAllByPropertyId(propertyId))
-                    .thenReturn(List.of(apt1));
+            when(apartmentRepository.findAllByPropertyId(propertyId)).thenReturn(List.of(apt1));
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
@@ -197,8 +192,7 @@ class ApartmentBalanceServiceTest {
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, 30L, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, 30L, true);
 
             assertThat(result).isEmpty();
         }
@@ -209,10 +203,9 @@ class ApartmentBalanceServiceTest {
             LocalDate sixtyDaysAgo = LocalDate.now().minusDays(60);
             when(apartmentRepository.findAllWithBuilding()).thenReturn(List.of(apt1));
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
-                    .thenReturn(List.of(new Object[] {apt1Id, sixtyDaysAgo}));
+                    .thenReturn(List.<Object[]>of(new Object[] {apt1Id, sixtyDaysAgo}));
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, 30L, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, 30L, true);
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getDaysOverdue()).isGreaterThanOrEqualTo(60L);
@@ -224,10 +217,9 @@ class ApartmentBalanceServiceTest {
             LocalDate fiveDaysAgo = LocalDate.now().minusDays(5);
             when(apartmentRepository.findAllWithBuilding()).thenReturn(List.of(apt1));
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
-                    .thenReturn(List.of(new Object[] {apt1Id, fiveDaysAgo}));
+                    .thenReturn(List.<Object[]>of(new Object[] {apt1Id, fiveDaysAgo}));
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, 30L, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, 30L, true);
 
             assertThat(result).isEmpty();
         }
@@ -238,28 +230,29 @@ class ApartmentBalanceServiceTest {
     class GetBalancesSorting {
 
         @Test
-        @DisplayName("sortDesc=false — sortuje rosnąco (najmniejsza zaległość na pierwszym miejscu)")
+        @DisplayName(
+                "sortDesc=false — sortuje rosnąco (najmniejsza zaległość na pierwszym miejscu)")
         void shouldSortAscending() {
             when(apartmentRepository.findAllWithBuilding()).thenReturn(List.of(apt2, apt1));
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, false);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, false);
 
             assertThat(result.get(0).getBalance()).isEqualByComparingTo("-200.00");
             assertThat(result.get(1).getBalance()).isEqualByComparingTo("-500.00");
         }
 
         @Test
-        @DisplayName("sortDesc=true — sortuje malejąco po zaległości (największa zaległość na pierwszym miejscu)")
+        @DisplayName(
+                "sortDesc=true — sortuje malejąco po zaległości (największa zaległość na pierwszym"
+                        + " miejscu)")
         void shouldSortDescending() {
             when(apartmentRepository.findAllWithBuilding()).thenReturn(List.of(apt1, apt2));
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, true);
 
             assertThat(result.get(0).getBalance()).isEqualByComparingTo("-500.00");
         }
@@ -275,10 +268,9 @@ class ApartmentBalanceServiceTest {
             LocalDate paymentDate = LocalDate.now().minusDays(45);
             when(apartmentRepository.findAllWithBuilding()).thenReturn(List.of(apt1));
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
-                    .thenReturn(List.of(new Object[] {apt1Id, paymentDate}));
+                    .thenReturn(List.<Object[]>of(new Object[] {apt1Id, paymentDate}));
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, true);
 
             assertThat(result.get(0).getLastPaymentDate()).isEqualTo(paymentDate);
             assertThat(result.get(0).getDaysOverdue()).isGreaterThanOrEqualTo(45L);
@@ -291,8 +283,7 @@ class ApartmentBalanceServiceTest {
             when(transactionRepository.findLastPaymentDatesByApartmentIds(anyList()))
                     .thenReturn(List.of());
 
-            List<ApartmentBalanceResponse> result =
-                    service.getBalances(null, null, null, true);
+            List<ApartmentBalanceResponse> result = service.getBalances(null, null, null, true);
 
             assertThat(result.get(0).getLastPaymentDate()).isNull();
             assertThat(result.get(0).getDaysOverdue()).isNull();

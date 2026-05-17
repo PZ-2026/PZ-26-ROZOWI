@@ -33,10 +33,11 @@ public class AdminFinanceController {
     }
 
     /**
-     * Zwraca zestawienie sald wszystkich lokali z możliwością filtrowania i sortowania. Przeznaczony
-     * do widoku „Monitorowanie zaległości" w panelu zarządcy.
+     * Zwraca zestawienie sald wszystkich lokali z możliwością filtrowania i sortowania.
+     * Przeznaczony do widoku „Monitorowanie zaległości" w panelu zarządcy.
      *
      * <p>Parametry filtrowania:
+     *
      * <ul>
      *   <li>{@code propertyId} — zawęża wyniki do wybranej nieruchomości
      *   <li>{@code minDebt} — pokazuje lokale z zaległością ≥ podanej kwoty (PLN)

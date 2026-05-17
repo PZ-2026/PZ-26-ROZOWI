@@ -137,8 +137,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Nieprawidłowy email lub hasło"));
         } catch (Exception e) {
-            System.out.println("UNHANDLED EXCEPTION:" + e.getMessage());
-            return null;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Nieoczekiwany błąd serwera"));
         }
     }
 
@@ -187,14 +187,11 @@ public class AuthController {
      * @return 200 po pomyślnym ustawieniu hasła, 400 przy nieprawidłowym tokenie
      */
     @PostMapping("/accept-invitation")
-    public ResponseEntity<?> acceptInvitation(
-            @Valid @RequestBody AcceptInvitationRequest request) {
+    public ResponseEntity<?> acceptInvitation(@Valid @RequestBody AcceptInvitationRequest request) {
         try {
             invitationService.acceptInvitation(request.getToken(), request.getNewPassword());
             return ResponseEntity.ok(
-                    Map.of(
-                            "message",
-                            "Hasło zostało ustawione. Możesz się teraz zalogować."));
+                    Map.of("message", "Hasło zostało ustawione. Możesz się teraz zalogować."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));

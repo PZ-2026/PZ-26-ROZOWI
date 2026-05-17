@@ -1,7 +1,6 @@
 package pl.edu.ur.blokur.service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -58,14 +57,13 @@ public class PasswordResetService {
      * @param email adres e-mail, na który ma zostać wysłany link resetujący
      */
     public void requestPasswordReset(String email) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        // Zawsze zwracamy sukces — nie ujawniamy czy email istnieje w bazie
+        var userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             return;
         }
 
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+        var token = UUID.randomUUID().toString();
+        var expiry = LocalDateTime.now().plusHours(1);
 
         tokenRepository.save(new PasswordResetToken(userOpt.get(), token, expiry));
 
@@ -80,7 +78,7 @@ public class PasswordResetService {
      * @throws IllegalArgumentException gdy token nie istnieje lub wygasł
      */
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken =
+        var resetToken =
                 tokenRepository
                         .findByToken(token)
                         .orElseThrow(
@@ -102,18 +100,20 @@ public class PasswordResetService {
 
     @Async
     protected void sendResetEmail(String email, String token) {
-        SimpleMailMessage message = new SimpleMailMessage();
+        var message = new SimpleMailMessage();
         message.setFrom(fromAddress);
         message.setTo(email);
         message.setSubject("Blokur – reset hasła");
         message.setText(
-                "Otrzymaliśmy prośbę o reset hasła do Twojego konta w aplikacji Blokur.\n\n"
-                        + "Kliknij poniższy link, aby ustawić nowe hasło (ważny przez 1 godzinę):\n"
-                        + resetBaseUrl
-                        + "?token="
-                        + token
-                        + "\n\n"
-                        + "Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość.");
+                """
+                Otrzymaliśmy prośbę o reset hasła do Twojego konta w aplikacji Blokur.
+
+                Kliknij poniższy link, aby ustawić nowe hasło (ważny przez 1 godzinę):
+                %s?token=%s
+
+                Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość.
+                """
+                        .formatted(resetBaseUrl, token));
         mailSender.send(message);
     }
 }

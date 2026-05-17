@@ -7,6 +7,7 @@ import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Domain
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -22,7 +23,8 @@ enum class NavBarOption {
     USERS,
     CATEGORIES,
     RESOLUTIONS,
-    INSPECTIONS
+    INSPECTIONS,
+    NOTIFICATIONS
 }
 
 data class BottomNavItem(
@@ -48,6 +50,7 @@ val zarzadcaNavItems = listOf(
     BottomNavItem("Przeglądy", Icons.Outlined.Build, NavBarOption.INSPECTIONS),
     BottomNavItem("Użytkownicy", Icons.Outlined.People, NavBarOption.USERS),
     BottomNavItem("Kategorie", Icons.Outlined.Settings, NavBarOption.CATEGORIES),
+    BottomNavItem("Powiadomienia", Icons.Outlined.NotificationsNone, NavBarOption.NOTIFICATIONS),
     BottomNavItem("Profil", Icons.Outlined.AccountCircle, NavBarOption.PROFILE)
 )
 

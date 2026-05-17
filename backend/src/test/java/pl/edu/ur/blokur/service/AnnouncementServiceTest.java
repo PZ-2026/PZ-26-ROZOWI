@@ -3,8 +3,12 @@ package pl.edu.ur.blokur.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,6 +56,7 @@ class AnnouncementServiceTest {
     @Mock private BuildingRepository buildingRepository;
     @Mock private StaircaseRepository staircaseRepository;
     @Mock private ApartmentRepository apartmentRepository;
+    @Mock private PushNotificationService pushNotificationService;
 
     @InjectMocks private AnnouncementService announcementService;
 
@@ -509,6 +514,117 @@ class AnnouncementServiceTest {
                                             ann.getId(), request, null, EMAIL))
                     .isInstanceOf(BusinessValidationException.class)
                     .hasMessageContaining("Tylko zarządca może edytować ogłoszenia");
+        }
+    }
+
+    // =======================================================
+    // Wysyłka powiadomień PUSH — resolveRecipientIds
+    // =======================================================
+
+    @Nested
+    @DisplayName("Wysyłka powiadomień PUSH")
+    class SendPushNotificationsTests {
+
+        private Announcement buildSavedAnnouncement(AnnouncementTargetType type) {
+            Announcement ann = new Announcement();
+            ann.setId(UUID.randomUUID());
+            ann.setTitle("Test");
+            ann.setContent("Treść");
+            ann.setTargetType(type);
+            ann.setCreatedAt(LocalDateTime.now());
+            return ann;
+        }
+
+        @Test
+        @DisplayName("WSZYSCY — wywołuje findAllResidentIds i wysyła PUSH")
+        void shouldSendToAllResidentsForWszyscy() {
+            List<UUID> residents = List.of(UUID.randomUUID(), UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.WSZYSCY);
+
+            when(userRepository.findAllResidentIds()).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findAllResidentIds();
+            verify(pushNotificationService)
+                    .sendToUsers(
+                            eq(residents),
+                            eq(PushNotificationService.EVENT_OGLOSZENIE),
+                            eq("Test"),
+                            eq("Treść"),
+                            anyMap());
+        }
+
+        @Test
+        @DisplayName("BUDYNEK — wywołuje findUserIdsByBuildingId z ID budynku ogłoszenia")
+        void shouldSendToBuildingResidentsForBudynek() {
+            List<UUID> residents = List.of(UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.BUDYNEK);
+            ann.setTargetBuilding(building);
+
+            when(userRepository.findUserIdsByBuildingId(buildingId)).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findUserIdsByBuildingId(buildingId);
+            verify(pushNotificationService)
+                    .sendToUsers(eq(residents), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("KLATKA — wywołuje findUserIdsByStaircaseId z ID klatki ogłoszenia")
+        void shouldSendToStaircaseResidentsForKlatka() {
+            List<UUID> residents = List.of(UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.KLATKA);
+            ann.setTargetStaircase(staircase);
+
+            when(userRepository.findUserIdsByStaircaseId(staircaseId)).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findUserIdsByStaircaseId(staircaseId);
+            verify(pushNotificationService)
+                    .sendToUsers(eq(residents), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("NIERUCHOMOSC — wywołuje findUserIdsByApartmentId z ID lokalu ogłoszenia")
+        void shouldSendToApartmentResidentsForNieruchomosc() {
+            List<UUID> residents = List.of(UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.NIERUCHOMOSC);
+            ann.setTargetApartment(apartment);
+
+            when(userRepository.findUserIdsByApartmentId(apartmentId)).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findUserIdsByApartmentId(apartmentId);
+            verify(pushNotificationService)
+                    .sendToUsers(eq(residents), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("Pusta lista odbiorców — nie wywołuje pushNotificationService")
+        void shouldNotSendWhenNoRecipients() {
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.WSZYSCY);
+            when(userRepository.findAllResidentIds()).thenReturn(List.of());
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(pushNotificationService, never())
+                    .sendToUsers(anyList(), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("BUDYNEK bez targetBuilding — nie wysyła PUSH")
+        void shouldNotSendWhenBuildingIsNull() {
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.BUDYNEK);
+            ann.setTargetBuilding(null);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(pushNotificationService, never())
+                    .sendToUsers(anyList(), anyString(), anyString(), anyString(), anyMap());
         }
     }
 }

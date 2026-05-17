@@ -39,3 +39,8 @@ out/
 ### Kotlin ###
 .kotlin
 .env
+
+### Sekrety ###
+firebase-credentials.json
+*-credentials.json
+*-service-account.json

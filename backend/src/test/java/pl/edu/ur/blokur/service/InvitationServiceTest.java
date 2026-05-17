@@ -67,8 +67,7 @@ class InvitationServiceTest {
         void shouldSaveTokenWithSeventyTwoHourExpiry() {
             invitationService.inviteUser(testUser);
 
-            ArgumentCaptor<InvitationToken> captor =
-                    ArgumentCaptor.forClass(InvitationToken.class);
+            ArgumentCaptor<InvitationToken> captor = ArgumentCaptor.forClass(InvitationToken.class);
             verify(tokenRepository).save(captor.capture());
 
             InvitationToken saved = captor.getValue();
@@ -81,8 +80,7 @@ class InvitationServiceTest {
         void shouldSaveTokenForCorrectUser() {
             invitationService.inviteUser(testUser);
 
-            ArgumentCaptor<InvitationToken> captor =
-                    ArgumentCaptor.forClass(InvitationToken.class);
+            ArgumentCaptor<InvitationToken> captor = ArgumentCaptor.forClass(InvitationToken.class);
             verify(tokenRepository).save(captor.capture());
 
             assertThat(captor.getValue().getUser()).isEqualTo(testUser);
@@ -141,8 +139,7 @@ class InvitationServiceTest {
             invitationService.inviteUser(testUser);
             invitationService.inviteUser(secondUser);
 
-            ArgumentCaptor<InvitationToken> captor =
-                    ArgumentCaptor.forClass(InvitationToken.class);
+            ArgumentCaptor<InvitationToken> captor = ArgumentCaptor.forClass(InvitationToken.class);
             verify(tokenRepository, times(2)).save(captor.capture());
 
             String token1 = captor.getAllValues().get(0).getToken();
@@ -165,9 +162,7 @@ class InvitationServiceTest {
             when(tokenRepository.findByToken("nieistniejacy")).thenReturn(Optional.empty());
 
             assertThatThrownBy(
-                            () ->
-                                    invitationService.acceptInvitation(
-                                            "nieistniejacy", "NoweHaslo1"))
+                            () -> invitationService.acceptInvitation("nieistniejacy", "NoweHaslo1"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Nieprawidłowy token");
         }
@@ -176,12 +171,10 @@ class InvitationServiceTest {
         @DisplayName("Wygasły token — rzuca TokenExpiredException (410) i usuwa token z bazy")
         void shouldThrowAndDeleteExpiredToken() {
             InvitationToken expiredToken =
-                    new InvitationToken(
-                            testUser, "wygasly", LocalDateTime.now().minusHours(1));
+                    new InvitationToken(testUser, "wygasly", LocalDateTime.now().minusHours(1));
             when(tokenRepository.findByToken("wygasly")).thenReturn(Optional.of(expiredToken));
 
-            assertThatThrownBy(
-                            () -> invitationService.acceptInvitation("wygasly", "NoweHaslo1"))
+            assertThatThrownBy(() -> invitationService.acceptInvitation("wygasly", "NoweHaslo1"))
                     .isInstanceOf(TokenExpiredException.class)
                     .hasMessageContaining("wygasł");
 
@@ -192,12 +185,10 @@ class InvitationServiceTest {
         @DisplayName("Wygasły token — nie ustawia hasła użytkownika")
         void shouldNotSetPasswordForExpiredToken() {
             InvitationToken expiredToken =
-                    new InvitationToken(
-                            testUser, "wygasly", LocalDateTime.now().minusHours(1));
+                    new InvitationToken(testUser, "wygasly", LocalDateTime.now().minusHours(1));
             when(tokenRepository.findByToken("wygasly")).thenReturn(Optional.of(expiredToken));
 
-            assertThatThrownBy(
-                    () -> invitationService.acceptInvitation("wygasly", "NoweHaslo1"));
+            assertThatThrownBy(() -> invitationService.acceptInvitation("wygasly", "NoweHaslo1"));
 
             verify(userRepository, never()).save(any());
         }
@@ -206,8 +197,7 @@ class InvitationServiceTest {
         @DisplayName("Prawidłowy token — hashuje nowe hasło i zapisuje użytkownika")
         void shouldHashAndSaveNewPassword() {
             InvitationToken validToken =
-                    new InvitationToken(
-                            testUser, "dobryToken", LocalDateTime.now().plusHours(72));
+                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 
@@ -218,11 +208,12 @@ class InvitationServiceTest {
         }
 
         @Test
-        @DisplayName("Prawidłowy token — usuwa token po ustawieniu hasła (brak możliwości ponownego użycia)")
+        @DisplayName(
+                "Prawidłowy token — usuwa token po ustawieniu hasła (brak możliwości ponownego"
+                        + " użycia)")
         void shouldDeleteTokenAfterSuccessfulAccept() {
             InvitationToken validToken =
-                    new InvitationToken(
-                            testUser, "dobryToken", LocalDateTime.now().plusHours(72));
+                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode(any())).thenReturn("hash");
 
@@ -235,8 +226,7 @@ class InvitationServiceTest {
         @DisplayName("Zużyty token — nie może być użyty ponownie (token usuniętym z bazy)")
         void shouldNotAllowReuse() {
             InvitationToken validToken =
-                    new InvitationToken(
-                            testUser, "dobryToken", LocalDateTime.now().plusHours(72));
+                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
             when(tokenRepository.findByToken("dobryToken"))
                     .thenReturn(Optional.of(validToken))
                     .thenReturn(Optional.empty());
@@ -244,8 +234,7 @@ class InvitationServiceTest {
 
             invitationService.acceptInvitation("dobryToken", "NoweHaslo1");
 
-            assertThatThrownBy(
-                            () -> invitationService.acceptInvitation("dobryToken", "InneHaslo1"))
+            assertThatThrownBy(() -> invitationService.acceptInvitation("dobryToken", "InneHaslo1"))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -253,8 +242,7 @@ class InvitationServiceTest {
         @DisplayName("Prawidłowy token — stare (puste) hasło nie pozostaje w bazie")
         void shouldReplaceEmptyPassword() {
             InvitationToken validToken =
-                    new InvitationToken(
-                            testUser, "dobryToken", LocalDateTime.now().plusHours(72));
+                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
             when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 

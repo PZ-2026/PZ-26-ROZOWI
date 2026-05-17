@@ -233,12 +233,12 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
                         + " IN (SELECT s.id FROM staircases s WHERE s.building_id = :buildingId)  "
                         + " OR t.apartment_id IN (SELECT ap2.id FROM apartments ap2     JOIN"
                         + " staircases s2 ON ap2.staircase_id = s2.id WHERE s2.building_id ="
-                        + " :buildingId)) AND (CAST(:dateFrom AS timestamp) IS NULL OR t.created_at >= :dateFrom) AND"
-                        + " (CAST(:dateTo AS timestamp) IS NULL OR t.created_at <= :dateTo) AND (:search IS NULL OR"
-                        + " LOWER(t.ticket_number) LIKE LOWER(CONCAT('%', :search, '%'))   OR"
-                        + " LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))   OR"
-                        + " LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%'))) ORDER BY"
-                        + " t.created_at DESC",
+                        + " :buildingId)) AND (CAST(:dateFrom AS timestamp) IS NULL OR t.created_at"
+                        + " >= :dateFrom) AND (CAST(:dateTo AS timestamp) IS NULL OR t.created_at"
+                        + " <= :dateTo) AND (:search IS NULL OR LOWER(t.ticket_number) LIKE"
+                        + " LOWER(CONCAT('%', :search, '%'))   OR LOWER(t.title) LIKE"
+                        + " LOWER(CONCAT('%', :search, '%'))   OR LOWER(t.description) LIKE"
+                        + " LOWER(CONCAT('%', :search, '%'))) ORDER BY t.created_at DESC",
             nativeQuery = true)
     List<Object[]> findWithFilters(
             @Param("status") String status,
@@ -278,12 +278,13 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
                         + " b.id WHERE t.is_deleted = false AND (t.apartment_id = :apartmentId OR"
                         + " t.staircase_id = :staircaseId   OR t.building_id = :buildingId) AND"
                         + " (:status IS NULL OR t.status = :status) AND (:categoryId IS NULL OR"
-                        + " t.category_id = :categoryId) AND (CAST(:dateFrom AS timestamp) IS NULL OR t.created_at >="
-                        + " :dateFrom) AND (CAST(:dateTo AS timestamp) IS NULL OR t.created_at <= :dateTo) AND"
-                        + " (:search IS NULL OR LOWER(t.ticket_number) LIKE LOWER(CONCAT('%',"
-                        + " :search, '%'))   OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search,"
-                        + " '%'))   OR LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%')))"
-                        + " ORDER BY t.created_at DESC",
+                        + " t.category_id = :categoryId) AND (CAST(:dateFrom AS timestamp) IS NULL"
+                        + " OR t.created_at >= :dateFrom) AND (CAST(:dateTo AS timestamp) IS NULL"
+                        + " OR t.created_at <= :dateTo) AND (:search IS NULL OR"
+                        + " LOWER(t.ticket_number) LIKE LOWER(CONCAT('%', :search, '%'))   OR"
+                        + " LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))   OR"
+                        + " LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%'))) ORDER BY"
+                        + " t.created_at DESC",
             nativeQuery = true)
     List<Object[]> findForResidentWithFilters(
             @Param("apartmentId") UUID apartmentId,
@@ -318,12 +319,13 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
                         + " = ap.id LEFT JOIN staircases st ON t.staircase_id = st.id LEFT JOIN"
                         + " buildings b ON t.building_id = b.id WHERE ass.id = :conservatorId AND"
                         + " t.is_deleted = false AND (:status IS NULL OR t.status = :status) AND"
-                        + " (:categoryId IS NULL OR t.category_id = :categoryId) AND (CAST(:dateFrom AS timestamp) IS"
-                        + " NULL OR t.created_at >= :dateFrom) AND (CAST(:dateTo AS timestamp) IS NULL OR t.created_at"
-                        + " <= :dateTo) AND (:search IS NULL OR LOWER(t.ticket_number) LIKE"
-                        + " LOWER(CONCAT('%', :search, '%'))   OR LOWER(t.title) LIKE"
-                        + " LOWER(CONCAT('%', :search, '%'))   OR LOWER(t.description) LIKE"
-                        + " LOWER(CONCAT('%', :search, '%'))) ORDER BY t.created_at DESC",
+                        + " (:categoryId IS NULL OR t.category_id = :categoryId) AND"
+                        + " (CAST(:dateFrom AS timestamp) IS NULL OR t.created_at >= :dateFrom) AND"
+                        + " (CAST(:dateTo AS timestamp) IS NULL OR t.created_at <= :dateTo) AND"
+                        + " (:search IS NULL OR LOWER(t.ticket_number) LIKE LOWER(CONCAT('%',"
+                        + " :search, '%'))   OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search,"
+                        + " '%'))   OR LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%')))"
+                        + " ORDER BY t.created_at DESC",
             nativeQuery = true)
     List<Object[]> findForConservatorWithFilters(
             @Param("conservatorId") UUID conservatorId,

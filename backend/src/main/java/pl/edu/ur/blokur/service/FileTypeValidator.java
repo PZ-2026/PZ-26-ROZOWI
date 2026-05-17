@@ -1,7 +1,7 @@
 package pl.edu.ur.blokur.service;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.Arrays;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +25,7 @@ public class FileTypeValidator {
      * @throws ResponseStatusException HTTP 415 gdy plik nie jest JPEG ani PNG
      */
     public void validateImage(MultipartFile file) {
-        byte[] header = readHeader(file, 4);
+        var header = readHeader(file, 4);
         if (!startsWith(header, JPEG_MAGIC) && !startsWith(header, PNG_MAGIC)) {
             throw new ResponseStatusException(
                     HttpStatus.UNSUPPORTED_MEDIA_TYPE,
@@ -40,7 +40,7 @@ public class FileTypeValidator {
      * @throws ResponseStatusException HTTP 415 gdy plik nie jest PDF
      */
     public void validatePdf(MultipartFile file) {
-        byte[] header = readHeader(file, 4);
+        var header = readHeader(file, 4);
         if (!startsWith(header, PDF_MAGIC)) {
             throw new ResponseStatusException(
                     HttpStatus.UNSUPPORTED_MEDIA_TYPE,
@@ -67,7 +67,7 @@ public class FileTypeValidator {
     }
 
     private byte[] readHeader(MultipartFile file, int length) {
-        try (InputStream is = file.getInputStream()) {
+        try (var is = file.getInputStream()) {
             return is.readNBytes(length);
         } catch (IOException e) {
             throw new ResponseStatusException(
@@ -76,14 +76,10 @@ public class FileTypeValidator {
     }
 
     boolean startsWith(byte[] data, byte[] magic) {
-        if (data.length < magic.length) {
+        if (data == null || data.length < magic.length) {
             return false;
         }
-        for (int i = 0; i < magic.length; i++) {
-            if (data[i] != magic[i]) {
-                return false;
-            }
-        }
-        return true;
+
+        return Arrays.equals(data, 0, magic.length, magic, 0, magic.length);
     }
 }

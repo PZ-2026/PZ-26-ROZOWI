@@ -14,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -91,11 +90,11 @@ public class AnnouncementController {
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<AnnouncementDto> createAnnouncement(
             @Valid @RequestPart("data") AnnouncementRequest request,
-            @RequestPart(value = "attachment", required = false) MultipartFile attachment) {
+            @RequestPart(value = "attachment", required = false) MultipartFile attachment,
+            Authentication auth) {
         if (attachment != null && !attachment.isEmpty()) {
             fileTypeValidator.validatePdf(attachment);
         }
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(announcementService.createAnnouncement(request, attachment, auth.getName()));
     }
@@ -113,11 +112,11 @@ public class AnnouncementController {
     public ResponseEntity<AnnouncementDto> updateAnnouncement(
             @PathVariable UUID id,
             @Valid @RequestPart("data") AnnouncementRequest request,
-            @RequestPart(value = "attachment", required = false) MultipartFile attachment) {
+            @RequestPart(value = "attachment", required = false) MultipartFile attachment,
+            Authentication auth) {
         if (attachment != null && !attachment.isEmpty()) {
             fileTypeValidator.validatePdf(attachment);
         }
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(
                 announcementService.updateAnnouncement(id, request, attachment, auth.getName()));
     }
@@ -130,8 +129,7 @@ public class AnnouncementController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ZARZADCA')")
-    public ResponseEntity<Void> deleteAnnouncement(@PathVariable UUID id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    public ResponseEntity<Void> deleteAnnouncement(@PathVariable UUID id, Authentication auth) {
         announcementService.deleteAnnouncement(id, auth.getName());
         return ResponseEntity.noContent().build();
     }

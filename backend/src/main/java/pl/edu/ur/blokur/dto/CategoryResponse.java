@@ -1,8 +1,10 @@
 package pl.edu.ur.blokur.dto;
 
 import java.util.UUID;
+import lombok.Data;
 
 /** DTO wyjściowe reprezentujące kategorię zgłoszenia zwracane klientom API. */
+@Data
 public class CategoryResponse {
 
     private UUID id;

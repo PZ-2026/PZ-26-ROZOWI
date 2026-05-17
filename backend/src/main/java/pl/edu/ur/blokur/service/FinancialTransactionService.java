@@ -1,7 +1,6 @@
 package pl.edu.ur.blokur.service;
 
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -10,12 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,7 +56,7 @@ public class FinancialTransactionService {
      * @throws NotFoundException jeśli lokal nie istnieje
      */
     public ApartmentTransactionsResponse getTransactionsForApartment(UUID apartmentId) {
-        Apartment apartment =
+        var apartment =
                 apartmentRepository
                         .findById(apartmentId)
                         .orElseThrow(
@@ -68,12 +64,12 @@ public class FinancialTransactionService {
                                         new NotFoundException(
                                                 "Lokal o ID " + apartmentId + " nie istnieje"));
 
-        List<FinancialTransactionResponse> transactions =
+        var transactions =
                 financialTransactionRepository
                         .findByApartmentIdOrderByTransactionDateDesc(apartmentId)
                         .stream()
                         .map(this::toResponse)
-                        .collect(Collectors.toList());
+                        .toList();
 
         return new ApartmentTransactionsResponse(apartment.getCurrentBalance(), transactions);
     }
@@ -94,7 +90,7 @@ public class FinancialTransactionService {
     @Transactional
     public FinancialTransactionResponse createTransaction(
             UUID apartmentId, FinancialTransactionRequest request, String userEmail) {
-        Apartment apartment =
+        var apartment =
                 apartmentRepository
                         .findById(apartmentId)
                         .orElseThrow(
@@ -102,7 +98,7 @@ public class FinancialTransactionService {
                                         new NotFoundException(
                                                 "Lokal o ID " + apartmentId + " nie istnieje"));
 
-        User user =
+        var user =
                 userRepository
                         .findByEmail(userEmail)
                         .orElseThrow(
@@ -112,7 +108,7 @@ public class FinancialTransactionService {
                                                         + userEmail
                                                         + " nie istnieje"));
 
-        FinancialTransaction transaction = new FinancialTransaction();
+        var transaction = new FinancialTransaction();
         transaction.setApartment(apartment);
         transaction.setType(request.getType());
         transaction.setAmount(request.getAmount());
@@ -120,13 +116,14 @@ public class FinancialTransactionService {
         transaction.setTransactionDate(request.getTransactionDate());
         transaction.setRecordedBy(user);
 
-        FinancialTransaction saved = financialTransactionRepository.save(transaction);
+        var saved = financialTransactionRepository.save(transaction);
 
-        BigDecimal currentBalance = apartment.getCurrentBalance();
+        var currentBalance = apartment.getCurrentBalance();
         if (currentBalance == null) {
             currentBalance = BigDecimal.ZERO;
         }
         apartment.setCurrentBalance(currentBalance.add(request.getAmount()));
+
         apartmentRepository.save(apartment);
 
         return toResponse(saved);
@@ -158,7 +155,7 @@ public class FinancialTransactionService {
      * @return podsumowanie zaimportowanych wierszy i błędów
      */
     public CsvImportResultDto importTransactionsFromCsv(MultipartFile file, String userEmail) {
-        User user =
+        var user =
                 userRepository
                         .findByEmail(userEmail)
                         .orElseThrow(
@@ -172,10 +169,10 @@ public class FinancialTransactionService {
         int importedCount = 0;
         int errorCount = 0;
 
-        Set<String> allowedTypes = new HashSet<>(Arrays.asList("WPLATA", "NALICZENIE", "KOREKTA"));
+        var allowedTypes = new HashSet<>(Arrays.asList("WPLATA", "NALICZENIE", "KOREKTA"));
 
-        try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
-                CSVParser csvParser =
+        try (var reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
+                var csvParser =
                         new CSVParser(
                                 reader,
                                 CSVFormat.DEFAULT
@@ -191,18 +188,18 @@ public class FinancialTransactionService {
                                         .setTrim(true)
                                         .build())) {
 
-            for (CSVRecord csvRecord : csvParser) {
+            for (var csvRecord : csvParser) {
                 int lineNumber =
                         (int) csvRecord.getRecordNumber()
                                 + 1; // getRecordNumber starts at 1, but we skip header, wait,
                 // getRecordNumber counts lines processed
 
                 try {
-                    String apartmentIdStr = csvRecord.get("apartment_id");
-                    String dateStr = csvRecord.get("date");
-                    String type = csvRecord.get("type");
-                    String amountStr = csvRecord.get("amount");
-                    String description = csvRecord.get("description");
+                    var apartmentIdStr = csvRecord.get("apartment_id");
+                    var dateStr = csvRecord.get("date");
+                    var type = csvRecord.get("type");
+                    var amountStr = csvRecord.get("amount");
+                    var description = csvRecord.get("description");
 
                     // Validate UUID
                     UUID apartmentId;
@@ -253,7 +250,7 @@ public class FinancialTransactionService {
                     }
 
                     // Validate Apartment existence
-                    Apartment apartment = apartmentRepository.findById(apartmentId).orElse(null);
+                    var apartment = apartmentRepository.findById(apartmentId).orElse(null);
                     if (apartment == null) {
                         errors.add(
                                 new CsvImportErrorDto(
@@ -305,7 +302,7 @@ public class FinancialTransactionService {
             String description,
             LocalDate transactionDate,
             User user) {
-        FinancialTransaction transaction = new FinancialTransaction();
+        var transaction = new FinancialTransaction();
         transaction.setApartment(apartment);
         transaction.setType(type);
         transaction.setAmount(amount);
@@ -315,11 +312,12 @@ public class FinancialTransactionService {
 
         financialTransactionRepository.save(transaction);
 
-        BigDecimal currentBalance = apartment.getCurrentBalance();
-        if (currentBalance == null) {
-            currentBalance = BigDecimal.ZERO;
-        }
+        var currentBalance =
+                apartment.getCurrentBalance() != null
+                        ? apartment.getCurrentBalance()
+                        : BigDecimal.ZERO;
         apartment.setCurrentBalance(currentBalance.add(amount));
+
         apartmentRepository.save(apartment);
     }
 }

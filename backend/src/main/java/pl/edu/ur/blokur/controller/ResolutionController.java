@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,10 +50,10 @@ public class ResolutionController {
     public ResponseEntity<Void> createResolution(
             @Valid @RequestBody CreateResolutionRequest request, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         resolutionService.createResolution(request, principal.getName());
-        return ResponseEntity.status(201).build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     /**
@@ -65,7 +66,7 @@ public class ResolutionController {
     @GetMapping
     public ResponseEntity<List<ResolutionDto>> getResolutions(Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(resolutionService.getResolutionsForUser(principal.getName()));
     }
@@ -81,7 +82,7 @@ public class ResolutionController {
     public ResponseEntity<ResolutionDetailDto> getResolutionDetails(
             @PathVariable UUID id, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(resolutionService.getResolutionDetails(id, principal.getName()));
     }
@@ -96,7 +97,7 @@ public class ResolutionController {
     @GetMapping(value = "/{id}/report", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> getResolutionReport(@PathVariable UUID id, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         byte[] pdfBytes = resolutionService.generateResolutionReport(id, principal.getName());
 
@@ -123,7 +124,7 @@ public class ResolutionController {
     public ResponseEntity<Void> castVote(
             @PathVariable UUID id, @RequestBody CastVoteRequest request, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         resolutionService.castVote(id, request, principal.getName());

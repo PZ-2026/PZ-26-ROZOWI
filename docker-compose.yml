@@ -21,6 +21,8 @@ services:
     restart: always
     ports:
       - "8080:8080"
+      # Odkomentuj poniższe i ustaw SPRING_PROFILES_ACTIVE=prod, aby włączyć HTTPS na porcie 8443
+      # - "8443:8443"
     depends_on:
       - db
     env_file:
@@ -32,6 +34,14 @@ services:
       - SPRING_FLYWAY_URL=jdbc:postgresql://db:5432/project
       - SPRING_FLYWAY_USER=admin
       - SPRING_FLYWAY_PASSWORD=admin
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      # Wymagane gdy SPRING_PROFILES_ACTIVE=prod:
+      - SSL_KEYSTORE_PATH=${SSL_KEYSTORE_PATH:-}
+      - SSL_KEYSTORE_PASSWORD=${SSL_KEYSTORE_PASSWORD:-}
+    # Opcjonalny mount katalogu z certyfikatem SSL (wymagany w trybie prod).
+    # Utwórz katalog ./certs, umieść w nim keystore.p12 i odkomentuj poniższe:
+    # volumes:
+    #   - ./certs:/certs:ro
 
 
 volumes:

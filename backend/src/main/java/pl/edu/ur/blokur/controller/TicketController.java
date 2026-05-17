@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.controller;
 
 import jakarta.validation.Valid;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -8,8 +9,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,9 +40,9 @@ public class TicketController {
 
     @PostMapping
     @PreAuthorize("hasRole('MIESZKANIEC')")
-    public ResponseEntity<TicketDetailDto> create(@Valid @RequestBody TicketRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        TicketDetailDto response = ticketService.create(request, auth.getName());
+    public ResponseEntity<TicketDetailDto> create(
+            @Valid @RequestBody TicketRequest request, Principal principal) {
+        var response = ticketService.create(request, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -58,13 +57,13 @@ public class TicketController {
                     LocalDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                     LocalDateTime dateTo,
-            @RequestParam(required = false) String search) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
+            @RequestParam(required = false) String search,
+            Principal principal) {
+        if (principal == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        TicketFilterParams filters = new TicketFilterParams();
+        var filters = new TicketFilterParams();
         filters.setStatus(status);
         filters.setCategoryId(categoryId);
         filters.setBuildingId(buildingId);
@@ -74,16 +73,15 @@ public class TicketController {
         filters.setDateTo(dateTo);
         filters.setSearch(search);
 
-        return ResponseEntity.ok(ticketService.getAll(auth.getName(), filters));
+        return ResponseEntity.ok(ticketService.getAll(principal.getName(), filters));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TicketDetailDto> getById(@PathVariable UUID id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
+    public ResponseEntity<TicketDetailDto> getById(@PathVariable UUID id, Principal principal) {
+        if (principal == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(ticketService.getById(id, auth.getName()));
+        return ResponseEntity.ok(ticketService.getById(id, principal.getName()));
     }
 
     /**
@@ -93,17 +91,17 @@ public class TicketController {
     @PatchMapping("/{id}/assign")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<TicketDetailDto> assignTicket(
-            @PathVariable UUID id, @Valid @RequestBody TicketAssignRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ticketService.assignTicket(id, request, auth.getName()));
+            @PathVariable UUID id,
+            @Valid @RequestBody TicketAssignRequest request,
+            Principal principal) {
+        return ResponseEntity.ok(ticketService.assignTicket(id, request, principal.getName()));
     }
 
     /** Zamyka zgłoszenie i generuje protokół PDF. Dostępne tylko dla roli ZARZADCA. */
     @PatchMapping("/{id}/close")
     @PreAuthorize("hasRole('ZARZADCA')")
-    public ResponseEntity<TicketDetailDto> closeTicket(@PathVariable UUID id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ticketService.closeTicket(id, auth.getName()));
+    public ResponseEntity<TicketDetailDto> closeTicket(@PathVariable UUID id, Principal principal) {
+        return ResponseEntity.ok(ticketService.closeTicket(id, principal.getName()));
     }
 
     /**
@@ -113,32 +111,34 @@ public class TicketController {
     @PatchMapping("/{id}/reject")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<TicketDetailDto> rejectTicket(
-            @PathVariable UUID id, @Valid @RequestBody TicketRejectRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ticketService.rejectTicket(id, request, auth.getName()));
+            @PathVariable UUID id,
+            @Valid @RequestBody TicketRejectRequest request,
+            Principal principal) {
+        return ResponseEntity.ok(ticketService.rejectTicket(id, request, principal.getName()));
     }
 
     @PatchMapping("/{id}/start")
     @PreAuthorize("hasRole('KONSERWATOR')")
-    public ResponseEntity<TicketDetailDto> startWork(@PathVariable UUID id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ticketService.startWork(id, auth.getName()));
+    public ResponseEntity<TicketDetailDto> startWork(@PathVariable UUID id, Principal principal) {
+        return ResponseEntity.ok(ticketService.startWork(id, principal.getName()));
     }
 
     @PatchMapping("/{id}/suspend")
     @PreAuthorize("hasRole('KONSERWATOR')")
     public ResponseEntity<TicketDetailDto> suspendWork(
-            @PathVariable UUID id, @Valid @RequestBody TicketSuspendRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ticketService.suspendWork(id, request, auth.getName()));
+            @PathVariable UUID id,
+            @Valid @RequestBody TicketSuspendRequest request,
+            Principal principal) {
+        return ResponseEntity.ok(ticketService.suspendWork(id, request, principal.getName()));
     }
 
     @PostMapping("/{id}/completion")
     @PreAuthorize("hasRole('KONSERWATOR')")
     public ResponseEntity<TicketDetailDto> completeWork(
-            @PathVariable UUID id, @Valid @RequestBody TicketCompletionRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ticketService.completeWork(id, request, auth.getName()));
+            @PathVariable UUID id,
+            @Valid @RequestBody TicketCompletionRequest request,
+            Principal principal) {
+        return ResponseEntity.ok(ticketService.completeWork(id, request, principal.getName()));
     }
 
     /**
@@ -152,8 +152,9 @@ public class TicketController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ZARZADCA') or hasRole('KONSERWATOR')")
     public ResponseEntity<TicketDetailDto> changeStatus(
-            @PathVariable UUID id, @Valid @RequestBody TicketStatusChangeRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(ticketService.changeStatus(id, request, auth.getName()));
+            @PathVariable UUID id,
+            @Valid @RequestBody TicketStatusChangeRequest request,
+            Principal principal) {
+        return ResponseEntity.ok(ticketService.changeStatus(id, request, principal.getName()));
     }
 }

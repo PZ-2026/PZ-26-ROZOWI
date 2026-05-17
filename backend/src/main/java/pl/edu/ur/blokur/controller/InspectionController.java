@@ -64,7 +64,7 @@ public class InspectionController {
     @GetMapping
     public ResponseEntity<List<InspectionResponse>> getAll(Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(inspectionService.getAll(principal.getName()));
     }
