@@ -15,11 +15,17 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 /** Encja reprezentująca lokal mieszkalny lub użytkowy w budynku. */
 @Entity
 @Table(name = "apartments")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Apartment {
 
     @Id
@@ -50,150 +56,6 @@ public class Apartment {
 
     @OneToMany(mappedBy = "apartment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserApartment> userApartments = new ArrayList<>();
-
-    /**
-     * Zwraca unikalny identyfikator lokalu.
-     *
-     * @return identyfikator UUID
-     */
-    public UUID getId() {
-        return id;
-    }
-
-    /**
-     * Ustawia unikalny identyfikator lokalu.
-     *
-     * @param id identyfikator UUID
-     */
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    /**
-     * Zwraca numer lokalu.
-     *
-     * @return numer lokalu
-     */
-    public String getNumber() {
-        return number;
-    }
-
-    /**
-     * Ustawia numer lokalu.
-     *
-     * @param number numer lokalu
-     */
-    public void setNumber(String number) {
-        this.number = number;
-    }
-
-    /**
-     * Zwraca aktualne saldo rozliczeniowe lokalu.
-     *
-     * @return saldo w PLN
-     */
-    public BigDecimal getCurrentBalance() {
-        return currentBalance;
-    }
-
-    /**
-     * Ustawia aktualne saldo rozliczeniowe lokalu.
-     *
-     * @param currentBalance saldo w PLN
-     */
-    public void setCurrentBalance(BigDecimal currentBalance) {
-        this.currentBalance = currentBalance;
-    }
-
-    /**
-     * Zwraca piętro lokalu.
-     *
-     * @return numer piętra lub {@code null}
-     */
-    public Integer getFloor() {
-        return floor;
-    }
-
-    /**
-     * Ustawia piętro lokalu.
-     *
-     * @param floor numer piętra
-     */
-    public void setFloor(Integer floor) {
-        this.floor = floor;
-    }
-
-    /**
-     * Zwraca powierzchnię lokalu w m².
-     *
-     * @return powierzchnia lub {@code null}
-     */
-    public BigDecimal getAreaM2() {
-        return areaM2;
-    }
-
-    /**
-     * Ustawia powierzchnię lokalu w m².
-     *
-     * @param areaM2 powierzchnia w m²
-     */
-    public void setAreaM2(BigDecimal areaM2) {
-        this.areaM2 = areaM2;
-    }
-
-    /**
-     * Zwraca typ własności lokalu (WLASNOSCIOWY lub NAJEM).
-     *
-     * @return typ własności lub {@code null}
-     */
-    public String getOwnershipType() {
-        return ownershipType;
-    }
-
-    /**
-     * Ustawia typ własności lokalu.
-     *
-     * @param ownershipType WLASNOSCIOWY lub NAJEM
-     */
-    public void setOwnershipType(String ownershipType) {
-        this.ownershipType = ownershipType;
-    }
-
-    /**
-     * Zwraca klatkę schodową, w której znajduje się lokal.
-     *
-     * @return encja klatki schodowej
-     */
-    public Staircase getStaircase() {
-        return staircase;
-    }
-
-    /**
-     * Ustawia klatkę schodową, w której znajduje się lokal.
-     *
-     * @param staircase encja klatki schodowej
-     */
-    public void setStaircase(Staircase staircase) {
-        this.staircase = staircase;
-    }
-
-    /**
-     * Zwraca listę przypisań użytkowników do tego lokalu.
-     *
-     * @return lista powiązań UserApartment
-     */
-    public List<UserApartment> getUserApartments() {
-        return userApartments;
-    }
-
-    /**
-     * Ustawia listę przypisań użytkowników do tego lokalu.
-     *
-     * @param userApartments lista powiązań UserApartment
-     */
-    public void setUserApartments(List<UserApartment> userApartments) {
-        this.userApartments = userApartments;
-    }
 
     /**
      * Aktualizuje saldo lokalu poprzez dodanie podanej kwoty. Dodatnia kwota zwiększa saldo

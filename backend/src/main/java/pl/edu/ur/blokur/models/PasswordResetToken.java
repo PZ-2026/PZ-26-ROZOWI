@@ -3,10 +3,14 @@ package pl.edu.ur.blokur.models;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 /** Encja jednorazowego tokenu służącego do resetowania hasła lub zapraszania nowego użytkownika. */
 @Entity
 @Table(name = "password_reset_tokens")
+@Getter
+@Setter
 public class PasswordResetToken {
 
     @Id
@@ -24,9 +28,6 @@ public class PasswordResetToken {
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
 
-    /** Konstruktor bezargumentowy wymagany przez JPA. */
-    public PasswordResetToken() {}
-
     /**
      * Tworzy token resetowania hasła powiązany z podanym użytkownikiem.
      *
@@ -38,41 +39,5 @@ public class PasswordResetToken {
         this.user = user;
         this.token = token;
         this.expiryDate = expiryDate;
-    }
-
-    /**
-     * Zwraca unikalny identyfikator tokenu.
-     *
-     * @return identyfikator UUID
-     */
-    public UUID getTokenId() {
-        return tokenId;
-    }
-
-    /**
-     * Zwraca użytkownika, dla którego wystawiono token.
-     *
-     * @return encja użytkownika
-     */
-    public User getUser() {
-        return user;
-    }
-
-    /**
-     * Zwraca wartość tokenu (ciąg znaków wysyłany e-mailem).
-     *
-     * @return wartość tokenu
-     */
-    public String getToken() {
-        return token;
-    }
-
-    /**
-     * Zwraca datę i czas wygaśnięcia tokenu.
-     *
-     * @return data i czas wygaśnięcia
-     */
-    public LocalDateTime getExpiryDate() {
-        return expiryDate;
     }
 }
