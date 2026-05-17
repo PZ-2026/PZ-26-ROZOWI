@@ -5,7 +5,7 @@ COPY gradlew .
 COPY gradle gradle
 COPY build.gradle* .
 COPY settings.gradle* .
-#COPY src src
+COPY pdf-lib pdf-lib
 
 RUN sed -i 's/\r$//' gradlew
 RUN chmod +x ./gradlew

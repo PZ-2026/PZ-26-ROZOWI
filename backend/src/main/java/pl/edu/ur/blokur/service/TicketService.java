@@ -1,7 +1,5 @@
 package pl.edu.ur.blokur.service;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,12 +21,10 @@ import pl.edu.ur.blokur.dto.TicketSuspendRequest;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
-import pl.edu.ur.blokur.models.Document;
 import pl.edu.ur.blokur.models.Ticket;
 import pl.edu.ur.blokur.models.TicketHistory;
 import pl.edu.ur.blokur.models.TicketStatus;
 import pl.edu.ur.blokur.models.User;
-import pl.edu.ur.blokur.repository.DocumentRepository;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
 import pl.edu.ur.blokur.repository.TicketHistoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
@@ -42,7 +38,7 @@ public class TicketService {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketNumberGenerator ticketNumberGenerator;
     private final TicketHistoryRepository ticketHistoryRepository;
-    private final DocumentRepository documentRepository;
+    private final DocumentService documentService;
     private final PdfGeneratorService pdfGeneratorService;
     private final TicketStateMachine ticketStateMachine;
     private final BusinessHoursCalculator businessHoursCalculator;
@@ -54,7 +50,7 @@ public class TicketService {
             TicketCategoryRepository ticketCategoryRepository,
             TicketNumberGenerator ticketNumberGenerator,
             TicketHistoryRepository ticketHistoryRepository,
-            DocumentRepository documentRepository,
+            DocumentService documentService,
             PdfGeneratorService pdfGeneratorService,
             TicketStateMachine ticketStateMachine,
             BusinessHoursCalculator businessHoursCalculator,
@@ -64,7 +60,7 @@ public class TicketService {
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketNumberGenerator = ticketNumberGenerator;
         this.ticketHistoryRepository = ticketHistoryRepository;
-        this.documentRepository = documentRepository;
+        this.documentService = documentService;
         this.pdfGeneratorService = pdfGeneratorService;
         this.ticketStateMachine = ticketStateMachine;
         this.businessHoursCalculator = businessHoursCalculator;
@@ -374,31 +370,15 @@ public class TicketService {
                         beforeImages,
                         afterImages);
 
-        try {
-            byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(pdfRequest);
-            var dirPath = Paths.get("uploads/documents");
-            if (!Files.exists(dirPath)) {
-                Files.createDirectories(dirPath);
-            }
-            var fileName =
-                    "protokol-"
-                            + ticket.getTicketNumber()
-                            + "-"
-                            + System.currentTimeMillis()
-                            + ".pdf";
-            var filePath = dirPath.resolve(fileName);
-            Files.write(filePath, pdfBytes);
-
-            var document = new Document();
-            document.setType("PROTOKOL");
-            document.setTitle("Protokół odbioru - " + ticket.getTicketNumber());
-            document.setFileUrl(filePath.toString());
-            document.setTicket(ticket);
-            document.setOwnerUser(manager);
-            documentRepository.save(document);
-        } catch (Exception e) {
-            throw new RuntimeException("Błąd podczas generowania i zapisu pliku PDF", e);
-        }
+        byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(pdfRequest);
+        documentService.storeGeneratedDocument(
+                "PROTOKOL",
+                "Protokół odbioru - " + ticket.getTicketNumber(),
+                pdfBytes,
+                manager,
+                ticket.getApartment(),
+                ticket,
+                null);
 
         ticket.setStatus(TicketStatus.ZAMKNIETE);
         ticket.setClosedAt(LocalDateTime.now());
