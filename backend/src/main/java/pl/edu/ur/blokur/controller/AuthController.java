@@ -137,8 +137,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Nieprawidłowy email lub hasło"));
         } catch (Exception e) {
-            System.out.println("UNHANDLED EXCEPTION:" + e.getMessage());
-            return null;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Nieoczekiwany błąd serwera"));
         }
     }
 

@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,16 +30,17 @@ public class TicketCommentController {
     @PostMapping("/{id}/comments")
     @PreAuthorize("hasRole('ZARZADCA') or hasRole('KONSERWATOR') or hasRole('MIESZKANIEC')")
     public ResponseEntity<TicketCommentDto> addComment(
-            @PathVariable UUID id, @Valid @RequestBody TicketCommentRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            @PathVariable UUID id,
+            @Valid @RequestBody TicketCommentRequest request,
+            Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ticketCommentService.addComment(id, request, auth.getName()));
     }
 
     @GetMapping("/{id}/comments")
     @PreAuthorize("hasRole('ZARZADCA') or hasRole('KONSERWATOR') or hasRole('MIESZKANIEC')")
-    public ResponseEntity<List<TicketCommentDto>> getComments(@PathVariable UUID id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    public ResponseEntity<List<TicketCommentDto>> getComments(
+            @PathVariable UUID id, Authentication auth) {
         return ResponseEntity.ok(ticketCommentService.getComments(id, auth.getName()));
     }
 }

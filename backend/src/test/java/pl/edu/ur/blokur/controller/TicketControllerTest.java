@@ -3,7 +3,6 @@ package pl.edu.ur.blokur.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -128,6 +127,7 @@ class TicketControllerTest {
 
             mockMvc.perform(
                             post("/api/tickets")
+                                    .principal(() -> "test@blokur.pl")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(validRequest)))
                     .andExpect(status().isCreated())
@@ -195,6 +195,7 @@ class TicketControllerTest {
 
             mockMvc.perform(
                             post("/api/tickets")
+                                    .principal(() -> "test@blokur.pl")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(validRequest)))
                     .andExpect(status().isNotFound());
@@ -210,6 +211,7 @@ class TicketControllerTest {
 
             mockMvc.perform(
                             post("/api/tickets")
+                                    .principal(() -> "test@blokur.pl")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(validRequest)))
                     .andExpect(status().isUnprocessableEntity());
@@ -230,7 +232,7 @@ class TicketControllerTest {
             when(ticketService.getAll(any(), any(TicketFilterParams.class)))
                     .thenReturn(List.of(sampleSummary));
 
-            mockMvc.perform(get("/api/tickets").with(user("test@blokur.pl")))
+            mockMvc.perform(get("/api/tickets").principal(() -> "test@blokur.pl"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$[0].ticketNumber").value("ZGL-2026-0001"))
@@ -242,7 +244,7 @@ class TicketControllerTest {
         void shouldReturn200WithEmptyList() throws Exception {
             when(ticketService.getAll(any(), any(TicketFilterParams.class))).thenReturn(List.of());
 
-            mockMvc.perform(get("/api/tickets").with(user("test@blokur.pl")))
+            mockMvc.perform(get("/api/tickets").principal(() -> "test@blokur.pl"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$").isEmpty());
@@ -256,7 +258,7 @@ class TicketControllerTest {
 
             mockMvc.perform(
                             get("/api/tickets")
-                                    .with(user("test@blokur.pl"))
+                                    .principal(() -> "test@blokur.pl")
                                     .param("status", "NOWE"))
                     .andExpect(status().isOk());
         }
@@ -268,7 +270,7 @@ class TicketControllerTest {
 
             mockMvc.perform(
                             get("/api/tickets")
-                                    .with(user("test@blokur.pl"))
+                                    .principal(() -> "test@blokur.pl")
                                     .param("categoryId", categoryId.toString()))
                     .andExpect(status().isOk());
         }
@@ -287,7 +289,7 @@ class TicketControllerTest {
         void shouldReturn200WithTicketDetails() throws Exception {
             when(ticketService.getById(eq(ticketId), any())).thenReturn(sampleDetail);
 
-            mockMvc.perform(get("/api/tickets/{id}", ticketId).with(user("test@blokur.pl")))
+            mockMvc.perform(get("/api/tickets/{id}", ticketId).principal(() -> "test@blokur.pl"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(ticketId.toString()))
                     .andExpect(jsonPath("$.ticketNumber").value("ZGL-2026-0001"))
@@ -302,7 +304,7 @@ class TicketControllerTest {
                     .thenThrow(
                             new NotFoundException("Zgłoszenie o ID " + ticketId + " nie istnieje"));
 
-            mockMvc.perform(get("/api/tickets/{id}", ticketId).with(user("test@blokur.pl")))
+            mockMvc.perform(get("/api/tickets/{id}", ticketId).principal(() -> "test@blokur.pl"))
                     .andExpect(status().isNotFound());
         }
 
@@ -312,7 +314,7 @@ class TicketControllerTest {
             when(ticketService.getById(eq(ticketId), any()))
                     .thenThrow(new BusinessValidationException("Brak dostępu do zgłoszenia"));
 
-            mockMvc.perform(get("/api/tickets/{id}", ticketId).with(user("test@blokur.pl")))
+            mockMvc.perform(get("/api/tickets/{id}", ticketId).principal(() -> "test@blokur.pl"))
                     .andExpect(status().isUnprocessableEntity());
         }
 
@@ -323,7 +325,7 @@ class TicketControllerTest {
 
             when(ticketService.getById(eq(ticketId), any())).thenReturn(sampleDetail);
 
-            mockMvc.perform(get("/api/tickets/{id}", ticketId).with(user("test@blokur.pl")))
+            mockMvc.perform(get("/api/tickets/{id}", ticketId).principal(() -> "test@blokur.pl"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.internalNote").doesNotExist());
         }
@@ -335,7 +337,7 @@ class TicketControllerTest {
 
             when(ticketService.getById(eq(ticketId), any())).thenReturn(sampleDetail);
 
-            mockMvc.perform(get("/api/tickets/{id}", ticketId).with(user("test@blokur.pl")))
+            mockMvc.perform(get("/api/tickets/{id}", ticketId).principal(() -> "test@blokur.pl"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.internalNote").value("Notatka wewnętrzna dla zarządcy"));
         }
