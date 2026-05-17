@@ -45,6 +45,7 @@ val bottomNavItems = listOf(
 /** Zestaw zakładek – dla zarządcy (z nieruchomościami, użytkownikami i kategoriami). */
 val zarzadcaNavItems = listOf(
     BottomNavItem("Zgłoszenia", Icons.Outlined.Build, NavBarOption.TICKETS),
+    BottomNavItem("Finanse", Icons.Outlined.DateRange, NavBarOption.FINANCES),
     BottomNavItem("Nieruchomości", Icons.Outlined.Domain, NavBarOption.PROPERTIES),
     BottomNavItem("Uchwały", Icons.Outlined.Gavel, NavBarOption.RESOLUTIONS),
     BottomNavItem("Przeglądy", Icons.Outlined.Build, NavBarOption.INSPECTIONS),

@@ -38,6 +38,16 @@ interface FinancialApiService {
         @Query("sort") sort: String? = null
     ): Response<List<ApartmentBalanceItemDto>>
 
+    /** GET /api/pdf/balances/pdf — pobierz PDF z zestawieniem */
+    @retrofit2.http.Headers("Accept: application/pdf")
+    @GET("api/pdf/balances/pdf")
+    suspend fun getApartmentBalancesPdf(
+        @Query("propertyId") propertyId: String? = null,
+        @Query("minDebt") minDebt: String? = null,
+        @Query("minDaysOverdue") minDaysOverdue: Long? = null,
+        @Query("sort") sort: String? = null
+    ): Response<okhttp3.ResponseBody>
+
     /** POST /api/finance/import — masowy import transakcji z CSV */
     @Multipart
     @POST("api/finance/import")
@@ -45,4 +55,3 @@ interface FinancialApiService {
         @Part file: MultipartBody.Part
     ): Response<CsvImportResultDto>
 }
-

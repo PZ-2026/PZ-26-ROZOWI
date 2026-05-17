@@ -2,6 +2,7 @@ package pl.edu.ur.blokur.ui.views.finances.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -36,12 +38,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -54,11 +60,10 @@ import pl.edu.ur.blokur.dtos.ApartmentBalanceItemDto
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.ApartmentBalancesViewModel
+import pl.edu.ur.blokur.ui.views.finances.viewmodels.BalancesEvent
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.BalancesFilterState
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.BalancesUiState
 import java.math.BigDecimal
-
-private const val API_BASE_URL = "https://blokur.pl"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,10 +73,19 @@ fun ApartmentBalancesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filterState by viewModel.filterState.collectAsState()
-    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is BalancesEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -124,21 +138,34 @@ fun ApartmentBalancesScreen(
                 onApply = viewModel::load
             )
             Spacer(Modifier.height(12.dp))
+
+            val isDownloading = (uiState as? BalancesUiState.Success)?.isDownloadingPdf == true
+
             Button(
-                onClick = {
-                    val url = viewModel.buildPdfUrl(API_BASE_URL)
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                },
+                onClick = viewModel::downloadPdf,
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isDownloading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Rounded.PictureAsPdf, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Pobierz zestawienie PDF", fontWeight = FontWeight.SemiBold)
+                AnimatedContent(isDownloading, label = "pdf_dl") { downloading ->
+                    if (downloading) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Generuję PDF...")
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.PictureAsPdf, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Pobierz zestawienie PDF", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(12.dp))
 
@@ -148,6 +175,7 @@ fun ApartmentBalancesScreen(
                     title = "Błąd",
                     description = s.message
                 )
+
                 is BalancesUiState.Success -> {
                     if (s.items.isEmpty()) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

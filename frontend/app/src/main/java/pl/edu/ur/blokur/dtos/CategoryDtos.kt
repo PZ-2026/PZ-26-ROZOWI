@@ -7,7 +7,8 @@ package pl.edu.ur.blokur.dtos
  */
 data class AdminCategoryDto(
     val id: String,
-    val name: String
+    val name: String,
+    val slaHours: Int? = null
 )
 
 /** Request do POST /api/admin/categories i PUT /api/admin/categories/{id} */

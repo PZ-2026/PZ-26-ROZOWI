@@ -42,10 +42,11 @@ public class PdfController {
      * @param userRepository repozytorium użytkowników (do ustalenia owner przy archiwizacji)
      */
     public PdfController(
-            PdfGeneratorService pdfGeneratorService,
-            ApartmentBalanceService apartmentBalanceService,
-            DocumentService documentService,
-            UserRepository userRepository) {
+        PdfGeneratorService pdfGeneratorService,
+        ApartmentBalanceService apartmentBalanceService,
+        DocumentService documentService,
+        UserRepository userRepository
+    ) {
         this.pdfGeneratorService = pdfGeneratorService;
         this.apartmentBalanceService = apartmentBalanceService;
         this.documentService = documentService;
@@ -60,13 +61,19 @@ public class PdfController {
      */
     @PostMapping("/work-acceptance-protocol")
     public ResponseEntity<byte[]> generateWorkAcceptanceProtocol(
-            @RequestBody WorkAcceptanceProtocolRequest request) {
-        byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(request);
+        @RequestBody WorkAcceptanceProtocolRequest request
+    ) {
+        byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(
+            request
+        );
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
-                ContentDisposition.inline().filename("protokol-odbioru-prac.pdf").build());
+            ContentDisposition.inline()
+                .filename("protokol-odbioru-prac.pdf")
+                .build()
+        );
 
         return ResponseEntity.ok().headers(headers).body(pdfBytes);
     }
@@ -85,39 +92,50 @@ public class PdfController {
      * @param save gdy {@code true} archiwizuje wygenerowany PDF w bazie dokumentów
      * @return plik PDF z zestawieniem
      */
-    @GetMapping("/balances")
+    @GetMapping("/balances/pdf")
     @PreAuthorize("hasRole('ZARZADCA')")
     public ResponseEntity<byte[]> generateBalancesReport(
-            @RequestParam(required = false) UUID propertyId,
-            @RequestParam(required = false) BigDecimal minDebt,
-            @RequestParam(required = false) Long minDaysOverdue,
-            @RequestParam(required = false, defaultValue = "debt_desc") String sort,
-            @RequestParam(required = false, defaultValue = "false") boolean save) {
+        @RequestParam(required = false) UUID propertyId,
+        @RequestParam(required = false) BigDecimal minDebt,
+        @RequestParam(required = false) Long minDaysOverdue,
+        @RequestParam(required = false, defaultValue = "debt_desc") String sort,
+        @RequestParam(required = false, defaultValue = "false") boolean save
+    ) {
         boolean sortDesc = !"debt_asc".equalsIgnoreCase(sort);
         List<ApartmentBalanceResponse> rows =
-                apartmentBalanceService.getBalances(propertyId, minDebt, minDaysOverdue, sortDesc);
+            apartmentBalanceService.getBalances(
+                propertyId,
+                minDebt,
+                minDaysOverdue,
+                sortDesc
+            );
         byte[] pdfBytes = pdfGeneratorService.generateBalancesReport(rows);
 
         if (save) {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Authentication auth =
+                SecurityContextHolder.getContext().getAuthentication();
             userRepository
-                    .findByEmail(auth.getName())
-                    .ifPresent(
-                            owner ->
-                                    documentService.storeGeneratedDocument(
-                                            "RAPORT_SALD",
-                                            "Zestawienie sald i zaległości",
-                                            pdfBytes,
-                                            owner,
-                                            null,
-                                            null,
-                                            null));
+                .findByEmail(auth.getName())
+                .ifPresent(owner ->
+                    documentService.storeGeneratedDocument(
+                        "RAPORT_SALD",
+                        "Zestawienie sald i zaległości",
+                        pdfBytes,
+                        owner,
+                        null,
+                        null,
+                        null
+                    )
+                );
         }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
-                ContentDisposition.inline().filename("zestawienie-zaleglosci.pdf").build());
+            ContentDisposition.inline()
+                .filename("zestawienie-zaleglosci.pdf")
+                .build()
+        );
 
         return ResponseEntity.ok().headers(headers).body(pdfBytes);
     }

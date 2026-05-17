@@ -34,4 +34,21 @@ class ApartmentBalanceService @Inject constructor(
             resp.body() ?: emptyList()
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
+
+    /** Pobiera zestawienie sald w formacie PDF (bajty). */
+    suspend fun getBalancesPdf(
+        propertyId: String? = null,
+        minDebt: String? = null,
+        minDaysOverdue: Long? = null,
+        sort: String = "debt_desc"
+    ): ByteArray {
+        val resp = api.getApartmentBalancesPdf(propertyId, minDebt, minDaysOverdue, sort)
+        if (!resp.isSuccessful) throw Exception(
+            when (resp.code()) {
+                403 -> "Brak uprawnień do pobierania PDF."
+                else -> "Błąd pobierania PDF (${resp.code()})"
+            }
+        )
+        return resp.body()?.bytes() ?: throw Exception("Pusta odpowiedź PDF")
+    }
 }
