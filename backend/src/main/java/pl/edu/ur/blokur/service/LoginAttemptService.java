@@ -83,14 +83,29 @@ public class LoginAttemptService {
             this.attempts++;
         }
 
+        /**
+         * Zwraca bieżącą liczbę nieudanych prób logowania.
+         *
+         * @return liczba prób
+         */
         public int getAttempts() {
             return attempts;
         }
 
+        /**
+         * Zwraca czas, do którego konto jest zablokowane.
+         *
+         * @return czas wygaśnięcia blokady lub {@code null}, gdy brak blokady
+         */
         public LocalDateTime getLockedUntil() {
             return lockedUntil;
         }
 
+        /**
+         * Ustawia czas wygaśnięcia blokady konta.
+         *
+         * @param lockedUntil czas wygaśnięcia blokady
+         */
         public void setLockedUntil(LocalDateTime lockedUntil) {
             this.lockedUntil = lockedUntil;
         }

@@ -17,6 +17,17 @@ public class TicketImageDto {
     private LocalDateTime uploadedAt;
     private String url;
 
+    /**
+     * Tworzy DTO zdjęcia przypisanego do zgłoszenia.
+     *
+     * @param id identyfikator zdjęcia
+     * @param ticketId identyfikator zgłoszenia
+     * @param uploaderId identyfikator użytkownika, który wgrał zdjęcie
+     * @param imageType typ zdjęcia (BEFORE/AFTER)
+     * @param originalFilename oryginalna nazwa pliku
+     * @param uploadedAt data i czas wgrania
+     * @param url URL dostępu do zdjęcia
+     */
     public TicketImageDto(
             UUID id,
             UUID ticketId,

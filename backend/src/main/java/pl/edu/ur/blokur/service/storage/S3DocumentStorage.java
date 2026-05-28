@@ -42,18 +42,38 @@ public class S3DocumentStorage implements DocumentStorage {
                         + " credentials. Włącz storage.type=local lub zaimplementuj S3.");
     }
 
+    /**
+     * Pobiera plik z bucketa S3 jako zasób Spring.
+     *
+     * @param key klucz obiektu w S3
+     * @return zasób ({@link Resource}) gotowy do odczytu
+     * @throws UnsupportedOperationException zawsze — implementacja S3 nie jest jeszcze gotowa
+     */
     @Override
     public Resource load(String key) {
         throw new UnsupportedOperationException(
                 "S3 storage nie jest jeszcze zaimplementowany — pobieranie plików.");
     }
 
+    /**
+     * Sprawdza, czy obiekt o podanym kluczu istnieje w buckecie S3.
+     *
+     * @param key klucz obiektu w S3
+     * @return {@code true} jeśli obiekt istnieje
+     * @throws UnsupportedOperationException zawsze — implementacja S3 nie jest jeszcze gotowa
+     */
     @Override
     public boolean exists(String key) {
         throw new UnsupportedOperationException(
                 "S3 storage nie jest jeszcze zaimplementowany — sprawdzanie istnienia.");
     }
 
+    /**
+     * Usuwa obiekt o podanym kluczu z bucketa S3.
+     *
+     * @param key klucz obiektu w S3
+     * @throws UnsupportedOperationException zawsze — implementacja S3 nie jest jeszcze gotowa
+     */
     @Override
     public void delete(String key) {
         throw new UnsupportedOperationException(

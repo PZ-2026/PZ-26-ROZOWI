@@ -189,5 +189,116 @@ class TicketImageServiceTest {
                     .isInstanceOf(BusinessValidationException.class)
                     .hasMessageContaining("Zgłoszenie nie jest przypisane do tego konserwatora");
         }
+
+        @Test
+        @DisplayName("Konserwator bez przypisania nie może wgrać zdjęcia AFTER (ticket.assignedTo null)")
+        void shouldDenyConservatorWhenTicketHasNoAssignment() {
+            ticket.setAssignedTo(null);
+
+            MockMultipartFile file =
+                    new MockMultipartFile("file", "test.jpg", "image/jpeg", "data".getBytes());
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(conservator.getEmail()))
+                    .thenReturn(Optional.of(conservator));
+
+            assertThatThrownBy(
+                            () ->
+                                    ticketImageService.uploadImage(
+                                            ticketId,
+                                            file,
+                                            TicketImageType.AFTER,
+                                            conservator.getEmail()))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Zgłoszenie nie jest przypisane do tego konserwatora");
+        }
+    }
+
+    @Nested
+    @DisplayName("getImagesForTicket — pobieranie listy zdjęć")
+    class GetImagesForTicketTests {
+
+        @Test
+        @DisplayName("Zarządca widzi zdjęcia wszystkich zgłoszeń")
+        void zarzadcaCanViewImages() {
+            User zarzadca = new User();
+            zarzadca.setId(UUID.randomUUID());
+            zarzadca.setRole("ZARZADCA");
+            zarzadca.setEmail("zarzadca@test.com");
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(zarzadca.getEmail())).thenReturn(Optional.of(zarzadca));
+            when(ticketImageRepository.findByTicketIdOrderByUploadedAtAsc(ticketId))
+                    .thenReturn(java.util.Collections.emptyList());
+
+            var result = ticketImageService.getImagesForTicket(ticketId, zarzadca.getEmail());
+
+            org.assertj.core.api.Assertions.assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec może przeglądać zdjęcia własnego zgłoszenia")
+        void residentCanViewOwnTicketImages() {
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(resident.getEmail())).thenReturn(Optional.of(resident));
+            when(ticketImageRepository.findByTicketIdOrderByUploadedAtAsc(ticketId))
+                    .thenReturn(java.util.Collections.emptyList());
+
+            var result = ticketImageService.getImagesForTicket(ticketId, resident.getEmail());
+
+            org.assertj.core.api.Assertions.assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Obcy mieszkaniec nie może przeglądać cudzych zdjęć")
+        void foreignResidentCannotViewImages() {
+            User foreignResident = new User();
+            foreignResident.setId(UUID.randomUUID());
+            foreignResident.setRole("MIESZKANIEC");
+            foreignResident.setEmail("obcy2@test.com");
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(foreignResident.getEmail()))
+                    .thenReturn(Optional.of(foreignResident));
+
+            assertThatThrownBy(
+                            () ->
+                                    ticketImageService.getImagesForTicket(
+                                            ticketId, foreignResident.getEmail()))
+                    .isInstanceOf(SecurityException.class);
+        }
+
+        @Test
+        @DisplayName("Konserwator przypisany może przeglądać zdjęcia")
+        void assignedConservatorCanViewImages() {
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(conservator.getEmail()))
+                    .thenReturn(Optional.of(conservator));
+            when(ticketImageRepository.findByTicketIdOrderByUploadedAtAsc(ticketId))
+                    .thenReturn(java.util.Collections.emptyList());
+
+            var result = ticketImageService.getImagesForTicket(ticketId, conservator.getEmail());
+
+            org.assertj.core.api.Assertions.assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Nieprzypisany konserwator nie może przeglądać zdjęć")
+        void unassignedConservatorCannotViewImages() {
+            User otherConservator = new User();
+            otherConservator.setId(UUID.randomUUID());
+            otherConservator.setRole("KONSERWATOR");
+            otherConservator.setEmail("inny_k@test.com");
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(otherConservator.getEmail()))
+                    .thenReturn(Optional.of(otherConservator));
+
+            assertThatThrownBy(
+                            () ->
+                                    ticketImageService.getImagesForTicket(
+                                            ticketId, otherConservator.getEmail()))
+                    .isInstanceOf(SecurityException.class);
+        }
     }
 }

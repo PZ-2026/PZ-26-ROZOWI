@@ -39,6 +39,11 @@ public class CategoryResponse {
         return slaHours;
     }
 
+    /**
+     * Ustawia liczbę godzin SLA dla kategorii.
+     *
+     * @param slaHours liczba godzin SLA
+     */
     public void setSlaHours(Integer slaHours) {
         this.slaHours = slaHours;
     }

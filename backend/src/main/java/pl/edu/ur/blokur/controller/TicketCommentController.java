@@ -17,12 +17,18 @@ import pl.edu.ur.blokur.dto.TicketCommentDto;
 import pl.edu.ur.blokur.dto.TicketCommentRequest;
 import pl.edu.ur.blokur.service.TicketCommentService;
 
+/** REST controller obsługujący komentarze do zgłoszeń. */
 @RestController
 @RequestMapping("/api/tickets")
 public class TicketCommentController {
 
     private final TicketCommentService ticketCommentService;
 
+    /**
+     * Tworzy kontroler i wstrzykuje serwis komentarzy.
+     *
+     * @param ticketCommentService serwis obsługi komentarzy do zgłoszeń
+     */
     public TicketCommentController(TicketCommentService ticketCommentService) {
         this.ticketCommentService = ticketCommentService;
     }

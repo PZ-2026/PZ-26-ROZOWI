@@ -30,6 +30,7 @@ import pl.edu.ur.blokur.repository.TicketHistoryRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
+/** Serwis obsługujący pełny cykl życia zgłoszeń serwisowych w systemie. */
 @Service
 public class TicketService {
 
@@ -44,6 +45,20 @@ public class TicketService {
     private final BusinessHoursCalculator businessHoursCalculator;
     private final PushNotificationService pushNotificationService;
 
+    /**
+     * Tworzy serwis zgłoszeń i wstrzykuje wymagane zależności.
+     *
+     * @param ticketRepository repozytorium zgłoszeń
+     * @param userRepository repozytorium użytkowników
+     * @param ticketCategoryRepository repozytorium kategorii zgłoszeń
+     * @param ticketNumberGenerator generator unikalnych numerów zgłoszeń
+     * @param ticketHistoryRepository repozytorium historii zmian statusu zgłoszeń
+     * @param documentService serwis zapisu i przechowywania dokumentów
+     * @param pdfGeneratorService serwis generowania plików PDF
+     * @param ticketStateMachine maszyna stanów walidująca przejścia statusów zgłoszeń
+     * @param businessHoursCalculator kalkulator godzin roboczych na potrzeby SLA
+     * @param pushNotificationService serwis wysyłania powiadomień PUSH
+     */
     public TicketService(
             TicketRepository ticketRepository,
             UserRepository userRepository,
@@ -67,6 +82,10 @@ public class TicketService {
         this.pushNotificationService = pushNotificationService;
     }
 
+    /**
+     * Inicjalizuje generator numerów zgłoszeń na podstawie ostatniego numeru sekwencyjnego
+     * przechowywanego w bazie danych. Wywoływane automatycznie po uruchomieniu aplikacji.
+     */
     @EventListener(ApplicationReadyEvent.class)
     public void initTicketNumberGenerator() {
         var year = LocalDate.now().getYear();
@@ -74,6 +93,13 @@ public class TicketService {
         ticketNumberGenerator.initYear(year, lastSeq);
     }
 
+    /**
+     * Tworzy nowe zgłoszenie serwisowe w imieniu zalogowanego mieszkańca.
+     *
+     * @param request dane nowego zgłoszenia (tytuł, opis, kategoria)
+     * @param username email zalogowanego mieszkańca
+     * @return szczegóły utworzonego zgłoszenia
+     */
     @Transactional
     public TicketDetailDto create(TicketRequest request, String username) {
         var author =
@@ -185,6 +211,15 @@ public class TicketService {
                 .toList();
     }
 
+    /**
+     * Zwraca szczegóły zgłoszenia o podanym identyfikatorze z uwzględnieniem uprawnień użytkownika.
+     * Zarządca widzi wszystkie pola; konserwator tylko przypisane sobie zgłoszenia; mieszkaniec
+     * tylko zgłoszenia dotyczące jego lokalu (bez notatki wewnętrznej).
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param username email zalogowanego użytkownika
+     * @return szczegóły zgłoszenia
+     */
     @Transactional(readOnly = true)
     public TicketDetailDto getById(UUID ticketId, String username) {
         var ticket =
@@ -409,6 +444,15 @@ public class TicketService {
         return result;
     }
 
+    /**
+     * Odrzuca zgłoszenie z podaniem powodu. Zmienia status na ODRZUCONE i zapisuje powód w notatce
+     * wewnętrznej. Dostępne tylko dla zarządcy.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request powód odrzucenia
+     * @param username email zalogowanego zarządcy
+     * @return zaktualizowane szczegóły zgłoszenia
+     */
     @Transactional
     public TicketDetailDto rejectTicket(
             UUID ticketId, TicketRejectRequest request, String username) {
@@ -451,6 +495,14 @@ public class TicketService {
         return result;
     }
 
+    /**
+     * Rozpoczyna prace przy zgłoszeniu — zmienia status z ZAPLANOWANO na W_REALIZACJI. Dostępne
+     * tylko dla konserwatora przypisanego do danego zgłoszenia.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param username email zalogowanego konserwatora
+     * @return zaktualizowane szczegóły zgłoszenia
+     */
     @Transactional
     public TicketDetailDto startWork(UUID ticketId, String username) {
         var ticket =
@@ -499,6 +551,15 @@ public class TicketService {
         return result;
     }
 
+    /**
+     * Wstrzymuje prace przy zgłoszeniu — zmienia status z W_REALIZACJI na WSTRZYMANO. Dostępne
+     * tylko dla konserwatora przypisanego do danego zgłoszenia.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request powód wstrzymania prac
+     * @param username email zalogowanego konserwatora
+     * @return zaktualizowane szczegóły zgłoszenia
+     */
     @Transactional
     public TicketDetailDto suspendWork(
             UUID ticketId, TicketSuspendRequest request, String username) {
@@ -555,6 +616,15 @@ public class TicketService {
         return result;
     }
 
+    /**
+     * Kończy prace przy zgłoszeniu — zmienia status z W_REALIZACJI na ZAKONCZONE_DO_WERYFIKACJI.
+     * Dostępne tylko dla konserwatora przypisanego do danego zgłoszenia.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request opis wykonanych prac
+     * @param username email zalogowanego konserwatora
+     * @return zaktualizowane szczegóły zgłoszenia
+     */
     @Transactional
     public TicketDetailDto completeWork(
             UUID ticketId, TicketCompletionRequest request, String username) {
@@ -609,6 +679,15 @@ public class TicketService {
         return result;
     }
 
+    /**
+     * Zmienia status zgłoszenia z walidacją maszyny stanów. Konserwator może zmieniać status tylko
+     * własnych zgłoszeń; zarządca może zmieniać status dowolnego zgłoszenia.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param request nowy status i opcjonalny komentarz
+     * @param username email zalogowanego użytkownika
+     * @return zaktualizowane szczegóły zgłoszenia
+     */
     @Transactional
     public TicketDetailDto changeStatus(
             UUID ticketId, TicketStatusChangeRequest request, String username) {

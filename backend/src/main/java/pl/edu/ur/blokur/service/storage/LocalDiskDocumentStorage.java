@@ -51,6 +51,13 @@ public class LocalDiskDocumentStorage implements DocumentStorage {
         }
     }
 
+    /**
+     * Wczytuje plik z lokalnego dysku jako zasób Spring.
+     *
+     * @param key ścieżka systemowa do pliku
+     * @return zasób ({@link Resource}) gotowy do odczytu
+     * @throws DocumentStorageException gdy plik nie istnieje lub jest nieczytelny
+     */
     @Override
     public Resource load(String key) {
         if (key == null || key.isBlank()) {
@@ -64,6 +71,12 @@ public class LocalDiskDocumentStorage implements DocumentStorage {
         return resource;
     }
 
+    /**
+     * Sprawdza, czy plik o podanej ścieżce istnieje i jest czytelny.
+     *
+     * @param key ścieżka systemowa do pliku
+     * @return {@code true} jeśli plik istnieje i jest czytelny, {@code false} w przeciwnym razie
+     */
     @Override
     public boolean exists(String key) {
         if (key == null || key.isBlank()) {
@@ -72,6 +85,12 @@ public class LocalDiskDocumentStorage implements DocumentStorage {
         return Files.exists(Paths.get(key)) && Files.isReadable(Paths.get(key));
     }
 
+    /**
+     * Usuwa plik z lokalnego dysku, jeśli istnieje.
+     *
+     * @param key ścieżka systemowa do pliku
+     * @throws DocumentStorageException gdy nie uda się usunąć pliku
+     */
     @Override
     public void delete(String key) {
         if (key == null || key.isBlank()) {

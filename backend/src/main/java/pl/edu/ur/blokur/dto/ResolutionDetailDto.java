@@ -18,6 +18,18 @@ public class ResolutionDetailDto {
     private List<ResolutionOptionDto> options;
     private List<ResolutionOptionResultDto> results;
 
+    /**
+     * Tworzy DTO szczegółów uchwały z wynikami głosowania.
+     *
+     * @param id identyfikator uchwały
+     * @param title tytuł uchwały
+     * @param description opis uchwały
+     * @param endDate data zakończenia głosowania
+     * @param buildingId identyfikator budynku powiązanego z uchwałą
+     * @param authorName imię i nazwisko autora uchwały
+     * @param options lista opcji do głosowania
+     * @param results lista wyników głosowania
+     */
     public ResolutionDetailDto(
             UUID id,
             String title,

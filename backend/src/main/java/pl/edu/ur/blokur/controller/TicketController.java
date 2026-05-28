@@ -28,12 +28,18 @@ import pl.edu.ur.blokur.dto.TicketSummaryDto;
 import pl.edu.ur.blokur.dto.TicketSuspendRequest;
 import pl.edu.ur.blokur.service.TicketService;
 
+/** REST controller obsługujący operacje na zgłoszeniach serwisowych. */
 @RestController
 @RequestMapping("/api/tickets")
 public class TicketController {
 
     private final TicketService ticketService;
 
+    /**
+     * Tworzy kontroler i wstrzykuje serwis zgłoszeń.
+     *
+     * @param ticketService serwis obsługi zgłoszeń serwisowych
+     */
     public TicketController(TicketService ticketService) {
         this.ticketService = ticketService;
     }

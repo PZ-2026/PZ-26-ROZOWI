@@ -22,8 +22,17 @@ public class FinancialTransactionRequest {
     @NotNull(message = "Data transakcji jest wymagana")
     private LocalDate transactionDate;
 
+    /** Tworzy pusty obiekt żądania transakcji (wymagany przez frameworki deserializacji). */
     public FinancialTransactionRequest() {}
 
+    /**
+     * Tworzy żądanie transakcji finansowej z podanymi danymi.
+     *
+     * @param type typ transakcji (np. PRZYCHÓD, ROZCHÓD)
+     * @param amount kwota transakcji
+     * @param description opis transakcji
+     * @param transactionDate data transakcji
+     */
     public FinancialTransactionRequest(
             String type, BigDecimal amount, String description, LocalDate transactionDate) {
         this.type = type;

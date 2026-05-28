@@ -17,6 +17,7 @@ import pl.edu.ur.blokur.repository.TicketCommentRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
+/** Serwis obsługujący operacje na komentarzach do zgłoszeń serwisowych. */
 @Service
 public class TicketCommentService {
 
@@ -24,6 +25,13 @@ public class TicketCommentService {
     private final TicketCommentRepository ticketCommentRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Tworzy serwis komentarzy i wstrzykuje wymagane repozytoria.
+     *
+     * @param ticketRepository repozytorium zgłoszeń
+     * @param ticketCommentRepository repozytorium komentarzy do zgłoszeń
+     * @param userRepository repozytorium użytkowników
+     */
     public TicketCommentService(
             TicketRepository ticketRepository,
             TicketCommentRepository ticketCommentRepository,

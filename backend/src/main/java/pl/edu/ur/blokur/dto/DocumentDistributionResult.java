@@ -14,14 +14,29 @@ public class DocumentDistributionResult {
         this.message = message;
     }
 
+    /**
+     * Zwraca liczbę wygenerowanych dokumentów.
+     *
+     * @return liczba dokumentów
+     */
     public int getDocumentsGenerated() {
         return documentsGenerated;
     }
 
+    /**
+     * Zwraca liczbę powiadomionych odbiorców.
+     *
+     * @return liczba odbiorców
+     */
     public int getRecipientsNotified() {
         return recipientsNotified;
     }
 
+    /**
+     * Zwraca komunikat opisujący wynik dystrybucji.
+     *
+     * @return komunikat wynikowy
+     */
     public String getMessage() {
         return message;
     }

@@ -16,6 +16,16 @@ public class MeterResponse {
     private LocalDate installationDate;
     private boolean active;
 
+    /**
+     * Tworzy odpowiedź z danymi licznika.
+     *
+     * @param id identyfikator licznika
+     * @param apartmentId identyfikator lokalu, do którego należy licznik
+     * @param serialNumber numer seryjny licznika
+     * @param mediumType typ medium
+     * @param installationDate data montażu
+     * @param active czy licznik jest aktywny
+     */
     public MeterResponse(
             UUID id,
             UUID apartmentId,

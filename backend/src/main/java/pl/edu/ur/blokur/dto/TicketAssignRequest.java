@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Data;
 
+/** DTO z danymi przypisania konserwatora do zgłoszenia serwisowego. */
 @Data
 public class TicketAssignRequest {
 

@@ -39,6 +39,18 @@ public class DocumentDistributionService {
     private final PropertyRepository propertyRepository;
     private final FinancialTransactionRepository financialTransactionRepository;
 
+    /**
+     * Tworzy serwis dystrybucji dokumentów i wstrzykuje wymagane zależności.
+     *
+     * @param pdfGeneratorService serwis generowania plików PDF
+     * @param documentService serwis zapisu i przechowywania dokumentów
+     * @param pushNotificationService serwis wysyłania powiadomień PUSH
+     * @param userRepository repozytorium użytkowników
+     * @param apartmentRepository repozytorium lokali
+     * @param buildingRepository repozytorium budynków
+     * @param propertyRepository repozytorium nieruchomości
+     * @param financialTransactionRepository repozytorium transakcji finansowych
+     */
     public DocumentDistributionService(
             PdfGeneratorService pdfGeneratorService,
             DocumentService documentService,

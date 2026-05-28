@@ -27,8 +27,11 @@ import org.springframework.web.server.ResponseStatusException;
 import pl.edu.ur.blokur.dto.CastVoteRequest;
 import pl.edu.ur.blokur.dto.CreateResolutionRequest;
 import pl.edu.ur.blokur.dto.ResolutionDetailDto;
+import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Building;
 import pl.edu.ur.blokur.models.Resolution;
+import pl.edu.ur.blokur.models.Staircase;
+import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.models.ResolutionOption;
 import pl.edu.ur.blokur.models.ResolutionVote;
 import pl.edu.ur.blokur.models.User;
@@ -255,6 +258,198 @@ class ResolutionServiceTest {
             assertThat(dto.getResults()).isNotNull();
             assertThat(dto.getResults()).hasSize(1);
             assertThat(dto.getResults().get(0).getVotesCount()).isEqualTo(5L);
+        }
+
+        @Test
+        @DisplayName("Wyniki są null gdy mieszkaniec nie zagłosował i głosowanie trwa")
+        void residentDoesNotSeeResultsDuringActiveVoting() {
+            resolution.setEndDate(LocalDateTime.now().plusDays(5));
+
+            UserApartment ua = new UserApartment();
+            Apartment apt = new Apartment();
+            Staircase sc = new Staircase();
+            sc.setBuilding(building);
+            apt.setStaircase(sc);
+            ua.setApartment(apt);
+            voter.getUserApartments().add(ua);
+
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findByResolutionId(resolutionId))
+                    .thenReturn(List.of(option));
+            when(resolutionVoteRepository.existsByResolutionIdAndVoterId(
+                            resolutionId, voter.getId()))
+                    .thenReturn(false);
+
+            ResolutionDetailDto dto =
+                    resolutionService.getResolutionDetails(resolutionId, EMAIL);
+
+            assertThat(dto.getResults()).isNull();
+        }
+    }
+
+    // =======================================================
+    // Scenario: Lista uchwał
+    // =======================================================
+
+    @Nested
+    @DisplayName("getResolutionsForUser — lista uchwał")
+    class GetResolutionsForUserTests {
+
+        @Test
+        @DisplayName("Zarządca widzi wszystkie uchwały")
+        void zarzadcaSeesAllResolutions() {
+            resolution.setAuthor(zarzadca);
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(resolutionRepository.findAll()).thenReturn(List.of(resolution));
+
+            var result = resolutionService.getResolutionsForUser(ZARZADCA_EMAIL);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getTitle()).isEqualTo("Uchwała nr 1/2026");
+        }
+
+        @Test
+        @DisplayName("Zarządca widzi pustą listę gdy brak uchwał")
+        void zarzadcaSeesEmptyListWhenNoResolutions() {
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(resolutionRepository.findAll()).thenReturn(Arrays.asList());
+
+            var result = resolutionService.getResolutionsForUser(ZARZADCA_EMAIL);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec bez przypisanego lokalu widzi pustą listę")
+        void residentWithoutApartmentSeesEmptyList() {
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
+
+            var result = resolutionService.getResolutionsForUser(EMAIL);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec widzi uchwały swojego budynku")
+        void residentSeesResolutionsForHisBuilding() {
+            UserApartment ua = new UserApartment();
+            Apartment apt = new Apartment();
+            Staircase sc = new Staircase();
+            sc.setBuilding(building);
+            apt.setStaircase(sc);
+            ua.setApartment(apt);
+            voter.getUserApartments().add(ua);
+            resolution.setAuthor(zarzadca);
+
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
+            when(resolutionRepository.findByBuildingId(buildingId)).thenReturn(List.of(resolution));
+
+            var result = resolutionService.getResolutionsForUser(EMAIL);
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // =======================================================
+    // Scenario: Raport PDF
+    // =======================================================
+
+    @Nested
+    @DisplayName("generateResolutionReport — raport PDF z wynikami")
+    class GenerateResolutionReportTests {
+
+        @Test
+        @DisplayName("Zarządca generuje raport po zakończeniu głosowania")
+        void zarzadcaCanGenerateReportAfterVotingEnds() {
+            resolution.setEndDate(LocalDateTime.now().minusDays(1));
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findByResolutionId(resolutionId))
+                    .thenReturn(List.of(option));
+            when(resolutionVoteRepository.countByOptionId(optionId)).thenReturn(10L);
+
+            byte[] pdf = resolutionService.generateResolutionReport(resolutionId, ZARZADCA_EMAIL);
+
+            assertThat(pdf).isNotNull();
+            assertThat(pdf.length).isGreaterThan(0);
+        }
+
+        @Test
+        @DisplayName("Zarządca nie może generować raportu gdy głosowanie trwa")
+        void zarzadcaCannotGenerateReportDuringActiveVoting() {
+            resolution.setEndDate(LocalDateTime.now().plusDays(5));
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+
+            assertThatThrownBy(
+                            () ->
+                                    resolutionService.generateResolutionReport(
+                                            resolutionId, ZARZADCA_EMAIL))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .satisfies(
+                            ex -> {
+                                var rse =
+                                        (org.springframework.web.server.ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode())
+                                        .isEqualTo(
+                                                org.springframework.http.HttpStatus.BAD_REQUEST);
+                            });
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec nie może generować raportu")
+        void residentCannotGenerateReport() {
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(voter));
+
+            assertThatThrownBy(
+                            () ->
+                                    resolutionService.generateResolutionReport(
+                                            resolutionId, EMAIL))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .satisfies(
+                            ex -> {
+                                var rse =
+                                        (org.springframework.web.server.ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode())
+                                        .isEqualTo(
+                                                org.springframework.http.HttpStatus.FORBIDDEN);
+                            });
+        }
+    }
+
+    // =======================================================
+    // Scenario: castVote — opcja z innej uchwały
+    // =======================================================
+
+    @Nested
+    @DisplayName("castVote — walidacja przynależności opcji do uchwały")
+    class OptionBelongsToResolutionTests {
+
+        @Test
+        @DisplayName("Rzuca 400 gdy wybrana opcja należy do innej uchwały")
+        void shouldThrow400WhenOptionDoesNotBelongToResolution() {
+            Resolution otherResolution = new Resolution();
+            otherResolution.setId(UUID.randomUUID());
+            option.setResolution(otherResolution);
+
+            when(resolutionRepository.findById(resolutionId)).thenReturn(Optional.of(resolution));
+            when(resolutionOptionRepository.findById(optionId)).thenReturn(Optional.of(option));
+
+            assertThatThrownBy(() -> resolutionService.castVote(resolutionId, request, EMAIL))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .satisfies(
+                            ex -> {
+                                var rse =
+                                        (org.springframework.web.server.ResponseStatusException) ex;
+                                assertThat(rse.getStatusCode())
+                                        .isEqualTo(
+                                                org.springframework.http.HttpStatus.BAD_REQUEST);
+                            });
+
+            verify(resolutionVoteRepository, never()).save(any());
         }
     }
 }

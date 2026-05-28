@@ -17,6 +17,17 @@ public class FinancialTransactionResponse {
     private LocalDate transactionDate;
     private String recordedByEmail;
 
+    /**
+     * Tworzy odpowiedź z danymi transakcji finansowej.
+     *
+     * @param id identyfikator transakcji
+     * @param apartmentId identyfikator lokalu powiązanego z transakcją
+     * @param type typ transakcji
+     * @param amount kwota transakcji
+     * @param description opis transakcji
+     * @param transactionDate data transakcji
+     * @param recordedByEmail email użytkownika, który zapisał transakcję
+     */
     public FinancialTransactionResponse(
             UUID id,
             UUID apartmentId,

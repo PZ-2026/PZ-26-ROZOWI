@@ -21,6 +21,13 @@ public class MeterRequest {
     @NotNull(message = "Data montażu jest wymagana")
     private LocalDate installationDate;
 
+    /**
+     * Tworzy żądanie rejestracji nowego licznika.
+     *
+     * @param serialNumber numer seryjny licznika
+     * @param mediumType typ medium (np. WODA, GAZ, ENERGIA)
+     * @param installationDate data montażu licznika
+     */
     public MeterRequest(String serialNumber, MediumType mediumType, LocalDate installationDate) {
         this.serialNumber = serialNumber;
         this.mediumType = mediumType;

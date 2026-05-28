@@ -15,6 +15,16 @@ public class ResolutionDto {
     private UUID buildingId;
     private String authorName;
 
+    /**
+     * Tworzy DTO uchwały na potrzeby listy uchwał.
+     *
+     * @param id identyfikator uchwały
+     * @param title tytuł uchwały
+     * @param description opis uchwały
+     * @param endDate data zakończenia głosowania
+     * @param buildingId identyfikator budynku powiązanego z uchwałą
+     * @param authorName imię i nazwisko autora uchwały
+     */
     public ResolutionDto(
             UUID id,
             String title,

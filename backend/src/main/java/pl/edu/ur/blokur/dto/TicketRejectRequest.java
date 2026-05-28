@@ -3,6 +3,7 @@ package pl.edu.ur.blokur.dto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+/** DTO z powodem odrzucenia zgłoszenia serwisowego. */
 @Data
 public class TicketRejectRequest {
 
