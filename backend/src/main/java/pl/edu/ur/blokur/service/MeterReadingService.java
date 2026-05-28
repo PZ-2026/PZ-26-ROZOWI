@@ -14,6 +14,8 @@ import pl.edu.ur.blokur.models.MeterReading;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.MeterReadingRepository;
 import pl.edu.ur.blokur.repository.MeterRepository;
+import pl.edu.ur.blokur.repository.TicketRepository;
+import pl.edu.ur.blokur.repository.UserRepository;
 
 /**
  * Serwis biznesowy obsługujący logikę odczytów liczników. Zawiera walidację duplikatów, regresji
@@ -25,6 +27,8 @@ public class MeterReadingService {
     private final MeterReadingRepository meterReadingRepository;
     private final ApartmentRepository apartmentRepository;
     private final MeterRepository meterRepository;
+    private final UserRepository userRepository;
+    private final TicketRepository ticketRepository;
 
     /**
      * Tworzy serwis z wymaganymi zależnościami.
@@ -32,28 +36,47 @@ public class MeterReadingService {
      * @param meterReadingRepository repozytorium odczytów liczników
      * @param apartmentRepository repozytorium lokali
      * @param meterRepository repozytorium liczników
+     * @param userRepository repozytorium użytkowników
+     * @param ticketRepository repozytorium zgłoszeń
      */
     public MeterReadingService(
             MeterReadingRepository meterReadingRepository,
             ApartmentRepository apartmentRepository,
-            MeterRepository meterRepository) {
+            MeterRepository meterRepository,
+            UserRepository userRepository,
+            TicketRepository ticketRepository) {
         this.meterReadingRepository = meterReadingRepository;
         this.apartmentRepository = apartmentRepository;
         this.meterRepository = meterRepository;
+        this.userRepository = userRepository;
+        this.ticketRepository = ticketRepository;
     }
 
     /**
      * Tworzy nowy odczyt dla wskazanego licznika w danym lokalu. Sprawdza duplikaty, regresję
      * wartości oraz to, czy licznik jest aktywny i rzeczywiście przypisany do wskazanego lokalu.
+     * Konserwator może dodawać odczyty wyłącznie dla lokali, do których ma przypisane zgłoszenie.
      *
      * @param apartmentId identyfikator lokalu
      * @param request dane nowego odczytu
+     * @param username email zalogowanego użytkownika
      * @return DTO z zapisanym odczytem
      * @throws NotFoundException jeśli lokal lub licznik nie istnieje
      * @throws BusinessValidationException jeśli odczyt jest duplikatem, wartość się cofa lub
-     *     licznik nie należy do lokalu / jest nieaktywny
+     *     licznik nie należy do lokalu / jest nieaktywny, bądź konserwator nie ma dostępu
      */
-    public MeterReadingResponse create(UUID apartmentId, MeterReadingRequest request) {
+    public MeterReadingResponse create(UUID apartmentId, MeterReadingRequest request, String username) {
+        var user =
+                userRepository
+                        .findByEmail(username)
+                        .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if ("KONSERWATOR".equals(user.getRole())
+                && !ticketRepository.existsByAssignedToIdAndApartmentId(user.getId(), apartmentId)) {
+            throw new BusinessValidationException(
+                    "Brak przypisanego zgłoszenia dla tego lokalu — konserwator nie jest upoważniony");
+        }
+
         var apartment =
                 apartmentRepository
                         .findById(apartmentId)
@@ -82,18 +105,37 @@ public class MeterReadingService {
     }
 
     /**
-     * Pobiera stronicowaną listę odczytów dla wskazanego lokalu.
+     * Pobiera stronicowaną listę odczytów dla wskazanego lokalu. Mieszkaniec może pobierać odczyty
+     * wyłącznie swojego lokalu.
      *
      * @param apartmentId identyfikator lokalu
      * @param page numer strony (od 0)
      * @param size rozmiar strony
+     * @param username email zalogowanego użytkownika
      * @return strona z odczytami
      * @throws NotFoundException jeśli lokal nie istnieje
+     * @throws BusinessValidationException jeśli mieszkaniec nie jest najemcą tego lokalu
      */
-    public Page<MeterReadingResponse> getAllByApartment(UUID apartmentId, int page, int size) {
+    public Page<MeterReadingResponse> getAllByApartment(UUID apartmentId, int page, int size, String username) {
         if (!apartmentRepository.existsById(apartmentId)) {
             throw new NotFoundException("Lokal o ID " + apartmentId + " nie istnieje");
         }
+
+        var user =
+                userRepository
+                        .findByEmail(username)
+                        .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        if ("MIESZKANIEC".equals(user.getRole())) {
+            boolean isTenant =
+                    user.getUserApartments().stream()
+                            .anyMatch(ua -> ua.getApartment().getId().equals(apartmentId));
+            if (!isTenant) {
+                throw new BusinessValidationException(
+                        "Brak dostępu — lokal nie należy do zalogowanego mieszkańca");
+            }
+        }
+
         var pageable = PageRequest.of(page, size, Sort.by("readingDate").descending());
         return meterReadingRepository
                 .findByApartmentIdAndDeletedFalse(apartmentId, pageable)
@@ -101,20 +143,47 @@ public class MeterReadingService {
     }
 
     /**
-     * Pobiera pojedynczy odczyt licznika po identyfikatorze.
+     * Pobiera pojedynczy odczyt licznika po identyfikatorze. Mieszkaniec i konserwator mają dostęp
+     * wyłącznie do odczytów lokali, do których mają uprawnienia.
      *
      * @param id identyfikator odczytu
+     * @param username email zalogowanego użytkownika
      * @return DTO z odczytem
      * @throws NotFoundException jeśli odczyt nie istnieje lub jest usunięty
+     * @throws BusinessValidationException jeśli użytkownik nie ma dostępu do tego odczytu
      */
-    public MeterReadingResponse getById(UUID id) {
-        return toResponse(
+    public MeterReadingResponse getById(UUID id, String username) {
+        var reading =
                 meterReadingRepository
                         .findByIdAndDeletedFalse(id)
                         .orElseThrow(
                                 () ->
                                         new NotFoundException(
-                                                "Odczyt licznika o ID " + id + " nie istnieje")));
+                                                "Odczyt licznika o ID " + id + " nie istnieje"));
+
+        var user =
+                userRepository
+                        .findByEmail(username)
+                        .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
+
+        UUID apartmentId = reading.getApartment().getId();
+
+        if ("MIESZKANIEC".equals(user.getRole())) {
+            boolean isTenant =
+                    user.getUserApartments().stream()
+                            .anyMatch(ua -> ua.getApartment().getId().equals(apartmentId));
+            if (!isTenant) {
+                throw new BusinessValidationException(
+                        "Brak dostępu — lokal nie należy do zalogowanego mieszkańca");
+            }
+        } else if ("KONSERWATOR".equals(user.getRole())) {
+            if (!ticketRepository.existsByAssignedToIdAndApartmentId(user.getId(), apartmentId)) {
+                throw new BusinessValidationException(
+                        "Brak przypisanego zgłoszenia dla tego lokalu");
+            }
+        }
+
+        return toResponse(reading);
     }
 
     /**

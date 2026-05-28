@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,6 +43,9 @@ public class AnnouncementController {
     private final AnnouncementRepository announcementRepository;
     private final FileTypeValidator fileTypeValidator;
 
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
     /**
      * Tworzy instancję kontrolera z wymaganymi zależnościami.
      *
@@ -66,15 +70,10 @@ public class AnnouncementController {
      * @return lista ogłoszeń (HTTP 200) lub błąd 403 gdy brak autoryzacji
      */
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<AnnouncementDto>> getAnnouncements(Principal principal) {
-
-        if (principal == null) {
-            return ResponseEntity.status(403).build();
-        }
-
         List<AnnouncementDto> dtos =
                 announcementService.getAnnouncementsForUser(principal.getName());
-
         return ResponseEntity.ok(dtos);
     }
 
@@ -152,7 +151,11 @@ public class AnnouncementController {
         }
 
         try {
-            Path filePath = Paths.get(announcement.getAttachmentPath());
+            Path allowedBase = Paths.get(uploadDir, "announcements").toRealPath();
+            Path filePath = Paths.get(announcement.getAttachmentPath()).normalize();
+            if (!Files.exists(filePath) || !filePath.toRealPath().startsWith(allowedBase)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
             byte[] bytes = Files.readAllBytes(filePath);
             return ResponseEntity.ok()
                     .header(

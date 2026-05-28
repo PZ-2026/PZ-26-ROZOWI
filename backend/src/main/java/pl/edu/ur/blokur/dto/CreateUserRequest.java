@@ -3,6 +3,7 @@ package pl.edu.ur.blokur.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.UUID;
 import lombok.Data;
 
@@ -16,7 +17,11 @@ public class CreateUserRequest {
 
     @NotBlank @Email private String email;
 
-    @NotBlank private String role;
+    @NotBlank
+    @Pattern(
+            regexp = "^(ZARZADCA|MIESZKANIEC|KONSERWATOR)$",
+            message = "Dozwolone role: ZARZADCA, MIESZKANIEC, KONSERWATOR")
+    private String role;
 
     @NotNull private UUID apartmentId;
 }

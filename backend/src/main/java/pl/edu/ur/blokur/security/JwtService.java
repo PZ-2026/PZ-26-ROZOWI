@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,12 +19,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "ToJestBardzoTajnyKluczDoGenerowaniaTokenowJwT!123";
     private static final long EXPIRATION_TIME = 28_800_000L;
     private static final int REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 
-    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    private final Key key;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    public JwtService(@Value("${jwt.secret}") String secretKey) {
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+    }
 
     /**
      * Generuje token JWT dla podanego użytkownika i roli.

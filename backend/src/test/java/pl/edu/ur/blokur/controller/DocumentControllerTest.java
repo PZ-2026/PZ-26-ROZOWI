@@ -39,12 +39,11 @@ class DocumentControllerTest {
 
     @MockitoBean private pl.edu.ur.blokur.security.JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    private UUID userId;
+    private static final String USER_EMAIL = "user@blokur.pl";
     private DocumentDto documentDto;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
         documentDto =
                 new DocumentDto(
                         UUID.randomUUID(),
@@ -72,33 +71,30 @@ class DocumentControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "123e4567-e89b-12d3-a456-426614174000")
+    @WithMockUser(username = USER_EMAIL)
     void getDocuments_ShouldReturnList() throws Exception {
-        UUID mockUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
         when(documentService.getDocuments(any(), any(), any(), any(), any()))
                 .thenReturn(List.of(documentDto));
 
-        mockMvc.perform(get("/api/documents").principal(() -> mockUserId.toString()))
+        mockMvc.perform(get("/api/documents").principal(() -> USER_EMAIL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Protokół odbioru"))
                 .andExpect(jsonPath("$[0].type").value("PROTOKOL"));
     }
 
     @Test
-    @WithMockUser(username = "123e4567-e89b-12d3-a456-426614174000")
+    @WithMockUser(username = USER_EMAIL)
     void getDocuments_ShouldReturnForbidden_WhenSecurityException() throws Exception {
-        UUID mockUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
         when(documentService.getDocuments(any(), any(), any(), any(), any()))
                 .thenThrow(new SecurityException("Forbidden"));
 
-        mockMvc.perform(get("/api/documents").principal(() -> mockUserId.toString()))
+        mockMvc.perform(get("/api/documents").principal(() -> USER_EMAIL))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "123e4567-e89b-12d3-a456-426614174000")
+    @WithMockUser(username = USER_EMAIL)
     void downloadDocument_ShouldReturnFile() throws Exception {
-        UUID mockUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
         UUID docId = UUID.randomUUID();
 
         Resource mockResource =
@@ -109,11 +105,11 @@ class DocumentControllerTest {
                     }
                 };
 
-        when(documentService.downloadDocument(docId, mockUserId)).thenReturn(mockResource);
+        when(documentService.downloadDocument(docId, USER_EMAIL)).thenReturn(mockResource);
 
         mockMvc.perform(
                         get("/api/documents/{id}/download", docId)
-                                .principal(() -> mockUserId.toString()))
+                                .principal(() -> USER_EMAIL))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF))
                 .andExpect(

@@ -55,9 +55,8 @@ public class DocumentController {
             @RequestParam(required = false) String type,
             Principal principal) {
         try {
-            UUID userId = UUID.fromString(principal.getName());
             List<DocumentDto> documents =
-                    documentService.getDocuments(apartmentId, startDate, endDate, type, userId);
+                    documentService.getDocuments(apartmentId, startDate, endDate, type, principal.getName());
             return ResponseEntity.ok(documents);
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -75,8 +74,7 @@ public class DocumentController {
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> downloadDocument(@PathVariable UUID id, Principal principal) {
         try {
-            UUID userId = UUID.fromString(principal.getName());
-            Resource resource = documentService.downloadDocument(id, userId);
+            Resource resource = documentService.downloadDocument(id, principal.getName());
 
             String filename =
                     resource.getFilename() != null ? resource.getFilename() : "document.pdf";

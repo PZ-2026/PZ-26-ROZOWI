@@ -186,6 +186,21 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     List<Object[]> findAllSummariesRaw();
 
     /**
+     * Sprawdza czy konserwator ma przypisane co najmniej jedno aktywne zgłoszenie dla danego lokalu.
+     *
+     * @param conservatorId identyfikator konserwatora
+     * @param apartmentId identyfikator lokalu
+     * @return {@code true} jeśli istnieje co najmniej jedno przypisane zgłoszenie
+     */
+    @Query(
+            "SELECT COUNT(t) > 0 FROM Ticket t "
+                    + "WHERE t.assignedTo.id = :conservatorId "
+                    + "AND t.apartment.id = :apartmentId")
+    boolean existsByAssignedToIdAndApartmentId(
+            @Param("conservatorId") UUID conservatorId,
+            @Param("apartmentId") UUID apartmentId);
+
+    /**
      * Pobiera maksymalny numer sekwencyjny zgłoszeń dla danego roku. Używane przy inicjalizacji
      * generatora numerów zgłoszeń po restarcie aplikacji.
      *

@@ -59,6 +59,7 @@ public class PdfController {
      * @return plik PDF jako tablica bajtów z nagłówkami HTTP
      */
     @PostMapping("/work-acceptance-protocol")
+    @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR')")
     public ResponseEntity<byte[]> generateWorkAcceptanceProtocol(
             @RequestBody WorkAcceptanceProtocolRequest request) {
         byte[] pdfBytes = pdfGeneratorService.generateWorkAcceptanceProtocol(request);

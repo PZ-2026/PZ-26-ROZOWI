@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.controller;
 
 import jakarta.validation.Valid;
+import java.security.Principal;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -35,41 +36,42 @@ public class MeterReadingController {
 
     /**
      * Tworzy nowy odczyt licznika dla wskazanego lokalu. Dostęp: ZARZADCA, KONSERWATOR.
+     * Konserwator może dodawać odczyty wyłącznie dla lokali z przypisanym mu zgłoszeniem.
      *
      * @param apartmentId identyfikator lokalu
      * @param request dane nowego odczytu
+     * @param principal dane zalogowanego użytkownika
      * @return utworzony odczyt z kodem HTTP 201
      */
-    // TODO: Zgodnie z Modułem 7, należy zweryfikować czy konserwator jest upoważniony
-    // do obsługi tego konkretnego lokalu (np. posiada przypisane zgłoszenie).
     @PostMapping("/apartments/{apartmentId}/meter-readings")
     @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR')")
     public ResponseEntity<MeterReadingResponse> create(
-            @PathVariable UUID apartmentId, @Valid @RequestBody MeterReadingRequest request) {
-        MeterReadingResponse response = meterReadingService.create(apartmentId, request);
+            @PathVariable UUID apartmentId,
+            @Valid @RequestBody MeterReadingRequest request,
+            Principal principal) {
+        MeterReadingResponse response = meterReadingService.create(apartmentId, request, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
      * Pobiera paginowaną listę odczytów dla wskazanego lokalu. Dostęp: ZARZADCA, KONSERWATOR,
-     * MIESZKANIEC.
+     * MIESZKANIEC. Mieszkaniec widzi wyłącznie odczyty swojego lokalu.
      *
      * @param apartmentId identyfikator lokalu
      * @param page numer strony (domyślnie 0)
      * @param size rozmiar strony (domyślnie 20)
+     * @param principal dane zalogowanego użytkownika
      * @return strona z odczytami liczników
      */
-    // TODO: Krytyczny brak weryfikacji — Mieszkaniec może pobrać odczyty DOWOLNEGO lokalu,
-    // jeśli zna jego apartmentId. Należy dodać sprawdzenie czy zalogowany użytkownik
-    // jest właścicielem/najemcą tego lokalu.
     @GetMapping("/apartments/{apartmentId}/meter-readings")
     @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR', 'MIESZKANIEC')")
     public ResponseEntity<Page<MeterReadingResponse>> getAllByApartment(
             @PathVariable UUID apartmentId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            Principal principal) {
         Page<MeterReadingResponse> readings =
-                meterReadingService.getAllByApartment(apartmentId, page, size);
+                meterReadingService.getAllByApartment(apartmentId, page, size, principal.getName());
         return ResponseEntity.ok(readings);
     }
 
@@ -82,8 +84,8 @@ public class MeterReadingController {
      */
     @GetMapping("/meter-readings/{id}")
     @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR', 'MIESZKANIEC')")
-    public ResponseEntity<MeterReadingResponse> getById(@PathVariable UUID id) {
-        MeterReadingResponse reading = meterReadingService.getById(id);
+    public ResponseEntity<MeterReadingResponse> getById(@PathVariable UUID id, Principal principal) {
+        MeterReadingResponse reading = meterReadingService.getById(id, principal.getName());
         return ResponseEntity.ok(reading);
     }
 

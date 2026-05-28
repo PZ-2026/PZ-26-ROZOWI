@@ -55,10 +55,12 @@ class DocumentServiceTest {
 
         admin = new User();
         admin.setId(UUID.randomUUID());
+        admin.setEmail("admin@blokur.pl");
         admin.setRole("ZARZADCA");
 
         resident = new User();
         resident.setId(UUID.randomUUID());
+        resident.setEmail("resident@blokur.pl");
         resident.setRole("MIESZKANIEC");
 
         apartment = new Apartment();
@@ -88,12 +90,12 @@ class DocumentServiceTest {
 
     @Test
     void getDocuments_Admin_ReturnsAllDocuments() {
-        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+        when(userRepository.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
         when(documentRepository.findAllWithFilters(any(), any(), any(), any()))
                 .thenReturn(List.of(document));
 
         List<DocumentDto> result =
-                documentService.getDocuments(null, null, null, null, admin.getId());
+                documentService.getDocuments(null, null, null, null, admin.getEmail());
 
         assertEquals(1, result.size());
         verify(documentRepository, times(1)).findAllWithFilters(any(), any(), any(), any());
@@ -101,12 +103,12 @@ class DocumentServiceTest {
 
     @Test
     void getDocuments_Resident_ReturnsOwnedDocuments() {
-        when(userRepository.findById(resident.getId())).thenReturn(Optional.of(resident));
+        when(userRepository.findByEmail(resident.getEmail())).thenReturn(Optional.of(resident));
         when(documentRepository.findByApartmentIdOrOwnerUserId(null, resident.getId()))
                 .thenReturn(List.of(document));
 
         List<DocumentDto> result =
-                documentService.getDocuments(null, null, null, null, resident.getId());
+                documentService.getDocuments(null, null, null, null, resident.getEmail());
 
         assertEquals(1, result.size());
         verify(documentRepository, times(1)).findByApartmentIdOrOwnerUserId(null, resident.getId());
@@ -114,24 +116,24 @@ class DocumentServiceTest {
 
     @Test
     void getDocuments_Resident_AccessDeniedForOtherApartment() {
-        when(userRepository.findById(resident.getId())).thenReturn(Optional.of(resident));
+        when(userRepository.findByEmail(resident.getEmail())).thenReturn(Optional.of(resident));
 
         assertThrows(
                 SecurityException.class,
                 () ->
                         documentService.getDocuments(
-                                UUID.randomUUID(), null, null, null, resident.getId()));
+                                UUID.randomUUID(), null, null, null, resident.getEmail()));
     }
 
     @Test
     void downloadDocument_Admin_Success() {
         when(documentRepository.findById(document.getId())).thenReturn(Optional.of(document));
-        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+        when(userRepository.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
         Resource stubbed =
                 new org.springframework.core.io.FileSystemResource(document.getFileUrl());
         when(documentStorage.load(document.getFileUrl())).thenReturn(stubbed);
 
-        Resource resource = documentService.downloadDocument(document.getId(), admin.getId());
+        Resource resource = documentService.downloadDocument(document.getId(), admin.getEmail());
 
         assertNotNull(resource);
         assertTrue(resource.exists());
@@ -141,12 +143,12 @@ class DocumentServiceTest {
     @Test
     void downloadDocument_Resident_Success_IfApartmentMatches() {
         when(documentRepository.findById(document.getId())).thenReturn(Optional.of(document));
-        when(userRepository.findById(resident.getId())).thenReturn(Optional.of(resident));
+        when(userRepository.findByEmail(resident.getEmail())).thenReturn(Optional.of(resident));
         Resource stubbed =
                 new org.springframework.core.io.FileSystemResource(document.getFileUrl());
         when(documentStorage.load(document.getFileUrl())).thenReturn(stubbed);
 
-        Resource resource = documentService.downloadDocument(document.getId(), resident.getId());
+        Resource resource = documentService.downloadDocument(document.getId(), resident.getEmail());
 
         assertNotNull(resource);
         assertTrue(resource.exists());
@@ -211,13 +213,14 @@ class DocumentServiceTest {
     void downloadDocument_Resident_Forbidden_IfNoMatchingApartment() {
         User otherResident = new User();
         otherResident.setId(UUID.randomUUID());
+        otherResident.setEmail("other@blokur.pl");
         otherResident.setRole("MIESZKANIEC");
 
         when(documentRepository.findById(document.getId())).thenReturn(Optional.of(document));
-        when(userRepository.findById(otherResident.getId())).thenReturn(Optional.of(otherResident));
+        when(userRepository.findByEmail(otherResident.getEmail())).thenReturn(Optional.of(otherResident));
 
         assertThrows(
                 SecurityException.class,
-                () -> documentService.downloadDocument(document.getId(), otherResident.getId()));
+                () -> documentService.downloadDocument(document.getId(), otherResident.getEmail()));
     }
 }

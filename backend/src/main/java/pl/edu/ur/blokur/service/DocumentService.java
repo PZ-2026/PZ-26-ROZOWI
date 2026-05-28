@@ -132,15 +132,15 @@ public class DocumentService {
      * @param type opcjonalny typ dokumentu
      * @param startDate początek zakresu dat (data)
      * @param endDate koniec zakresu dat (data)
-     * @param userId identyfikator użytkownika wykonującego żądanie
+     * @param username email zalogowanego użytkownika
      * @return lista obiektów DocumentDto
      */
     @Transactional(readOnly = true)
     public List<DocumentDto> getDocuments(
-            UUID apartmentId, LocalDate startDate, LocalDate endDate, String type, UUID userId) {
+            UUID apartmentId, LocalDate startDate, LocalDate endDate, String type, String username) {
         var user =
                 userRepository
-                        .findById(userId)
+                        .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono użytkownika"));
 
         var startDateTime = startDate != null ? startDate.atStartOfDay() : null;
@@ -158,7 +158,8 @@ public class DocumentService {
             throw new SecurityException("Brak dostępu do podanego mieszkania");
         }
 
-        return documentRepository.findByApartmentIdOrOwnerUserId(apartmentId, user.getId()).stream()
+        return documentRepository.findByApartmentIdOrOwnerUserId(apartmentId, user.getId())
+                .stream()
                 .filter(d -> type == null || type.equals(d.getType()))
                 .filter(d -> startDateTime == null || !d.getCreatedAt().isBefore(startDateTime))
                 .filter(d -> endDateTime == null || !d.getCreatedAt().isAfter(endDateTime))
@@ -170,11 +171,11 @@ public class DocumentService {
      * Zwraca zasób reprezentujący pobierany plik ze storage, po weryfikacji uprawnień użytkownika.
      *
      * @param documentId identyfikator dokumentu
-     * @param userId identyfikator użytkownika
+     * @param username email zalogowanego użytkownika
      * @return zasób (Resource) z plikiem PDF
      */
     @Transactional(readOnly = true)
-    public Resource downloadDocument(UUID documentId, UUID userId) {
+    public Resource downloadDocument(UUID documentId, String username) {
         var document =
                 documentRepository
                         .findById(documentId)
@@ -182,13 +183,13 @@ public class DocumentService {
 
         var user =
                 userRepository
-                        .findById(userId)
+                        .findByEmail(username)
                         .orElseThrow(() -> new NotFoundException("Nie znaleziono użytkownika"));
 
         if (!"ZARZADCA".equals(user.getRole())) {
             var isOwner =
                     document.getOwnerUser() != null
-                            && document.getOwnerUser().getId().equals(userId);
+                            && document.getOwnerUser().getId().equals(user.getId());
 
             var isApartmentOwner =
                     document.getApartment() != null
