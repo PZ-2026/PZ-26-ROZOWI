@@ -4,13 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.services.AnnualSettlementDistributionRequestDto
+import pl.edu.ur.blokur.services.DocumentApiService
+import pl.edu.ur.blokur.services.RateChangeDistributionRequestDto
 import javax.inject.Inject
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
@@ -50,15 +52,10 @@ sealed interface DocDistributionEvent {
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
-/**
- * ViewModel dystrybucji dokumentów zarządcy.
- *
- * WIP: Backend nie dostarcza jeszcze endpointów do generowania i dystrybucji dokumentów PDF.
- * Klasa jest gotowa architektonicznie — wysyłkę `sendRateChange()` i `sendAnnualSettlement()`
- * należy podłączyć do odpowiednich serwisów, gdy będą dostępne.
- */
 @HiltViewModel
-class DocDistributionViewModel @Inject constructor() : ViewModel() {
+class DocDistributionViewModel @Inject constructor(
+    private val documentApiService: DocumentApiService
+) : ViewModel() {
 
     private val _state = MutableStateFlow(DocDistributionState())
     val state: StateFlow<DocDistributionState> = _state.asStateFlow()
@@ -108,74 +105,70 @@ class DocDistributionViewModel @Inject constructor() : ViewModel() {
 
     // ── Send actions ──────────────────────────────────────────────────────────
 
-    /**
-     * Wysyła zawiadomienie o zmianie stawek.
-     *
-     * TODO WIP: Podłączyć do endpointu POST /api/documents/rate-change (lub analogicznego)
-     * gdy zostanie zaimplementowany.
-     */
     fun sendRateChange() {
         val s = _state.value
         if (s.isSubmitting) return
         if (s.rateChangeSubject.isBlank() || s.rateChangeBody.isBlank()) return
         viewModelScope.launch {
             _state.value = s.copy(isSubmitting = true, lastSentTab = null)
-            // WIP: zastąp symulację prawdziwym wywołaniem API
-            runCatching { simulateSend() }
-                .onSuccess {
-                    _state.value = _state.value.copy(
-                        isSubmitting = false,
-                        lastSentTab = DocDistributionTab.RATE_CHANGE
+            runCatching {
+                documentApiService.distributeRateChange(
+                    RateChangeDistributionRequestDto(
+                        subject = s.rateChangeSubject,
+                        body = s.rateChangeBody,
+                        effectiveDate = s.rateChangeEffectiveDate,
+                        scope = s.recipientScope.name,
+                        targetId = s.targetId.ifBlank { null }
                     )
-                    val scopeLabel = scopeLabel(s.recipientScope, s.targetId)
-                    _events.send(DocDistributionEvent.ShowSnackbar(
-                        "Zawiadomienie wysłane do: $scopeLabel (WIP — symulacja)"
-                    ))
-                }
-                .onFailure { e ->
-                    _state.value = _state.value.copy(isSubmitting = false)
-                    _events.send(DocDistributionEvent.ShowSnackbar(e.message ?: "Błąd wysyłki"))
-                }
+                )
+            }.onSuccess { response ->
+                _state.value = _state.value.copy(
+                    isSubmitting = false,
+                    lastSentTab = DocDistributionTab.RATE_CHANGE
+                )
+                val result = response.body()
+                val msg = result?.message
+                    ?: "Zawiadomienie wysłane do ${result?.recipientsNotified ?: 0} mieszkańców"
+                _events.send(DocDistributionEvent.ShowSnackbar(msg))
+            }.onFailure { e ->
+                _state.value = _state.value.copy(isSubmitting = false)
+                _events.send(DocDistributionEvent.ShowSnackbar(e.message ?: "Błąd wysyłki"))
+            }
         }
     }
 
-    /**
-     * Wysyła rozliczenie roczne.
-     *
-     * TODO WIP: Podłączyć do endpointu POST /api/documents/annual-settlement
-     * gdy zostanie zaimplementowany.
-     */
     fun sendAnnualSettlement() {
         val s = _state.value
         if (s.isSubmitting) return
         val year = s.settlementYear.toIntOrNull() ?: return
         viewModelScope.launch {
             _state.value = s.copy(isSubmitting = true, lastSentTab = null)
-            // WIP: zastąp symulację prawdziwym wywołaniem API
-            runCatching { simulateSend() }
-                .onSuccess {
-                    _state.value = _state.value.copy(
-                        isSubmitting = false,
-                        lastSentTab = DocDistributionTab.ANNUAL_SETTLEMENT
+            runCatching {
+                documentApiService.distributeAnnualSettlement(
+                    AnnualSettlementDistributionRequestDto(
+                        year = year,
+                        note = s.settlementNote.ifBlank { null },
+                        scope = s.recipientScope.name,
+                        targetId = s.targetId.ifBlank { null }
                     )
-                    val scopeLabel = scopeLabel(s.recipientScope, s.targetId)
-                    _events.send(DocDistributionEvent.ShowSnackbar(
-                        "Rozliczenie za $year wysłane do: $scopeLabel (WIP — symulacja)"
-                    ))
-                }
-                .onFailure { e ->
-                    _state.value = _state.value.copy(isSubmitting = false)
-                    _events.send(DocDistributionEvent.ShowSnackbar(e.message ?: "Błąd wysyłki"))
-                }
+                )
+            }.onSuccess { response ->
+                _state.value = _state.value.copy(
+                    isSubmitting = false,
+                    lastSentTab = DocDistributionTab.ANNUAL_SETTLEMENT
+                )
+                val result = response.body()
+                val msg = result?.message
+                    ?: "Rozliczenie za $year wygenerowane dla ${result?.documentsGenerated ?: 0} lokali"
+                _events.send(DocDistributionEvent.ShowSnackbar(msg))
+            }.onFailure { e ->
+                _state.value = _state.value.copy(isSubmitting = false)
+                _events.send(DocDistributionEvent.ShowSnackbar(e.message ?: "Błąd wysyłki"))
+            }
         }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /** Symuluje opóźnienie sieciowe (zostanie zastąpione wywołaniem API). */
-    private suspend fun simulateSend() {
-        delay(1500)
-    }
 
     private fun scopeLabel(scope: RecipientScope, targetId: String) = when (scope) {
         RecipientScope.ALL -> "wszyscy mieszkańcy"

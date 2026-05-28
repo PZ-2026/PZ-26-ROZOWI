@@ -6,10 +6,14 @@ import org.springframework.stereotype.Service;
 import pl.edu.ur.blokur.dto.ApartmentBalanceResponse;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
 import pl.edu.ur.blokur.pdflib.PdfGenerator;
+import pl.edu.ur.blokur.pdflib.template.AnnualSettlementTemplate;
 import pl.edu.ur.blokur.pdflib.template.BalancesReportTemplate;
+import pl.edu.ur.blokur.pdflib.template.RateChangeNotificationTemplate;
 import pl.edu.ur.blokur.pdflib.template.WorkAcceptanceProtocolTemplate;
+import pl.edu.ur.blokur.pdflib.template.data.AnnualSettlementData;
 import pl.edu.ur.blokur.pdflib.template.data.BalanceRow;
 import pl.edu.ur.blokur.pdflib.template.data.BalancesReportData;
+import pl.edu.ur.blokur.pdflib.template.data.RateChangeNotificationData;
 import pl.edu.ur.blokur.pdflib.template.data.WorkAcceptanceProtocolData;
 
 /**
@@ -39,6 +43,32 @@ public class PdfGeneratorService {
                         request.getBeforeImagesPaths(),
                         request.getAfterImagesPaths());
         return pdfGenerator.generate(new WorkAcceptanceProtocolTemplate(data));
+    }
+
+    /**
+     * Generuje zawiadomienie o zmianie stawek opłat w formacie PDF.
+     *
+     * @param subject tytuł zawiadomienia
+     * @param body treść zawiadomienia
+     * @param effectiveDate data wejścia w życie zmian
+     * @param communityName nazwa wspólnoty
+     * @return wygenerowany plik PDF jako tablica bajtów
+     */
+    public byte[] generateRateChangeNotification(
+            String subject, String body, String effectiveDate, String communityName) {
+        RateChangeNotificationData data =
+                new RateChangeNotificationData(subject, body, effectiveDate, communityName);
+        return pdfGenerator.generate(new RateChangeNotificationTemplate(data));
+    }
+
+    /**
+     * Generuje roczne rozliczenie kosztów lokalu w formacie PDF.
+     *
+     * @param data dane rozliczenia (adres, rok, saldo, transakcje, uwagi)
+     * @return wygenerowany plik PDF jako tablica bajtów
+     */
+    public byte[] generateAnnualSettlement(AnnualSettlementData data) {
+        return pdfGenerator.generate(new AnnualSettlementTemplate(data));
     }
 
     /**

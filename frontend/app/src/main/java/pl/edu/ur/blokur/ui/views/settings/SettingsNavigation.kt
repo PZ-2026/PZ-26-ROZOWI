@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import pl.edu.ur.blokur.ui.navigation.AppRoute
 import pl.edu.ur.blokur.ui.views.settings.screens.CommunityLogoScreen
 import pl.edu.ur.blokur.ui.views.settings.screens.NotificationSettingsScreen
+import pl.edu.ur.blokur.ui.views.settings.viewmodels.CommunityLogoViewModel
 import pl.edu.ur.blokur.ui.views.settings.viewmodels.NotificationSettingsViewModel
 
 sealed interface SettingsRoutes : AppRoute {
@@ -28,7 +29,9 @@ fun NavGraphBuilder.settingsGraph(navController: NavController) {
     }
 
     composable<SettingsRoutes.CommunityLogo> {
+        val viewModel: CommunityLogoViewModel = hiltViewModel()
         CommunityLogoScreen(
+            viewModel = viewModel,
             onNavigateBack = { navController.popBackStack() }
         )
     }

@@ -1,10 +1,12 @@
 package pl.edu.ur.blokur.ui.views.settings.screens
 
-import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,42 +17,71 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
-import androidx.compose.material.icons.rounded.Construction
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Row
 
-/**
- * Ekran zarządzania logo wspólnoty.
- *
- * WIP: Cała funkcjonalność jest w przygotowaniu — brak endpointu backendowego
- * do uploadu/pobrania logo. Ekran zawiera placeholder z opisem docelowej funkcjonalności.
- */
+/** Ekran zarządzania logo wspólnoty — pozwala zarządcy wybrać i załadować plik graficzny logo. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityLogoScreen(
+    viewModel: pl.edu.ur.blokur.ui.views.settings.viewmodels.CommunityLogoViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val state by viewModel.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is pl.edu.ur.blokur.ui.views.settings.viewmodels.CommunityLogoEvent.ShowSnackbar ->
+                    snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val cursor = context.contentResolver.query(uri, null, null, null, null)
+            val nameIndex = cursor?.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            cursor?.moveToFirst()
+            val name = nameIndex?.let { cursor.getString(it) }
+            cursor?.close()
+            viewModel.onFileSelected(uri, name)
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -87,42 +118,6 @@ fun CommunityLogoScreen(
         ) {
             Spacer(Modifier.height(8.dp))
 
-            // ── WIP Banner ──────────────────────────────────────────────────
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD))
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        Icons.Rounded.Construction,
-                        contentDescription = null,
-                        tint = Color(0xFFD97706),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(
-                            "WIP — Funkcja w przygotowaniu",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF92400E)
-                        )
-                        Text(
-                            "Zarządzanie logo wspólnoty wymaga implementacji backendu " +
-                            "(upload, przechowywanie i serwowanie pliku). " +
-                            "Poniżej znajduje się podgląd docelowego interfejsu.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFB45309)
-                        )
-                    }
-                }
-            }
-
-            // ── Placeholder logo ────────────────────────────────────────────
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -139,49 +134,60 @@ fun CommunityLogoScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        "Aktualne logo",
+                        "Logo wspólnoty",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
 
-                    // Placeholder — tutaj będzie logo
                     Box(
                         modifier = Modifier
                             .size(160.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
                             .border(
                                 2.dp,
-                                MaterialTheme.colorScheme.outlineVariant,
+                                if (state.uploadSuccess)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.outlineVariant,
                                 RoundedCornerShape(20.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        if (state.uploadSuccess) {
                             Icon(
-                                Icons.Rounded.Image,
+                                Icons.Rounded.CheckCircle,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(48.dp)
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(64.dp)
                             )
-                            Text(
-                                "Tutaj będzie logo\nwspólnoty",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Image,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Text(
+                                    if (state.selectedFileName != null)
+                                        state.selectedFileName!!
+                                    else
+                                        "Wybierz plik",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
 
-                    // Przycisk upload (nieaktywny)
                     OutlinedButton(
-                        onClick = { /* WIP: Otwórz picker pliku */ },
+                        onClick = { filePickerLauncher.launch("image/*") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        enabled = false
+                        enabled = !state.isUploading && !state.isLoadingProperties
                     ) {
                         Icon(
                             Icons.Rounded.AddPhotoAlternate,
@@ -189,11 +195,38 @@ fun CommunityLogoScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.size(8.dp))
-                        Text("Zmień logo (wkrótce)")
+                        Text(if (state.selectedFileName != null) "Zmień plik" else "Wybierz logo")
+                    }
+
+                    if (state.selectedFileName != null) {
+                        Button(
+                            onClick = viewModel::upload,
+                            enabled = !state.isUploading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            if (state.isUploading) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    Text("Przesyłam...")
+                                }
+                            } else {
+                                Text("Prześlij logo", fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
 
                     Text(
-                        "Dozwolone formaty: PNG, JPG, SVG\nMaksymalny rozmiar: 2 MB\nZalecana rozdzielczość: 512×512 px",
+                        "Dozwolone formaty: PNG, JPG\nMaksymalny rozmiar: 2 MB",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center

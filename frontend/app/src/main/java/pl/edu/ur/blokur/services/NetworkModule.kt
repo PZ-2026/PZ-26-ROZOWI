@@ -122,6 +122,11 @@ object NetworkModule {
     fun provideNotificationApiService(@Named("main") retrofit: Retrofit): NotificationApiService =
         retrofit.create(NotificationApiService::class.java)
 
+    @Provides
+    @Singleton
+    fun provideDocumentApiService(@Named("main") retrofit: Retrofit): DocumentApiService =
+        retrofit.create(DocumentApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }

@@ -1,7 +1,6 @@
 package pl.edu.ur.blokur.ui.views.documents.screens
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,7 +23,6 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Announcement
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Construction
 import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.Button
@@ -53,6 +51,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -169,42 +168,6 @@ fun DocumentDistributionScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp)
             ) {
-                // ── WIP Banner ─────────────────────────────────────────────────
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.Construction,
-                                null,
-                                tint = Color(0xFFD97706),
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Column {
-                                Text(
-                                    "WIP — Funkcja w przygotowaniu",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF92400E)
-                                )
-                                Text(
-                                    "Dystrybucja dokumentów wymaga endpointów backendowych " +
-                                    "do generowania i wysyłki PDF. Formularz jest gotowy do podłączenia.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFB45309)
-                                )
-                            }
-                        }
-                    }
-                }
-
                 when (state.activeTab) {
                     DocDistributionTab.RATE_CHANGE -> {
                         item {
