@@ -28,7 +28,6 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,8 +39,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,7 +64,6 @@ import pl.edu.ur.blokur.ui.views.users.viewmodels.UsersEvent
 import pl.edu.ur.blokur.ui.views.users.viewmodels.UsersUiState
 import pl.edu.ur.blokur.ui.views.users.viewmodels.UsersViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UsersScreen(
     viewModel: UsersViewModel,
@@ -134,27 +130,6 @@ fun UsersScreen(
     // ── Scaffold ─────────────────────────────────────────────────────────────
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Użytkownicy", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        val count = (state as? UsersUiState.Success)?.users?.size
-                        if (count != null) {
-                            Text("$count kont w systemie",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Rounded.Person, null, tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = viewModel::openCreateDialog,

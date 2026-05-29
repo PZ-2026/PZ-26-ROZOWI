@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.InspectionResponseDto
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
-import pl.edu.ur.blokur.ui.components.TopBar
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionEvent
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListState
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListViewModel
@@ -64,7 +63,6 @@ fun InspectionsListScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { TopBar(title = "Harmonogram i Przeglądy") },
         floatingActionButton = {
             if (isManager) {
                 ExtendedFloatingActionButton(

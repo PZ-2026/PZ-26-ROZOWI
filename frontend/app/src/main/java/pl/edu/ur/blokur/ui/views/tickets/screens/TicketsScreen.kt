@@ -11,17 +11,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.FloatingActionButton
@@ -32,7 +28,6 @@ import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsListState
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsScreenEvent
 import pl.edu.ur.blokur.ui.views.tickets.viewmodels.TicketsViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketsScreen(
     viewModel: TicketsViewModel,
@@ -57,20 +52,6 @@ fun TicketsScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    androidx.compose.material3.Text(
-                        "Zgłoszenia",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
         floatingActionButton = {
             if (showFab) {
                 FloatingActionButton(text = "+", onClick = viewModel::onCreateTicketClicked)

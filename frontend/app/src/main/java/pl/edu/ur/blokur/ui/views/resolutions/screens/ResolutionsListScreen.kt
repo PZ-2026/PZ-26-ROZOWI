@@ -30,7 +30,6 @@ import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.views.resolutions.viewmodels.ResolutionEvent
 import pl.edu.ur.blokur.ui.views.resolutions.viewmodels.ResolutionsListState
 import pl.edu.ur.blokur.ui.views.resolutions.viewmodels.ResolutionsListViewModel
-import pl.edu.ur.blokur.ui.components.TopBar
 
 @Composable
 fun ResolutionsListScreen(
@@ -71,7 +70,6 @@ fun ResolutionsListScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { TopBar(title = "Uchwały i głosowania") },
         floatingActionButton = {
             if (isManager) {
                 ExtendedFloatingActionButton(

@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.ui.components.TopBar
 import pl.edu.ur.blokur.ui.views.finances.contents.FinancesOverviewContent
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesEvent
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.FinancesViewModel
@@ -50,8 +49,7 @@ fun FinancesScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = { TopBar(title = "Finanse") }
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         FinancesOverviewContent(
             state = state,
