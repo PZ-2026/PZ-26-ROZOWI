@@ -127,6 +127,31 @@ object NetworkModule {
     fun provideDocumentApiService(@Named("main") retrofit: Retrofit): DocumentApiService =
         retrofit.create(DocumentApiService::class.java)
 
+    @Provides
+    @Singleton
+    fun provideAnnouncementApiService(@Named("main") retrofit: Retrofit): AnnouncementApiService =
+        retrofit.create(AnnouncementApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideTicketCommentApiService(@Named("main") retrofit: Retrofit): TicketCommentApiService =
+        retrofit.create(TicketCommentApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideTicketImageApiService(@Named("main") retrofit: Retrofit): TicketImageApiService =
+        retrofit.create(TicketImageApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserDocumentApiService(@Named("main") retrofit: Retrofit): UserDocumentApiService =
+        retrofit.create(UserDocumentApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDeviceApiService(@Named("main") retrofit: Retrofit): DeviceApiService =
+        retrofit.create(DeviceApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }

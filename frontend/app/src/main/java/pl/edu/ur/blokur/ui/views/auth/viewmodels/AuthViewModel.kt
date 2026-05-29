@@ -1,5 +1,6 @@
 package pl.edu.ur.blokur.ui.views.auth.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.services.AuthService
+import pl.edu.ur.blokur.services.DeviceService
+import pl.edu.ur.blokur.services.FcmTokenProvider
 import pl.edu.ur.blokur.ui.views.auth.utils.AuthEvent
 import pl.edu.ur.blokur.ui.views.auth.utils.AuthState
 import pl.edu.ur.blokur.ui.views.auth.utils.LoginFormFields
@@ -19,12 +22,24 @@ import javax.inject.Inject
 /**
  * ViewModel ekranu logowania.
  *
- * @property authService serwis autoryzacji.
+ * Po pomyślnym zalogowaniu próbuje pobrać aktualny FCM token (przez FcmTokenProvider)
+ * i zarejestrować urządzenie w backendzie. Błędy rejestracji są łagodnie logowane
+ * — nie blokują nawigacji do ekranu głównego.
+ *
+ * @property authService      serwis autoryzacji
+ * @property deviceService    serwis rejestracji urządzenia FCM
+ * @property fcmTokenProvider dostawca tokenu FCM (NoOpFcmTokenProvider gdy Firebase niedostępne)
  */
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val deviceService: DeviceService,
+    private val fcmTokenProvider: FcmTokenProvider
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "AuthViewModel"
+    }
 
     private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
     val state: StateFlow<AuthState> = _state.asStateFlow()
@@ -53,10 +68,32 @@ class AuthViewModel @Inject constructor(
                 .onSuccess { role ->
                     _state.value = AuthState.Success
                     _events.send(AuthEvent.NavigateToMain(role))
+                    // Rejestracja FCM token — fire-and-forget, błędy nie blokują nawigacji
+                    tryRegisterFcmToken()
                 }
                 .onFailure { e ->
                     _state.value = AuthState.Error(e.message ?: "Błąd logowania")
                 }
         }
     }
+
+    /**
+     * Pobiera token FCM i rejestruje urządzenie w backendzie.
+     * Gdy FcmTokenProvider zwraca null (np. NoOpFcmTokenProvider), operacja jest pomijana.
+     */
+    private fun tryRegisterFcmToken() {
+        viewModelScope.launch {
+            try {
+                val token = fcmTokenProvider.getToken()
+                if (token != null) {
+                    deviceService.registerDevice(token)
+                } else {
+                    Log.d(TAG, "FCM token niedostępny — pominięto rejestrację urządzenia")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Nie udało się zarejestrować FCM token: ${e.message}")
+            }
+        }
+    }
 }
+
