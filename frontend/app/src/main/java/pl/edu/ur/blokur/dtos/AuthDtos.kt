@@ -36,12 +36,20 @@ data class RefreshTokenRequestDto(
     @SerializedName("refreshToken") val refreshToken: String
 )
 
-/** POST /api/auth/refresh — odpowiedź. */
+/**
+ * POST /api/auth/refresh — odpowiedź.
+ *
+ * Backend zwraca JSON: { "token": "...", "refreshToken": "...", "role": "..." }
+ * (ta sama struktura co AuthResponseDto — używa AuthResponse.java po stronie serwera).
+ */
 data class TokenPairResponseDto(
-    @SerializedName("accessToken") val accessToken: String,
+    @SerializedName("token") val token: String,
     @SerializedName("refreshToken") val refreshToken: String,
     @SerializedName("role") val role: String
-)
+) {
+    /** Alias dla kompatybilności z TokenAuthenticator i innymi konsumentami. */
+    val accessToken: String get() = token
+}
 
 /** POST /api/auth/forgot-password — ciało żądania. */
 data class ForgotPasswordRequestDto(
@@ -56,5 +64,26 @@ data class ResetPasswordRequestDto(
 
 /** Generyczna odpowiedź z komunikatem (forgot-password, reset-password). */
 data class MessageResponseDto(
+    @SerializedName("message") val message: String
+)
+
+/**
+ * POST /api/auth/accept-invitation — ciło żądania przyjecia zaproszenia.
+ *
+ * Endpoint służy do pierwszego logowania użytkownika po zaproszeniu przez zarządcę.
+ * Token zaproszenia jest przekazywany w linku mailowym (query param ?token=...).
+ *
+ * Wymagania hasła (walidacja backendowa):
+ * - minimum 8 znaków
+ * - co najmniej jedna wielka litera
+ * - co najmniej jedna cyfra
+ */
+data class AcceptInvitationRequestDto(
+    @SerializedName("token") val token: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
+/** POST /api/auth/accept-invitation — odpowiedź (mapa {"message": "..."} z backendu). */
+data class AcceptInvitationResponseDto(
     @SerializedName("message") val message: String
 )

@@ -47,6 +47,7 @@ fun LoginForm(
 ) {
     val focusManager = LocalFocusManager.current
     val isLoading = state is AuthState.Loading
+    val isLocked = state is AuthState.AccountLocked
 
     Column(
         modifier = Modifier
@@ -65,6 +66,32 @@ fun LoginForm(
             color = MaterialTheme.colorScheme.onSurface
         )
 
+        // Banner konta zablokowanego (HTTP 423)
+        if (isLocked) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    text = (state as AuthState.AccountLocked).message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+
         OutlinedTextField(
             value = loginFormFields.email,
             onValueChange = { s ->
@@ -73,7 +100,7 @@ fun LoginForm(
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Adres e-mail") },
             singleLine = true,
-            enabled = !isLoading,
+            enabled = !isLoading && !isLocked,
             isError = state is AuthState.Error,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
@@ -93,7 +120,7 @@ fun LoginForm(
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Hasło") },
             singleLine = true,
-            enabled = !isLoading,
+            enabled = !isLoading && !isLocked,
             isError = state is AuthState.Error,
             visualTransformation = if (loginFormFields.passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
@@ -143,7 +170,7 @@ fun LoginForm(
         PrimaryButton(
             text = if (isLoading) "Logowanie..." else "Zaloguj się",
             onClick = onLoginClicked,
-            enabled = !isLoading && loginFormFields.email.isNotBlank() && loginFormFields.password.isNotBlank(),
+            enabled = !isLoading && !isLocked && loginFormFields.email.isNotBlank() && loginFormFields.password.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
         )
     }

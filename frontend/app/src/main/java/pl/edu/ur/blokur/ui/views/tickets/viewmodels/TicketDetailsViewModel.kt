@@ -80,16 +80,57 @@ class TicketDetailsViewModel @Inject constructor(
     }
 
     fun onRejectTicket(reason: String) {
+        val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
-            _events.send(TicketDetailsScreenEvent.RejectTicket(reason))
-            loadTicket()
+            runCatching {
+                ticketService.rejectTicket(
+                    ticketId = currentState.ticket.id,
+                    reason = reason
+                )
+            }.onSuccess {
+                loadTicket()
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+            }.onFailure { e ->
+                _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd odrzucania zgłoszenia"))
+            }
+        }
+    }
+
+    fun onCloseTicket() {
+        val currentState = _state.value as? TicketDetailsListState.Success ?: return
+        viewModelScope.launch {
+            runCatching {
+                ticketService.closeTicket(ticketId = currentState.ticket.id)
+            }.onSuccess {
+                loadTicket()
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+            }.onFailure { e ->
+                _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd zamykania zgłoszenia"))
+            }
         }
     }
 
     fun onConservatorAction(type: ConservatorActionType, comment: String, pause: Boolean = false) {
+        val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
-            _events.send(TicketDetailsScreenEvent.ConservatorAction(type, comment, pause))
-            loadTicket()
+            runCatching {
+                when (type) {
+                    ConservatorActionType.START -> ticketService.startWork(currentState.ticket.id)
+                    ConservatorActionType.FINISH -> ticketService.completeWork(
+                        ticketId = currentState.ticket.id,
+                        workDescription = comment.ifBlank { "Prace zakończone." }
+                    )
+                    ConservatorActionType.PAUSE_OR_COMMENT -> ticketService.suspendWork(
+                        ticketId = currentState.ticket.id,
+                        reason = comment.ifBlank { "Prace wstrzymane." }
+                    )
+                }
+            }.onSuccess {
+                loadTicket()
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+            }.onFailure { e ->
+                _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd wykonywania akcji"))
+            }
         }
     }
 }

@@ -35,9 +35,15 @@ data class MeterResponseDto(
 
 data class MeterReadingRequestDto(
     @SerializedName("meterId") val meterId: String,
-    @SerializedName("value") val value: Double,
+    /**
+     * Wartość odczytu jako BigDecimal — eliminuje błędy precyzji IEEE 754.
+     * Gson serializuje BigDecimal jako liczba JSON (bez cudzysłowów).
+     * Backend oczekuje BigDecimal — typy są teraz w pełni zgodne.
+     */
+    @SerializedName("value") val value: java.math.BigDecimal,
     @SerializedName("readingDate") val readingDate: String // YYYY-MM-DD
 )
+
 
 data class MeterReadingResponseDto(
     @SerializedName("id") val id: String,
@@ -45,12 +51,30 @@ data class MeterReadingResponseDto(
     @SerializedName("meterId") val meterId: String,
     @SerializedName("meterSerialNumber") val meterSerialNumber: String,
     @SerializedName("mediumType") val mediumType: String,
+    /**
+     * Wartość odczytu licznika.
+     *
+     * Backend zwraca BigDecimal serializowany przez Jacksona jako liczba JSON.
+     * Gson deserializuje ją do Double. Dla dokładnych obliczeń (np. finansowych)
+     * użyj właściwości [asBigDecimal] zamiast pola [value].
+     */
     @SerializedName("value") val value: Double,
     @SerializedName("readingDate") val readingDate: String,
     @SerializedName("createdAt") val createdAt: String?,
     @SerializedName("updatedAt") val updatedAt: String?,
     @SerializedName("recordedBy") val recordedBy: String?
-)
+) {
+    /**
+     * Wartość odczytu jako BigDecimal — użyj zamiast [value] wszędzie gdzie
+     * precyzja ma znaczenie (porównania, obliczenia różnic, wyświetlanie).
+     */
+    val asBigDecimal: java.math.BigDecimal
+        get() = value.toBigDecimal()
+
+    /** Wartość sformatowana jako łańcuch z maksymalnie 3 miejscami po przecinku. */
+    val displayValue: String
+        get() = asBigDecimal.stripTrailingZeros().toPlainString()
+}
 
 data class PaginatedResponse<T>(
     @SerializedName("content") val content: List<T>,

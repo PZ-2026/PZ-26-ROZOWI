@@ -15,6 +15,9 @@ interface PropertyApiService {
     @GET("/api/properties")
     suspend fun getProperties(): Response<List<PropertyResponseDto>>
 
+    @GET("/api/properties/{id}")
+    suspend fun getPropertyById(@Path("id") id: String): Response<PropertyResponseDto>
+
     @POST("/api/properties")
     suspend fun createProperty(@Body request: PropertyRequestDto): Response<PropertyResponseDto>
 
@@ -23,6 +26,7 @@ interface PropertyApiService {
         @Path("id") id: String,
         @Body request: PropertyRequestDto
     ): Response<PropertyResponseDto>
+
 
     // ─── Buildings ───────────────────────────────────────────────────
     @POST("/api/buildings")
@@ -33,6 +37,10 @@ interface PropertyApiService {
         @Path("id") id: String,
         @Body request: BuildingRequestDto
     ): Response<BuildingResponseDto>
+
+    /** DELETE /api/buildings/{id} — usuwa budynek (tylko gdy brak powiązanych lokali). ZARZADCA. */
+    @DELETE("/api/buildings/{id}")
+    suspend fun deleteBuilding(@Path("id") id: String): Response<Unit>
 
     // ─── Staircases ──────────────────────────────────────────────────
     @POST("/api/buildings/{buildingId}/staircases")
@@ -48,6 +56,16 @@ interface PropertyApiService {
         @Body request: StaircaseRequestDto
     ): Response<StaircaseResponseDto>
 
+    /**
+     * DELETE /api/buildings/{buildingId}/staircases/{staircaseId} —
+     * Usuwa klatkę schodową z budynku. ZARZADCA.
+     */
+    @DELETE("/api/buildings/{buildingId}/staircases/{staircaseId}")
+    suspend fun deleteStaircase(
+        @Path("buildingId") buildingId: String,
+        @Path("staircaseId") staircaseId: String
+    ): Response<Unit>
+
     // ─── Apartments ──────────────────────────────────────────────────
     @POST("/api/staircases/{staircaseId}/apartments")
     suspend fun createApartment(
@@ -61,4 +79,14 @@ interface PropertyApiService {
         @Path("apartmentId") apartmentId: String,
         @Body request: ApartmentRequestDto
     ): Response<ApartmentResponseDto>
+
+    /**
+     * DELETE /api/staircases/{staircaseId}/apartments/{apartmentId} —
+     * Usuwa lokal. Historyczne zgłoszenia powiązane z lokalem pozostają nienaruszone. ZARZADCA.
+     */
+    @DELETE("/api/staircases/{staircaseId}/apartments/{apartmentId}")
+    suspend fun deleteApartment(
+        @Path("staircaseId") staircaseId: String,
+        @Path("apartmentId") apartmentId: String
+    ): Response<Unit>
 }
