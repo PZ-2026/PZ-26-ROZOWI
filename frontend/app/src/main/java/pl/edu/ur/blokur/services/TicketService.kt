@@ -68,12 +68,53 @@ class TicketService @Inject constructor(
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
+    /** PATCH /api/tickets/{id}/close — zamknięcie zgłoszenia (ZARZADCA). */
+    suspend fun closeTicket(ticketId: String): TicketDetailDto {
+        return runCatching {
+            val response = api.closeTicket(ticketId)
+            handleResponse(response, "Błąd podczas zamykania zgłoszenia")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
+    /** PATCH /api/tickets/{id}/reject — odrzucenie zgłoszenia z powodem (ZARZADCA). */
+    suspend fun rejectTicket(ticketId: String, reason: String): TicketDetailDto {
+        return runCatching {
+            val response = api.rejectTicket(ticketId, TicketRejectRequest(reason = reason))
+            handleResponse(response, "Błąd podczas odrzucania zgłoszenia")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
+    /** PATCH /api/tickets/{id}/start — rozpoczęcie prac (KONSERWATOR). */
+    suspend fun startWork(ticketId: String): TicketDetailDto {
+        return runCatching {
+            val response = api.startWork(ticketId)
+            handleResponse(response, "Błąd podczas rozpoczynania prac")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
+    /** PATCH /api/tickets/{id}/suspend — wstrzymanie prac z powodem (KONSERWATOR). */
+    suspend fun suspendWork(ticketId: String, reason: String): TicketDetailDto {
+        return runCatching {
+            val response = api.suspendWork(ticketId, TicketSuspendRequest(reason = reason))
+            handleResponse(response, "Błąd podczas wstrzymywania prac")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
+    /** POST /api/tickets/{id}/completion — zakończenie prac z opisem (KONSERWATOR). */
+    suspend fun completeWork(ticketId: String, workDescription: String): TicketDetailDto {
+        return runCatching {
+            val response = api.completeWork(ticketId, TicketCompletionRequest(workDescription = workDescription))
+            handleResponse(response, "Błąd podczas zgłaszania zakończenia prac")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
     private fun <T> handleResponse(response: retrofit2.Response<T>, defaultErrorMessage: String): T {
         if (!response.isSuccessful) {
             val message = when (response.code()) {
                 400 -> "Błąd walidacji danych."
                 403 -> "Brak uprawnień do wykonania tej operacji."
                 404 -> "Nie znaleziono wybranego zgłoszenia."
+                409 -> "Operacja niedozwolona w aktualnym stanie zgłoszenia."
                 422 -> "Niezgodność danych z regułami biznesowymi."
                 else -> "$defaultErrorMessage (Kod: ${response.code()})"
             }
@@ -82,4 +123,5 @@ class TicketService @Inject constructor(
         return response.body() ?: throw Exception("Pusta odpowiedź z serwera")
     }
 }
+
 

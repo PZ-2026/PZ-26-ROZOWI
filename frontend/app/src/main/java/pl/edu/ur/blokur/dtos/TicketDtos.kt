@@ -75,3 +75,20 @@ data class AppUserDto(
 ) {
     val fullName: String get() = "$firstName $lastName"
 }
+
+// ── Request DTOs dla akcji na zgłoszeniu ──────────────────────────────────────
+
+/** PATCH /api/tickets/{id}/reject — odrzucenie zgłoszenia przez zarządcę. */
+data class TicketRejectRequest(
+    val reason: String
+)
+
+/** PATCH /api/tickets/{id}/suspend — wstrzymanie prac przez konserwatora. */
+data class TicketSuspendRequest(
+    val reason: String
+)
+
+/** POST /api/tickets/{id}/completion — zakończenie prac przez konserwatora. */
+data class TicketCompletionRequest(
+    val workDescription: String
+)

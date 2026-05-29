@@ -36,12 +36,20 @@ data class RefreshTokenRequestDto(
     @SerializedName("refreshToken") val refreshToken: String
 )
 
-/** POST /api/auth/refresh — odpowiedź. */
+/**
+ * POST /api/auth/refresh — odpowiedź.
+ *
+ * Backend zwraca JSON: { "token": "...", "refreshToken": "...", "role": "..." }
+ * (ta sama struktura co AuthResponseDto — używa AuthResponse.java po stronie serwera).
+ */
 data class TokenPairResponseDto(
-    @SerializedName("accessToken") val accessToken: String,
+    @SerializedName("token") val token: String,
     @SerializedName("refreshToken") val refreshToken: String,
     @SerializedName("role") val role: String
-)
+) {
+    /** Alias dla kompatybilności z TokenAuthenticator i innymi konsumentami. */
+    val accessToken: String get() = token
+}
 
 /** POST /api/auth/forgot-password — ciało żądania. */
 data class ForgotPasswordRequestDto(
