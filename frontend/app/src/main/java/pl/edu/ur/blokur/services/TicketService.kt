@@ -9,9 +9,31 @@ class TicketService @Inject constructor(
     private val api: TicketApiService,
     private val tokenStorage: TokenStorage
 ) {
-    suspend fun getTickets(): List<TicketSummaryDto> {
+    /**
+     * Pobiera listę zgłoszeń z opcjonalnymi filtrami serwera.
+     * Wszystkie parametry są opcjonalne — null = brak filtra.
+     */
+    suspend fun getTickets(
+        status: String? = null,
+        categoryId: String? = null,
+        buildingId: String? = null,
+        staircaseId: String? = null,
+        assignedTo: String? = null,
+        dateFrom: String? = null,
+        dateTo: String? = null,
+        search: String? = null
+    ): List<TicketSummaryDto> {
         return runCatching {
-            val response = api.getTickets()
+            val response = api.getTickets(
+                status = status,
+                categoryId = categoryId,
+                buildingId = buildingId,
+                staircaseId = staircaseId,
+                assignedTo = assignedTo,
+                dateFrom = dateFrom,
+                dateTo = dateTo,
+                search = search
+            )
             handleResponse(response, "Błąd podczas pobierania zgłoszeń")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }

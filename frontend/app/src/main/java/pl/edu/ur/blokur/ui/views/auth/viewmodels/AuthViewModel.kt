@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.dtos.AuthException
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.DeviceService
 import pl.edu.ur.blokur.services.FcmTokenProvider
@@ -52,7 +53,10 @@ class AuthViewModel @Inject constructor(
 
     fun onFormChanged(fields: LoginFormFields) {
         _formFields.value = fields
-        if (_state.value is AuthState.Error) _state.value = AuthState.Idle
+        // Resetuj błąd przy każdej zmianie formularza (również dla AccountLocked)
+        if (_state.value is AuthState.Error || _state.value is AuthState.AccountLocked) {
+            _state.value = AuthState.Idle
+        }
     }
 
     fun login() {
@@ -72,7 +76,14 @@ class AuthViewModel @Inject constructor(
                     tryRegisterFcmToken()
                 }
                 .onFailure { e ->
-                    _state.value = AuthState.Error(e.message ?: "Błąd logowania")
+                    // HTTP 423 — konto zablokowane po przekroczeniu limitu prób
+                    _state.value = if (e is AuthException.AccountLocked) {
+                        AuthState.AccountLocked(
+                            e.message ?: "Konto zostało zablokowane. Spróbuj ponownie za 15 minut."
+                        )
+                    } else {
+                        AuthState.Error(e.message ?: "Błąd logowania")
+                    }
                 }
         }
     }

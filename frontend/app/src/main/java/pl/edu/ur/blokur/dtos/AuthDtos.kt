@@ -66,3 +66,24 @@ data class ResetPasswordRequestDto(
 data class MessageResponseDto(
     @SerializedName("message") val message: String
 )
+
+/**
+ * POST /api/auth/accept-invitation — ciło żądania przyjecia zaproszenia.
+ *
+ * Endpoint służy do pierwszego logowania użytkownika po zaproszeniu przez zarządcę.
+ * Token zaproszenia jest przekazywany w linku mailowym (query param ?token=...).
+ *
+ * Wymagania hasła (walidacja backendowa):
+ * - minimum 8 znaków
+ * - co najmniej jedna wielka litera
+ * - co najmniej jedna cyfra
+ */
+data class AcceptInvitationRequestDto(
+    @SerializedName("token") val token: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
+/** POST /api/auth/accept-invitation — odpowiedź (mapa {"message": "..."} z backendu). */
+data class AcceptInvitationResponseDto(
+    @SerializedName("message") val message: String
+)

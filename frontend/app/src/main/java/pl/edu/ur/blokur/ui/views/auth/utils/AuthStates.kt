@@ -15,8 +15,15 @@ sealed interface AuthState {
     /** Logowanie zakończone sukcesem. */
     data object Success : AuthState
 
-    /** Logowanie zakończone błędem. */
+    /** Logowanie zakończone błędem (np. złe hasło, błąd sieciowy). */
     data class Error(val message: String) : AuthState
+
+    /**
+     * Konto zablokowane (HTTP 423) — użytkownik przekroczył limit nieudanych prób.
+     * UI powinno wyświetlić ikony kłódki i informację o czasie odblokowania.
+     * @param message komunikat z serwera (np. "Konto zostało zablokowane na 15 minut")
+     */
+    data class AccountLocked(val message: String) : AuthState
 }
 
 /**

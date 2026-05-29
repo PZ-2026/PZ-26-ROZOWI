@@ -19,8 +19,30 @@ import retrofit2.http.Query
 
 interface TicketApiService {
 
+    /**
+     * GET /api/tickets — lista zgłoszeń z opcjonalnymi filtrami.
+     *
+     * Parametry (wszystkie opcjonalne):
+     * @param status      nazwa statusu (np. "NOWE", "W_REALIZACJI")
+     * @param categoryId  UUID kategorii
+     * @param buildingId  UUID budynku
+     * @param staircaseId UUID klatki schodowej
+     * @param assignedTo  UUID konserwatora
+     * @param dateFrom    data od (ISO 8601, np. "2026-01-01T00:00:00")
+     * @param dateTo      data do (ISO 8601)
+     * @param search      fraza do wyszukiwania w tytule / numerze zgłoszenia
+     */
     @GET("api/tickets")
-    suspend fun getTickets(): Response<List<TicketSummaryDto>>
+    suspend fun getTickets(
+        @Query("status") status: String? = null,
+        @Query("categoryId") categoryId: String? = null,
+        @Query("buildingId") buildingId: String? = null,
+        @Query("staircaseId") staircaseId: String? = null,
+        @Query("assignedTo") assignedTo: String? = null,
+        @Query("dateFrom") dateFrom: String? = null,
+        @Query("dateTo") dateTo: String? = null,
+        @Query("search") search: String? = null
+    ): Response<List<TicketSummaryDto>>
 
     @GET("api/tickets/{id}")
     suspend fun getTicketById(@Path("id") id: String): Response<TicketDetailDto>
