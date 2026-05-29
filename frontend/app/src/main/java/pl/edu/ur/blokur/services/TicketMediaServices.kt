@@ -4,8 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.ResponseBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody
 import pl.edu.ur.blokur.dtos.TicketCommentDto
 import pl.edu.ur.blokur.dtos.TicketCommentRequestDto
 import pl.edu.ur.blokur.dtos.TicketImageDto
@@ -78,7 +79,9 @@ class TicketImageService @Inject constructor(
     ): TicketImageDto = withContext(Dispatchers.IO) {
         val requestBody = imageBytes.toRequestBody(mimeType.toMediaTypeOrNull())
         val part = MultipartBody.Part.createFormData("file", filename, requestBody)
-        val response = api.uploadImage(ticketId, imageType, part)
+        // imageType przekazywany jako multipart form field (nie query param)
+        val imageTypeBody: RequestBody = imageType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val response = api.uploadImage(ticketId, imageTypeBody, part)
         if (response.isSuccessful) {
             response.body() ?: throw Exception("Pusta odpowiedź z serwera")
         } else {

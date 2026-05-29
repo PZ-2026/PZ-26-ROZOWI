@@ -47,4 +47,23 @@ interface MeterApiService {
     suspend fun deleteMeterReading(
         @Path("id") id: String
     ): Response<Unit>
+
+    /**
+     * GET /api/meter-readings/{id} — pobiera szczegóły konkretnego odczytu.
+     * Dostęp: ZARZADCA (wszystkie), KONSERWATOR i MIESZKANIEC (w obrębie swojego lokalu).
+     */
+    @GET("/api/meter-readings/{id}")
+    suspend fun getMeterReadingById(
+        @Path("id") id: String
+    ): Response<MeterReadingResponseDto>
+
+    /**
+     * PUT /api/meter-readings/{id} — edytuje istniejący odczyt (tylko własny lokal lub ZARZADCA).
+     * Przykładowe zastosowanie: korekta błędnie wpisanej wartości przed migracjá danych.
+     */
+    @PUT("/api/meter-readings/{id}")
+    suspend fun updateMeterReading(
+        @Path("id") id: String,
+        @Body request: MeterReadingRequestDto
+    ): Response<MeterReadingResponseDto>
 }

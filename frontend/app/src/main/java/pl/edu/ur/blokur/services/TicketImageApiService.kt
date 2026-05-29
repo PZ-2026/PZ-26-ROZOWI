@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.services
 
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import pl.edu.ur.blokur.dtos.TicketImageDto
 import retrofit2.Response
@@ -10,7 +11,6 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
-import retrofit2.http.Query
 
 /**
  * Retrofit interface dla endpointów zdjęć w zgłoszeniach.
@@ -23,14 +23,14 @@ interface TicketImageApiService {
 
     /**
      * POST /api/tickets/{id}/images — wgraj zdjęcie do zgłoszenia.
-     * @param imageType "BEFORE" lub "AFTER"
+     * @param imageType "BEFORE" lub "AFTER" — przekazywany jako część formularza multipart
      * @param file      plik obrazu jako MultipartBody.Part (JPEG lub PNG)
      */
     @Multipart
     @POST("/api/tickets/{id}/images")
     suspend fun uploadImage(
         @Path("id") ticketId: String,
-        @Query("image_type") imageType: String,
+        @Part("image_type") imageType: RequestBody,
         @Part file: MultipartBody.Part
     ): Response<TicketImageDto>
 

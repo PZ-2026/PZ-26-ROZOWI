@@ -15,6 +15,9 @@ interface PropertyApiService {
     @GET("/api/properties")
     suspend fun getProperties(): Response<List<PropertyResponseDto>>
 
+    @GET("/api/properties/{id}")
+    suspend fun getPropertyById(@Path("id") id: String): Response<PropertyResponseDto>
+
     @POST("/api/properties")
     suspend fun createProperty(@Body request: PropertyRequestDto): Response<PropertyResponseDto>
 
@@ -23,6 +26,7 @@ interface PropertyApiService {
         @Path("id") id: String,
         @Body request: PropertyRequestDto
     ): Response<PropertyResponseDto>
+
 
     // ─── Buildings ───────────────────────────────────────────────────
     @POST("/api/buildings")

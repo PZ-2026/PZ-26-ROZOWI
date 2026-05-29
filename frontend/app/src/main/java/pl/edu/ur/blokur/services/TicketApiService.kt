@@ -7,6 +7,7 @@ import pl.edu.ur.blokur.dtos.TicketAssignRequest
 import pl.edu.ur.blokur.dtos.TicketCompletionRequest
 import pl.edu.ur.blokur.dtos.TicketDetailDto
 import pl.edu.ur.blokur.dtos.TicketRejectRequest
+import pl.edu.ur.blokur.dtos.TicketStatusChangeRequest
 import pl.edu.ur.blokur.dtos.TicketSummaryDto
 import pl.edu.ur.blokur.dtos.TicketSuspendRequest
 import retrofit2.Response
@@ -90,5 +91,17 @@ interface TicketApiService {
     suspend fun completeWork(
         @Path("id") ticketId: String,
         @Body request: TicketCompletionRequest
+    ): Response<TicketDetailDto>
+
+    /**
+     * PATCH /api/tickets/{id}/status — ogólna zmiana statusu przez maszynę stanów.
+     * Dostęp: ZARZADCA i KONSERWATOR (konserwator — tylko swoje zgłoszenia).
+     * Backend waliduje dozwolone przejście przez TicketStateMachine.
+     * Umożliwia np. ponowne uruchomienie z WSTRZYMANO → W_REALIZACJI.
+     */
+    @PATCH("api/tickets/{id}/status")
+    suspend fun changeStatus(
+        @Path("id") ticketId: String,
+        @Body request: TicketStatusChangeRequest
     ): Response<TicketDetailDto>
 }

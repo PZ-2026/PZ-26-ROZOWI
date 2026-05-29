@@ -36,14 +36,14 @@ data class MeterResponseDto(
 data class MeterReadingRequestDto(
     @SerializedName("meterId") val meterId: String,
     /**
-     * Wartość odczytu jako String aby uniknąć błędów precyzji IEEE 754 przy serialzacji.
-     * Backend przyjmuje wartość numeryczną (BigDecimal) — Gson serializuje String
-     * bez cudzysłowów gdy jest to poprawna liczba dziesiętna.
-     * Użycie: wartość.toBigDecimal().toPlainString() przed przekazaniem tutaj.
+     * Wartość odczytu jako BigDecimal — eliminuje błędy precyzji IEEE 754.
+     * Gson serializuje BigDecimal jako liczba JSON (bez cudzysłowów).
+     * Backend oczekuje BigDecimal — typy są teraz w pełni zgodne.
      */
-    @SerializedName("value") val value: Double,
+    @SerializedName("value") val value: java.math.BigDecimal,
     @SerializedName("readingDate") val readingDate: String // YYYY-MM-DD
 )
+
 
 data class MeterReadingResponseDto(
     @SerializedName("id") val id: String,

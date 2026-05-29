@@ -56,12 +56,12 @@ public class SecurityConfig {
                                                 "/api/auth/forgot-password",
                                                 "/api/auth/reset-password",
                                                 "/api/auth/accept-invitation",
-                                                "/api/pdf/**",
                                                 "/api/categories",
                                                 "/error")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated());
+
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class);
