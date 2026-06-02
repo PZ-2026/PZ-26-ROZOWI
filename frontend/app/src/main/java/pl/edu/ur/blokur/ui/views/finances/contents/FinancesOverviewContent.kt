@@ -12,12 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Upload
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
+import pl.edu.ur.blokur.ui.components.SectionHeader
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
 import pl.edu.ur.blokur.ui.views.finances.components.BalanceCard
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesState
@@ -55,7 +56,7 @@ fun FinancesOverviewContent(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
             BalanceCard(balance = state.balance)
-            Text("Przejdź do", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            SectionHeader(title = "Przejdź do")
             FinancesNavItem(
                 icon = Icons.Rounded.AccountBalanceWallet,
                 title = "Kartoteka finansowa",
@@ -76,7 +77,7 @@ fun FinancesOverviewContent(
             )
             if (isManager) {
                 FinancesNavItem(
-                    icon = Icons.Rounded.Warning,
+                    icon = Icons.Rounded.AccountBalance,
                     title = "Monitorowanie zaległości",
                     subtitle = "Zestawienie sald i zaległości wszystkich lokali",
                     onClick = onNavigateToBalances

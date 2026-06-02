@@ -35,6 +35,11 @@ fun BottomNavBar(
         is ResidentMainState.ViewingProfile -> NavBarOption.PROFILE
         is ResidentMainState.ViewingTickets -> NavBarOption.TICKETS
         is ResidentMainState.ViewingProperties -> NavBarOption.PROPERTIES
+        is ResidentMainState.ViewingUsers -> NavBarOption.USERS
+        is ResidentMainState.ViewingCategories -> NavBarOption.CATEGORIES
+        is ResidentMainState.ViewingResolutions -> NavBarOption.RESOLUTIONS
+        is ResidentMainState.ViewingInspections -> NavBarOption.INSPECTIONS
+        is ResidentMainState.ViewingNotifications -> NavBarOption.NOTIFICATIONS
         else -> NavBarOption.NONE
     }
 

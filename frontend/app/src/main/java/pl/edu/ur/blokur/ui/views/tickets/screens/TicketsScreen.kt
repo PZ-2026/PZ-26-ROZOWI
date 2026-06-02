@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.FloatingActionButton
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketFilterPanel
 import pl.edu.ur.blokur.ui.views.tickets.contents.TicketListContent
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsListState
@@ -54,7 +56,11 @@ fun TicketsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             if (showFab) {
-                FloatingActionButton(text = "+", onClick = viewModel::onCreateTicketClicked)
+                FloatingActionButton(
+                    icon = Icons.Rounded.Add,
+                    contentDescription = "Utwórz zgłoszenie",
+                    onClick = viewModel::onCreateTicketClicked
+                )
             }
         }
     ) { innerPadding ->

@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.InspectionResponseDto
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
+import pl.edu.ur.blokur.ui.theme.InfoBlue
+import pl.edu.ur.blokur.ui.theme.InfoBlueBg
+import pl.edu.ur.blokur.ui.theme.ShadowOverlay
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionEvent
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListState
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListViewModel
@@ -115,7 +118,7 @@ private fun InspectionCard(
     inspection: InspectionResponseDto
 ) {
     val isUpcoming = inspection.isUpcoming
-    val statusColor = if (isUpcoming) Color(0xFF1976D2) else MaterialTheme.colorScheme.onSurfaceVariant
+    val statusColor = if (isUpcoming) InfoBlue else MaterialTheme.colorScheme.onSurfaceVariant
     val statusIcon = if (isUpcoming) Icons.Rounded.CalendarToday else Icons.Rounded.CheckCircle
     val statusText = if (isUpcoming) "Zaplanowane" else "Odbyte"
 
@@ -134,8 +137,8 @@ private fun InspectionCard(
             modifier = Modifier
                 .size(48.dp)
                 .background(
-                    if (isUpcoming) Color(0xFFE3F2FD) else MaterialTheme.colorScheme.surfaceVariant,
-                    RoundedCornerShape(14.dp)
+                    if (isUpcoming) InfoBlueBg else MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.shapes.small
                 ),
             contentAlignment = Alignment.Center
         ) {

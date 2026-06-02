@@ -5,15 +5,19 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
@@ -48,13 +52,14 @@ fun PrimaryButton(
 fun SecondaryButton(
     text: String,
     onClick: () -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = Modifier.height(54.dp),
+        modifier = modifier.height(54.dp),
         enabled = enabled,
-        shape = RoundedCornerShape(18.dp),
+        shape = MaterialTheme.shapes.small,
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = MaterialTheme.colorScheme.primary
@@ -69,24 +74,40 @@ fun SecondaryButton(
 
 @Composable
 fun FloatingActionButton(
-    text: String,
-    onClick: () -> Unit
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null
 ) {
-    FloatingActionButton(
-        onClick = onClick,
-        modifier = Modifier,
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = RoundedCornerShape(18.dp),
-        elevation = FloatingActionButtonDefaults.elevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 6.dp
+    if (label != null) {
+        androidx.compose.material3.ExtendedFloatingActionButton(
+            onClick = onClick,
+            modifier = modifier,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            shape = RoundedCornerShape(18.dp),
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 4.dp,
+                pressedElevation = 6.dp
+            ),
+            icon = { Icon(imageVector = icon, contentDescription = contentDescription) },
+            text = { Text(text = label, style = MaterialTheme.typography.labelLarge) }
         )
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.headlineSmall
-        )
+    } else {
+        FloatingActionButton(
+            onClick = onClick,
+            modifier = modifier,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            shape = RoundedCornerShape(18.dp),
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 4.dp,
+                pressedElevation = 6.dp
+            )
+        ) {
+            Icon(imageVector = icon, contentDescription = contentDescription)
+        }
     }
 }
 
@@ -112,7 +133,8 @@ private fun BlokurButtonsPreview() {
 private fun BlokurFabPreview() {
     PreviewTheme {
         FloatingActionButton(
-            text = "FAB",
+            icon = Icons.Rounded.Add,
+            contentDescription = "Dodaj",
             onClick = {}
         )
     }
