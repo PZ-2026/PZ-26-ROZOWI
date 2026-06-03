@@ -54,7 +54,7 @@ fun ResidentMainScreen(
         is ResidentMainState.ViewingFinances -> "Finanse"
         is ResidentMainState.ViewingProfile -> "Profil"
         is ResidentMainState.ViewingTickets -> "Zgłoszenia"
-        is ResidentMainState.ViewingProperties -> "Nieruchomości"
+        is ResidentMainState.ViewingProperties -> "Lokale"
         is ResidentMainState.ViewingUsers -> "Użytkownicy"
         is ResidentMainState.ViewingCategories -> "Kategorie"
         is ResidentMainState.ViewingResolutions -> "Uchwały"

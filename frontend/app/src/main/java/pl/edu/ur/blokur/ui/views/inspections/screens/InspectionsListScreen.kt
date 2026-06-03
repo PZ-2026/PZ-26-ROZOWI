@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CalendarToday
@@ -32,10 +33,12 @@ import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionEvent
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListState
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionsListScreen(
     viewModel: InspectionsListViewModel,
-    isManager: Boolean = true // Panel jest tylko dla zarządcy
+    isManager: Boolean = true,
+    onNavigateBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val showDialog by viewModel.showCreateDialog.collectAsState()
@@ -66,6 +69,29 @@ fun InspectionsListScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Harmonogram przeglądów",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Wróć",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
         floatingActionButton = {
             if (isManager) {
                 ExtendedFloatingActionButton(
