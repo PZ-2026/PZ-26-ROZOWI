@@ -116,7 +116,7 @@ public class MeterReadingService {
      * @throws NotFoundException jeśli lokal nie istnieje
      * @throws BusinessValidationException jeśli mieszkaniec nie jest najemcą tego lokalu
      */
-    public Page<MeterReadingResponse> getAllByApartment(UUID apartmentId, int page, int size, String username) {
+    public Page<MeterReadingResponse> getAllByApartment(UUID apartmentId, UUID meterId, int page, int size, String username) {
         if (!apartmentRepository.existsById(apartmentId)) {
             throw new NotFoundException("Lokal o ID " + apartmentId + " nie istnieje");
         }
@@ -137,9 +137,15 @@ public class MeterReadingService {
         }
 
         var pageable = PageRequest.of(page, size, Sort.by("readingDate").descending());
-        return meterReadingRepository
-                .findByApartmentIdAndDeletedFalse(apartmentId, pageable)
-                .map(this::toResponse);
+        
+        Page<MeterReading> readingsPage;
+        if (meterId != null) {
+            readingsPage = meterReadingRepository.findByApartmentIdAndMeterIdAndDeletedFalse(apartmentId, meterId, pageable);
+        } else {
+            readingsPage = meterReadingRepository.findByApartmentIdAndDeletedFalse(apartmentId, pageable);
+        }
+        
+        return readingsPage.map(this::toResponse);
     }
 
     /**

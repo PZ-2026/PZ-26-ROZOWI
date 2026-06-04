@@ -255,7 +255,7 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Brak zmian.
 
 **Kryteria akceptacji:**
- - [ ] Opóźnienie na inpucie szukajki w UI omija spam zapytań (debounce np. 500ms).
+ - [x] Opóźnienie na inpucie szukajki w UI omija spam zapytań (debounce np. 500ms).
 
 **ID:** FRONT-016
 **Tytuł:** Narzędzia edycji i permanentnego usuwania kont
@@ -270,8 +270,8 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Z listy kliknięcie w kontener przenosi nas na `/users/{id}` z przyciskami aktualizacji.
 
 **Kryteria akceptacji:**
- - [ ] Stworzenie UI dla edycji użytkownika.
- - [ ] Zapewnienie stanów ładowania i notyfikacji o sukcesie akcji.
+ - [x] Stworzenie UI dla edycji użytkownika.
+ - [x] Zapewnienie stanów ładowania i notyfikacji o sukcesie akcji.
 
 **ID:** FRONT-017
 **Tytuł:** Paginacja historii Odczytów Liczników i url ścieżki
@@ -286,7 +286,7 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Brak zmian.
 
 **Kryteria akceptacji:**
- - [ ] Skorygowane adnotacje URL (dodanie ścieżki ze wstrzykiwanym kluczem).
+ - [x] Skorygowane adnotacje URL (dodanie ścieżki ze wstrzykiwanym kluczem).
 
 ---
 

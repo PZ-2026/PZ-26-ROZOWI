@@ -143,6 +143,23 @@ fun MeterDetailScreen(
                                     onDelete = { viewModel.deleteReading(reading.id) }
                                 )
                             }
+
+                            if (s.isFetchingNextPage) {
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            } else if (!s.isLastPage && s.readings.isNotEmpty()) {
+                                item {
+                                    LaunchedEffect(Unit) {
+                                        viewModel.loadNextPage()
+                                    }
+                                }
+                            }
                         }
                     }
                 }

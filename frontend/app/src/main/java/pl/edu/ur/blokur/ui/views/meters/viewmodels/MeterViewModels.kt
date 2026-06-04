@@ -118,7 +118,11 @@ class MeterListViewModel @Inject constructor(
 sealed interface MeterDetailState {
     data object Loading : MeterDetailState
     data class Error(val message: String) : MeterDetailState
-    data class Success(val readings: List<MeterReadingResponseDto>) : MeterDetailState
+    data class Success(
+        val readings: List<MeterReadingResponseDto>,
+        val isFetchingNextPage: Boolean = false,
+        val isLastPage: Boolean = false
+    ) : MeterDetailState
 }
 
 data class CreateReadingFormState(
@@ -154,22 +158,58 @@ class MeterDetailViewModel @Inject constructor(
     private val _formState = MutableStateFlow(CreateReadingFormState())
     val formState: StateFlow<CreateReadingFormState> = _formState.asStateFlow()
 
+    private var currentPage = 0
+    private var isLastPage = false
+    private var isFetchingNextPage = false
+
     init { load() }
 
     fun load() {
         viewModelScope.launch {
             _state.value = MeterDetailState.Loading
-            runCatching { meterService.getMeterReadingsByApartment(apartmentId, 0, 100) }
+            currentPage = 0
+            isLastPage = false
+            
+            runCatching { meterService.getMeterReadingsByApartment(apartmentId, meterId, currentPage, 15) }
                 .onSuccess { paged ->
-                    // Filtrujemy tylko dla tego licznika, bo API zwraca dla całego apartamentu
-                    val meterReadings = paged.content
-                        .filter { it.meterId == meterId }
-                        .sortedByDescending { it.readingDate }
-                    _state.value = MeterDetailState.Success(meterReadings)
+                    isLastPage = paged.number >= paged.totalPages - 1
+                    _state.value = MeterDetailState.Success(
+                        readings = paged.content,
+                        isFetchingNextPage = false,
+                        isLastPage = isLastPage
+                    )
                 }
                 .onFailure { e ->
                     _state.value = MeterDetailState.Error(e.message ?: "Błąd ładowania odczytów")
                 }
+        }
+    }
+
+    fun loadNextPage() {
+        if (isLastPage || isFetchingNextPage) return
+        val currentState = _state.value as? MeterDetailState.Success ?: return
+
+        viewModelScope.launch {
+            isFetchingNextPage = true
+            _state.value = currentState.copy(isFetchingNextPage = true)
+
+            runCatching { meterService.getMeterReadingsByApartment(apartmentId, meterId, currentPage + 1, 15) }
+                .onSuccess { paged ->
+                    currentPage++
+                    isLastPage = paged.number >= paged.totalPages - 1
+                    val newReadings = currentState.readings + paged.content
+                    _state.value = MeterDetailState.Success(
+                        readings = newReadings,
+                        isFetchingNextPage = false,
+                        isLastPage = isLastPage
+                    )
+                }
+                .onFailure {
+                    // W przypadku błędu przywracamy poprzedni stan (ukrywamy loader)
+                    _events.send(MeterEvent.ShowSnackbar("Nie udało się pobrać kolejnej strony"))
+                    _state.value = currentState.copy(isFetchingNextPage = false)
+                }
+            isFetchingNextPage = false
         }
     }
 

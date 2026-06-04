@@ -24,6 +24,16 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID
     Page<MeterReading> findByApartmentIdAndDeletedFalse(UUID apartmentId, Pageable pageable);
 
     /**
+     * Pobiera stronicowaną listę nieusuniętych odczytów dla danego lokalu i konkretnego licznika.
+     *
+     * @param apartmentId identyfikator lokalu
+     * @param meterId identyfikator licznika
+     * @param pageable parametry stronicowania
+     * @return strona z odczytami
+     */
+    Page<MeterReading> findByApartmentIdAndMeterIdAndDeletedFalse(UUID apartmentId, UUID meterId, Pageable pageable);
+
+    /**
      * Pobiera nieusunięty odczyt o podanym identyfikatorze.
      *
      * @param id identyfikator odczytu

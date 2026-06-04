@@ -2,6 +2,21 @@ package pl.edu.ur.blokur.dtos
 
 import com.google.gson.annotations.SerializedName
 
+// ─── Paging ────────────────────────────────────────────────────────────────
+
+/** Generyczny model strony zwracany przez Spring Data */
+data class PageDto<T>(
+    @SerializedName("content") val content: List<T>,
+    @SerializedName("last") val last: Boolean,
+    @SerializedName("totalPages") val totalPages: Int,
+    @SerializedName("totalElements") val totalElements: Int,
+    @SerializedName("size") val size: Int,
+    @SerializedName("number") val number: Int,
+    @SerializedName("first") val first: Boolean,
+    @SerializedName("numberOfElements") val numberOfElements: Int,
+    @SerializedName("empty") val empty: Boolean
+)
+
 // ─── Admin Users ───────────────────────────────────────────────────────────
 
 /** Odpowiedź z danymi użytkownika — GET /api/admin/users */

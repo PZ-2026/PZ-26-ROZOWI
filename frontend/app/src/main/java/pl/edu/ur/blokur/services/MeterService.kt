@@ -41,8 +41,8 @@ class MeterService @Inject constructor(
         }
     }
 
-    suspend fun getMeterReadingsByApartment(apartmentId: String, page: Int = 0, size: Int = 50): PaginatedResponse<MeterReadingResponseDto> = withContext(Dispatchers.IO) {
-        val response = api.getMeterReadingsByApartment(apartmentId, page, size)
+    suspend fun getMeterReadingsByApartment(apartmentId: String, meterId: String? = null, page: Int = 0, size: Int = 15): PaginatedResponse<MeterReadingResponseDto> = withContext(Dispatchers.IO) {
+        val response = api.getMeterReadingsByApartment(apartmentId, meterId, page, size)
         if (response.isSuccessful) {
             response.body() ?: throw Exception("Pusta odpowiedź z serwera")
         } else {

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.dtos.AdminUserDto
@@ -26,15 +27,12 @@ sealed interface UsersUiState {
     data class Error(val message: String) : UsersUiState
     data class Success(
         val users: List<AdminUserDto>,
-        val searchQuery: String = ""
+        val searchQuery: String = "",
+        val page: Int = 0,
+        val isFetchingNextPage: Boolean = false,
+        val isLastPage: Boolean = false
     ) : UsersUiState {
-        val filtered: List<AdminUserDto>
-            get() = if (searchQuery.isBlank()) users
-            else users.filter {
-                it.fullName.contains(searchQuery, ignoreCase = true) ||
-                it.email.contains(searchQuery, ignoreCase = true) ||
-                it.role.contains(searchQuery, ignoreCase = true)
-            }
+        val filtered: List<AdminUserDto> get() = users
     }
 }
 
@@ -48,6 +46,7 @@ data class NewUserFormState(
     val firstName: String = "",
     val lastName: String = "",
     val email: String = "",
+    val phone: String = "",
     val role: String = "MIESZKANIEC",
     // Wybór drzewa lokalu
     val buildings: List<BuildingTreeNodeDto> = emptyList(),
@@ -84,22 +83,69 @@ class UsersViewModel @Inject constructor(
     private val _showDialog = MutableStateFlow(false)
     val showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
-    init {
-        loadUsers()
-    }
+    private val _searchQuery = MutableStateFlow("")
 
-    fun loadUsers() {
+    init {
         viewModelScope.launch {
-            _state.value = UsersUiState.Loading
-            runCatching { adminUserService.getAllUsers() }
-                .onSuccess { _state.value = UsersUiState.Success(it) }
-                .onFailure { _state.value = UsersUiState.Error(it.message ?: "Błąd ładowania") }
+            _searchQuery
+                .debounce(500L)
+                .collect { query ->
+                    fetchUsers(reset = true, query = query)
+                }
         }
     }
 
-    fun onSearchChanged(query: String) {
+    private fun fetchUsers(reset: Boolean, query: String) {
+        viewModelScope.launch {
+            val current = _state.value as? UsersUiState.Success
+            val currentPage = if (reset) 0 else (current?.page ?: 0)
+            val currentUsers = if (reset) emptyList() else (current?.users ?: emptyList())
+            
+            if (reset) {
+                _state.value = UsersUiState.Loading
+            } else if (current != null) {
+                _state.value = current.copy(isFetchingNextPage = true)
+            }
+
+            runCatching { 
+                adminUserService.getAllUsers(
+                    page = currentPage,
+                    size = 15,
+                    search = query.takeIf { it.isNotBlank() }
+                ) 
+            }
+                .onSuccess { pageDto ->
+                    _state.value = UsersUiState.Success(
+                        users = currentUsers + pageDto.content,
+                        searchQuery = query,
+                        page = currentPage + 1,
+                        isFetchingNextPage = false,
+                        isLastPage = pageDto.last
+                    )
+                }
+                .onFailure { e ->
+                    if (reset) {
+                        _state.value = UsersUiState.Error(e.message ?: "Błąd ładowania")
+                    } else if (current != null) {
+                        _state.value = current.copy(isFetchingNextPage = false)
+                        _events.send(UsersEvent.ShowSnackbar(e.message ?: "Błąd ładowania"))
+                    }
+                }
+        }
+    }
+
+    fun loadNextPage() {
         val current = _state.value as? UsersUiState.Success ?: return
-        _state.value = current.copy(searchQuery = query)
+        if (current.isLastPage || current.isFetchingNextPage) return
+        fetchUsers(reset = false, query = current.searchQuery)
+    }
+
+    fun onSearchChanged(query: String) {
+        val current = _state.value as? UsersUiState.Success
+        if (current != null) {
+            _state.value = current.copy(searchQuery = query)
+        }
+        _searchQuery.value = query
     }
 
     // ── Dialog ───────────────────────────────────────────────────────────────
