@@ -25,7 +25,7 @@ import retrofit2.http.Path
 interface AnnouncementApiService {
 
     /** GET /api/announcements — lista ogłoszeń dostępnych dla zalogowanego użytkownika. */
-    @GET("/api/announcements")
+    @GET("api/announcements")
     suspend fun getAnnouncements(): Response<List<AnnouncementDto>>
 
     /**
@@ -33,7 +33,7 @@ interface AnnouncementApiService {
      * Part "data" to JSON body, part "attachment" — opcjonalny PDF.
      */
     @Multipart
-    @POST("/api/announcements")
+    @POST("api/announcements")
     suspend fun createAnnouncement(
         @Part("data") data: RequestBody,
         @Part attachment: MultipartBody.Part?
@@ -44,7 +44,7 @@ interface AnnouncementApiService {
      * Part "data" to JSON body, part "attachment" — opcjonalny nowy PDF.
      */
     @Multipart
-    @PUT("/api/announcements/{id}")
+    @PUT("api/announcements/{id}")
     suspend fun updateAnnouncement(
         @Path("id") id: String,
         @Part("data") data: RequestBody,
@@ -52,7 +52,7 @@ interface AnnouncementApiService {
     ): Response<AnnouncementDto>
 
     /** DELETE /api/announcements/{id} — usuń ogłoszenie (ZARZADCA). */
-    @DELETE("/api/announcements/{id}")
+    @DELETE("api/announcements/{id}")
     suspend fun deleteAnnouncement(@Path("id") id: String): Response<Unit>
 
     /**
@@ -60,6 +60,6 @@ interface AnnouncementApiService {
      * Zwraca ResponseBody do ręcznego odczytu bajtów PDF.
      */
     @Headers("Accept: application/pdf")
-    @GET("/api/announcements/{id}/attachment")
+    @GET("api/announcements/{id}/attachment")
     suspend fun getAttachment(@Path("id") id: String): Response<ResponseBody>
 }

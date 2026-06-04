@@ -16,16 +16,16 @@ import retrofit2.http.POST
 /** Retrofit interface dla endpointów autoryzacji. */
 interface AuthApiService {
 
-    @POST("/api/auth/login")
+    @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequestDto): Response<AuthResponseDto>
 
-    @POST("/api/auth/refresh")
+    @POST("api/auth/refresh")
     suspend fun refresh(@Body request: RefreshTokenRequestDto): Response<TokenPairResponseDto>
 
-    @POST("/api/auth/forgot-password")
+    @POST("api/auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequestDto): Response<MessageResponseDto>
 
-    @POST("/api/auth/reset-password")
+    @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequestDto): Response<MessageResponseDto>
 
     /**
@@ -38,7 +38,7 @@ interface AuthApiService {
      * HTTP 200 OK — sukces, {"message": "Hasło zostało ustawione..."}
      * HTTP 400 Bad Request — token wygasł lub hasło nie spełnia wymagań
      */
-    @POST("/api/auth/accept-invitation")
+    @POST("api/auth/accept-invitation")
     suspend fun acceptInvitation(
         @Body request: AcceptInvitationRequestDto
     ): Response<AcceptInvitationResponseDto>

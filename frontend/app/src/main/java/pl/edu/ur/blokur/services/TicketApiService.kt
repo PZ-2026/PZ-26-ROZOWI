@@ -59,37 +59,37 @@ interface TicketApiService {
     @GET("api/users")
     suspend fun getConservators(@Query("role") role: String = "KONSERWATOR"): Response<List<ConservatorDto>>
 
-    /** POST /api/tickets/{id}/assign — przypisanie konserwatora (ZARZADCA). */
-    @POST("api/tickets/{id}/assign")
+    /** PATCH api/tickets/{id}/assign — przypisanie konserwatora (ZARZADCA). */
+    @PATCH("api/tickets/{id}/assign")
     suspend fun assignTicket(
         @Path("id") ticketId: String,
         @Body request: TicketAssignRequest
     ): Response<TicketDetailDto>
 
-    /** POST /api/tickets/{id}/close — zamknięcie zgłoszenia (ZARZADCA). */
-    @POST("api/tickets/{id}/close")
+    /** PATCH api/tickets/{id}/close — zamknięcie zgłoszenia (ZARZADCA). */
+    @PATCH("api/tickets/{id}/close")
     suspend fun closeTicket(@Path("id") ticketId: String): Response<TicketDetailDto>
 
-    /** POST /api/tickets/{id}/reject — odrzucenie zgłoszenia z powodem (ZARZADCA). */
-    @POST("api/tickets/{id}/reject")
+    /** PATCH api/tickets/{id}/reject — odrzucenie zgłoszenia z powodem (ZARZADCA). */
+    @PATCH("api/tickets/{id}/reject")
     suspend fun rejectTicket(
         @Path("id") ticketId: String,
         @Body request: TicketRejectRequest
     ): Response<TicketDetailDto>
 
-    /** POST /api/tickets/{id}/start-work — rozpoczęcie prac (KONSERWATOR). */
-    @POST("api/tickets/{id}/start-work")
+    /** PATCH api/tickets/{id}/start — rozpoczęcie prac (KONSERWATOR). */
+    @PATCH("api/tickets/{id}/start")
     suspend fun startWork(@Path("id") ticketId: String): Response<TicketDetailDto>
 
-    /** POST /api/tickets/{id}/suspend — wstrzymanie prac z powodem (KONSERWATOR). */
-    @POST("api/tickets/{id}/suspend")
+    /** PATCH api/tickets/{id}/suspend — wstrzymanie prac z powodem (KONSERWATOR). */
+    @PATCH("api/tickets/{id}/suspend")
     suspend fun suspendWork(
         @Path("id") ticketId: String,
         @Body request: TicketSuspendRequest
     ): Response<TicketDetailDto>
 
-    /** POST /api/tickets/{id}/complete — zakończenie prac z opisem (KONSERWATOR). */
-    @POST("api/tickets/{id}/complete")
+    /** POST api/tickets/{id}/completion — zakończenie prac z opisem (KONSERWATOR). */
+    @POST("api/tickets/{id}/completion")
     suspend fun completeWork(
         @Path("id") ticketId: String,
         @Body request: TicketCompletionRequest
@@ -107,7 +107,6 @@ interface TicketApiService {
         @Body request: TicketStatusChangeRequest
     ): Response<TicketDetailDto>
 
-    /** GET /api/tickets/{id}/history — historia statusów zgłoszenia. */
     @GET("api/tickets/{id}/history")
     suspend fun getTicketHistory(@Path("id") ticketId: String): Response<List<pl.edu.ur.blokur.dtos.TicketHistoryDto>>
 }

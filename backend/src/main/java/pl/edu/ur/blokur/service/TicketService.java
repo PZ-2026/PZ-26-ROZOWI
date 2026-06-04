@@ -19,6 +19,7 @@ import pl.edu.ur.blokur.dto.TicketStatusChangeRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
 import pl.edu.ur.blokur.dto.TicketSuspendRequest;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
+import pl.edu.ur.blokur.dto.TicketHistoryDto;
 import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.Ticket;
@@ -716,6 +717,23 @@ public class TicketService {
         recordStatusChange(ticket, newStatus, user, request.getComment());
 
         return mapToDetail(ticketRepository.save(ticket));
+    }
+
+    /**
+     * Zwraca historię zmian statusów dla danego zgłoszenia.
+     * Wykorzystuje logikę dostępu z getById - jeśli użytkownik nie ma dostępu do zgłoszenia, 
+     * zgłoszony zostanie odpowiedni wyjątek.
+     *
+     * @param ticketId identyfikator zgłoszenia
+     * @param username email zalogowanego użytkownika
+     * @return lista DTO historii zgłoszenia
+     */
+    @Transactional(readOnly = true)
+    public List<TicketHistoryDto> getTicketHistory(UUID ticketId, String username) {
+        // Weryfikacja dostępu (rzuci wyjątek jeśli brak uprawnień)
+        getById(ticketId, username);
+        
+        return ticketHistoryRepository.findHistoryByTicketId(ticketId);
     }
 
     private void recordStatusChange(

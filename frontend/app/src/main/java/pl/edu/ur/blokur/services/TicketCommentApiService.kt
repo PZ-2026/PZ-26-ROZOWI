@@ -19,14 +19,14 @@ import retrofit2.http.Path
 interface TicketCommentApiService {
 
     /** GET /api/tickets/{id}/comments — lista komentarzy do zgłoszenia. */
-    @GET("/api/tickets/{id}/comments")
+    @GET("api/tickets/{id}/comments")
     suspend fun getComments(@Path("id") ticketId: String): Response<List<TicketCommentDto>>
 
     /**
      * POST /api/tickets/{id}/comments — dodaj komentarz do zgłoszenia.
      * Pole commentType: "PUBLICZNY" lub "WEWNETRZNY".
      */
-    @POST("/api/tickets/{id}/comments")
+    @POST("api/tickets/{id}/comments")
     suspend fun addComment(
         @Path("id") ticketId: String,
         @Body request: TicketCommentRequestDto

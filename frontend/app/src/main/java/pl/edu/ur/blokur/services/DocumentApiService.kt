@@ -47,7 +47,7 @@ interface DocumentApiService {
      * Dystrybuuje zawiadomienie o zmianie stawek do wybranych mieszkańców.
      * POST /api/admin/documents/rate-change
      */
-    @POST("/api/admin/documents/rate-change")
+    @POST("api/admin/documents/rate-change")
     suspend fun distributeRateChange(
         @Body request: RateChangeDistributionRequestDto
     ): Response<DocumentDistributionResultDto>
@@ -56,7 +56,7 @@ interface DocumentApiService {
      * Generuje i dystrybuuje roczne rozliczenia do wybranych mieszkańców.
      * POST /api/admin/documents/annual-settlement
      */
-    @POST("/api/admin/documents/annual-settlement")
+    @POST("api/admin/documents/annual-settlement")
     suspend fun distributeAnnualSettlement(
         @Body request: AnnualSettlementDistributionRequestDto
     ): Response<DocumentDistributionResultDto>
@@ -69,7 +69,7 @@ interface DocumentApiService {
      * używamy go do odświeżenia stanu UI bez konieczności dodatkowego GET.
      */
     @Multipart
-    @PATCH("/api/properties/{id}/logo")
+    @PATCH("api/properties/{id}/logo")
     suspend fun uploadPropertyLogo(
         @Path("id") propertyId: String,
         @Part file: MultipartBody.Part
@@ -97,7 +97,7 @@ interface PdfApiService {
      * @param sort           "debt_desc" (domyślnie) lub "debt_asc"
      * @param save           true — PDF zostaje zarchiwizowany jako dokument w systemie
      */
-    @GET("/api/pdf/balances")
+    @GET("api/pdf/balances")
     suspend fun getBalancesPdf(
         @Query("propertyId") propertyId: String? = null,
         @Query("minDebt") minDebt: String? = null,
@@ -111,7 +111,7 @@ interface PdfApiService {
      * Dostęp: ZARZADCA i KONSERWATOR.
      * Backend generuje PDF na podstawie przekazanego opisu prac i danych zgłoszenia.
      */
-    @POST("/api/pdf/work-acceptance-protocol")
+    @POST("api/pdf/work-acceptance-protocol")
     suspend fun getWorkAcceptanceProtocol(
         @Body request: WorkAcceptanceProtocolRequestDto
     ): Response<ResponseBody>

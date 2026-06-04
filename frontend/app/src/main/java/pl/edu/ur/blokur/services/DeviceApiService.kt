@@ -20,7 +20,7 @@ interface DeviceApiService {
      * Należy wywołać natychmiast po pomyślnym zalogowaniu (gdy FCM token jest dostępny).
      * Operacja idempotentna — bezpieczna przy wielokrotnym wywołaniu z tym samym tokenem.
      */
-    @POST("/api/devices")
+    @POST("api/devices/register")
     suspend fun registerDevice(
         @Body request: DeviceRegistrationRequestDto
     ): Response<Unit>
@@ -29,6 +29,6 @@ interface DeviceApiService {
      * DELETE /api/devices/{token} — wyrejestrowuje token FCM po wylogowaniu.
      * Dzięki temu push notifications przestają docierać na to urządzenie.
      */
-    @DELETE("/api/devices/{token}")
+    @DELETE("api/devices/{token}")
     suspend fun unregisterDevice(@Path("token") fcmToken: String): Response<Unit>
 }

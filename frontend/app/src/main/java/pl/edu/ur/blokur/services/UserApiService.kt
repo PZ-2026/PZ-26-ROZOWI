@@ -6,6 +6,6 @@ import retrofit2.http.GET
 
 /** Retrofit interface dla endpointów zalogowanego użytkownika. */
 interface UserApiService {
-    @GET("/api/users/me")
+    @GET("api/users/me")
     suspend fun getMe(): Response<UserProfileDto>
 }

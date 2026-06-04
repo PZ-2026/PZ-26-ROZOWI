@@ -27,7 +27,7 @@ interface TicketImageApiService {
      * @param file      plik obrazu jako MultipartBody.Part (JPEG lub PNG)
      */
     @Multipart
-    @POST("/api/tickets/{id}/images")
+    @POST("api/tickets/{id}/images")
     suspend fun uploadImage(
         @Path("id") ticketId: String,
         @Part("image_type") imageType: RequestBody,
@@ -35,7 +35,7 @@ interface TicketImageApiService {
     ): Response<TicketImageDto>
 
     /** GET /api/tickets/{id}/images — lista metadanych zdjęć przypisanych do zgłoszenia. */
-    @GET("/api/tickets/{id}/images")
+    @GET("api/tickets/{id}/images")
     suspend fun getImagesForTicket(@Path("id") ticketId: String): Response<List<TicketImageDto>>
 
     /**
@@ -43,10 +43,10 @@ interface TicketImageApiService {
      * Odpowiedź to strumień bajtów (image/jpeg lub image/png).
      */
     @Headers("Accept: image/jpeg, image/png, application/octet-stream")
-    @GET("/api/images/{id}")
+    @GET("api/images/{id}")
     suspend fun serveImage(@Path("id") imageId: String): Response<ResponseBody>
 
     /** DELETE /api/images/{id} — usuń zdjęcie. */
-    @retrofit2.http.DELETE("/api/images/{id}")
+    @retrofit2.http.DELETE("api/images/{id}")
     suspend fun deleteImage(@Path("id") imageId: String): Response<Unit>
 }

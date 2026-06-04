@@ -25,7 +25,7 @@ interface UserDocumentApiService {
      * GET /api/documents — lista dokumentów.
      * Parametry opcjonalne: apartmentId, startDate (YYYY-MM-DD), endDate, type.
      */
-    @GET("/api/documents")
+    @GET("api/documents")
     suspend fun getDocuments(
         @Query("apartmentId") apartmentId: String? = null,
         @Query("startDate") startDate: String? = null,
@@ -38,6 +38,6 @@ interface UserDocumentApiService {
      * Zwraca ResponseBody do ręcznego zapisu na dysk lub otwarcia przez FileProvider.
      */
     @Headers("Accept: application/pdf")
-    @GET("/api/documents/{id}/download")
+    @GET("api/documents/{id}/download")
     suspend fun downloadDocument(@Path("id") documentId: String): Response<ResponseBody>
 }
