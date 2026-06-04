@@ -207,4 +207,62 @@ class MeterDetailViewModel @Inject constructor(
                 }
         }
     }
+
+    fun deleteReading(readingId: String) {
+        viewModelScope.launch {
+            runCatching { meterService.deleteMeterReading(readingId) }
+                .onSuccess {
+                    _events.send(MeterEvent.ShowSnackbar("Odczyt został usunięty"))
+                    load()
+                }
+                .onFailure { e ->
+                    _events.send(MeterEvent.ShowSnackbar(e.message ?: "Błąd usuwania odczytu"))
+                }
+        }
+    }
+
+    // ── Edycja odczytu ──────────────────────────────────────────────────
+
+    private val _editingReading = MutableStateFlow<MeterReadingResponseDto?>(null)
+    val editingReading: StateFlow<MeterReadingResponseDto?> = _editingReading.asStateFlow()
+
+    private val _editFormState = MutableStateFlow(CreateReadingFormState())
+    val editFormState: StateFlow<CreateReadingFormState> = _editFormState.asStateFlow()
+
+    fun openEditDialog(reading: MeterReadingResponseDto) {
+        _editingReading.value = reading
+        _editFormState.value = CreateReadingFormState(
+            value = reading.value.toString(),
+            readingDate = reading.readingDate
+        )
+    }
+
+    fun closeEditDialog() { _editingReading.value = null }
+    fun onEditValueChanged(v: String) { _editFormState.value = _editFormState.value.copy(value = v) }
+    fun onEditReadingDateChanged(v: String) { _editFormState.value = _editFormState.value.copy(readingDate = v) }
+
+    fun submitUpdate() {
+        val reading = _editingReading.value ?: return
+        val form = _editFormState.value
+        val valBigDecimal = form.value.replace(",", ".").toBigDecimalOrNull()
+        if (!form.isValid || valBigDecimal == null) return
+        viewModelScope.launch {
+            _editFormState.value = form.copy(isSubmitting = true)
+            val req = MeterReadingRequestDto(
+                meterId = meterId,
+                value = valBigDecimal,
+                readingDate = form.readingDate.trim()
+            )
+            runCatching { meterService.updateMeterReading(reading.id, req) }
+                .onSuccess {
+                    closeEditDialog()
+                    _events.send(MeterEvent.ShowSnackbar("Odczyt został zaktualizowany"))
+                    load()
+                }
+                .onFailure { e ->
+                    _editFormState.value = form.copy(isSubmitting = false)
+                    _events.send(MeterEvent.ShowSnackbar(e.message ?: "Błąd aktualizacji odczytu"))
+                }
+        }
+    }
 }

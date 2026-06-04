@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ShowChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,7 +30,6 @@ import pl.edu.ur.blokur.ui.components.TopBar
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailState
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailViewModel
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterEvent
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun MeterDetailScreen(
@@ -38,6 +39,8 @@ fun MeterDetailScreen(
     val state by viewModel.state.collectAsState()
     val showDialog by viewModel.showCreateDialog.collectAsState()
     val formState by viewModel.formState.collectAsState()
+    val editingReading by viewModel.editingReading.collectAsState()
+    val editFormState by viewModel.editFormState.collectAsState()
     val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -55,6 +58,18 @@ fun MeterDetailScreen(
             onValueChanged = viewModel::onValueChanged,
             onReadingDateChanged = viewModel::onReadingDateChanged,
             onConfirm = viewModel::submitCreate
+        )
+    }
+
+    // Dialog edycji odczytu
+    if (editingReading != null) {
+        CreateMeterReadingDialog(
+            formState = editFormState,
+            onDismiss = viewModel::closeEditDialog,
+            onValueChanged = viewModel::onEditValueChanged,
+            onReadingDateChanged = viewModel::onEditReadingDateChanged,
+            onConfirm = viewModel::submitUpdate,
+            confirmLabel = "Zaktualizuj"
         )
     }
 
@@ -122,7 +137,11 @@ fun MeterDetailScreen(
                             contentPadding = PaddingValues(bottom = 100.dp)
                         ) {
                             items(s.readings, key = { it.id }) { reading ->
-                                ReadingCard(reading = reading)
+                                ReadingCard(
+                                    reading = reading,
+                                    onEdit = { viewModel.openEditDialog(reading) },
+                                    onDelete = { viewModel.deleteReading(reading.id) }
+                                )
                             }
                         }
                     }
@@ -133,7 +152,11 @@ fun MeterDetailScreen(
 }
 
 @Composable
-private fun ReadingCard(reading: MeterReadingResponseDto) {
+private fun ReadingCard(
+    reading: MeterReadingResponseDto,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -169,6 +192,25 @@ private fun ReadingCard(reading: MeterReadingResponseDto) {
                     "Osoba spisująca: $it",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Row {
+            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Rounded.Edit,
+                    contentDescription = "Edytuj odczyt",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Rounded.Close,
+                    contentDescription = "Usuń odczyt",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

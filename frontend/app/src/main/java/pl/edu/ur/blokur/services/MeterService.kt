@@ -66,6 +66,24 @@ class MeterService @Inject constructor(
         }
     }
 
+    suspend fun getMeterReadingById(id: String): MeterReadingResponseDto = withContext(Dispatchers.IO) {
+        val response = api.getMeterReadingById(id)
+        if (response.isSuccessful) {
+            response.body() ?: throw Exception("Brak danych w odpowiedzi")
+        } else {
+            throw Exception(handleError(response.code(), "pobierania odczytu"))
+        }
+    }
+
+    suspend fun updateMeterReading(id: String, request: MeterReadingRequestDto): MeterReadingResponseDto = withContext(Dispatchers.IO) {
+        val response = api.updateMeterReading(id, request)
+        if (response.isSuccessful) {
+            response.body() ?: throw Exception("Brak danych w odpowiedzi")
+        } else {
+            throw Exception(handleError(response.code(), "aktualizacji odczytu"))
+        }
+    }
+
     private fun handleError(code: Int, action: String): String = when (code) {
         400 -> "Błędne dane podczas $action."
         401 -> "Brak autoryzacji. Zaloguj się ponownie."

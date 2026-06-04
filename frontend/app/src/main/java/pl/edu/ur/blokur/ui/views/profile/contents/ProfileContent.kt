@@ -135,7 +135,30 @@ private fun ProfileDataContent(
                 onValueChange = onNameChanged,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Imię i nazwisko") },
-                singleLine = true
+                singleLine = true,
+                readOnly = true // Wymaga dodatkowego endpointu do edycji
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = data.email,
+                onValueChange = { },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Adres e-mail") },
+                singleLine = true,
+                readOnly = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = data.phone,
+                onValueChange = { },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Numer telefonu") },
+                singleLine = true,
+                readOnly = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -280,7 +303,7 @@ private fun ProfileContentLoadingPreview() {
 private fun ProfileContentDataPreview() {
     PreviewTheme {
         ProfileContent(
-            state = ProfileState.Data(name = "Jan Kowalski"),
+            state = ProfileState.Data(name = "Jan Kowalski", email = "jan@example.com", phone = "123456789"),
             showSaveDialog = false,
             onNameChanged = {},
             onRequestSave = {},
@@ -296,7 +319,7 @@ private fun ProfileContentDataPreview() {
 private fun ProfileContentManagerPreview() {
     PreviewTheme {
         ProfileContent(
-            state = ProfileState.Data(name = "Anna Zarządca"),
+            state = ProfileState.Data(name = "Anna Zarządca", email = "admin@example.com", phone = ""),
             showSaveDialog = false,
             onNameChanged = {},
             onRequestSave = {},

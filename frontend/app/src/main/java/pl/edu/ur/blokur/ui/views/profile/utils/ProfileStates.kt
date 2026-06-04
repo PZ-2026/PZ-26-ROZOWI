@@ -2,7 +2,11 @@ package pl.edu.ur.blokur.ui.views.profile.utils
 
 sealed interface ProfileState {
     data object Loading : ProfileState
-    data class Data(val name: String = "") : ProfileState
+    data class Data(
+        val name: String = "",
+        val email: String = "",
+        val phone: String = ""
+    ) : ProfileState
 }
 
 sealed interface ProfileEvent {

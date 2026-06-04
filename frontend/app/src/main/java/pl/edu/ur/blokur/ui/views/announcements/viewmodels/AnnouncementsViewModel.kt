@@ -1,8 +1,13 @@
 package pl.edu.ur.blokur.ui.views.announcements.viewmodels
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,11 +18,13 @@ import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.services.AnnouncementService
 import pl.edu.ur.blokur.ui.views.announcements.utils.AnnouncementsEvent
 import pl.edu.ur.blokur.ui.views.announcements.utils.AnnouncementsState
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class AnnouncementsViewModel @Inject constructor(
-    private val announcementService: AnnouncementService
+    private val announcementService: AnnouncementService,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<AnnouncementsState>(AnnouncementsState.Loading)
@@ -41,6 +48,35 @@ class AnnouncementsViewModel @Inject constructor(
                 .onFailure { e ->
                     _state.value = AnnouncementsState.Error(e.message ?: "Błąd ładowania ogłoszeń")
                     _events.send(AnnouncementsEvent.ShowError(e.message ?: "Błąd ładowania ogłoszeń"))
+                }
+        }
+    }
+
+    fun downloadAttachment(announcementId: String, title: String) {
+        viewModelScope.launch {
+            runCatching { announcementService.getAttachment(announcementId) }
+                .onSuccess { body ->
+                    try {
+                        val dir = File(context.cacheDir, "announcements").also { it.mkdirs() }
+                        val safe = title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(40)
+                        val file = File(dir, "zalacznik_${safe}.pdf")
+                        file.writeBytes(body.bytes())
+                        val uri: Uri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.provider",
+                            file
+                        )
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/pdf")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        _events.send(AnnouncementsEvent.ShowError("Nie można otworzyć załącznika: ${e.message}"))
+                    }
+                }
+                .onFailure { e ->
+                    _events.send(AnnouncementsEvent.ShowError(e.message ?: "Błąd pobierania załącznika"))
                 }
         }
     }

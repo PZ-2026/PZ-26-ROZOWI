@@ -186,6 +186,28 @@ fun ConservatorActionSheet(
                         Text("Dodaj wpis", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
                 }
+
+                ConservatorActionType.CLOSE_VERIFICATION -> {
+                    Text(
+                        "Zamknij zgłoszenie",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Prace zostały zweryfikowane. Potwierdź zamknięcie zgłoszenia — status zmieni się na 'Zamknięte'.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Button(
+                        onClick = { onSubmit("", false) },
+                        colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Zatwierdź i zamknij", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
             }
             Spacer(Modifier.height(8.dp))
         }

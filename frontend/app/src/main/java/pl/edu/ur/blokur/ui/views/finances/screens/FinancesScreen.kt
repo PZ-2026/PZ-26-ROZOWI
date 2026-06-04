@@ -44,6 +44,7 @@ fun FinancesScreen(
                 FinancesEvent.NavigateToDocuments -> onNavigateToDocuments()
                 FinancesEvent.NavigateToLedger -> onNavigateToLedger()
                 FinancesEvent.NavigateToBalances -> onNavigateToBalances()
+                else -> Unit // OpenPdf i ShowSnackbar obsługuje DocumentsScreen
             }
         }
     }

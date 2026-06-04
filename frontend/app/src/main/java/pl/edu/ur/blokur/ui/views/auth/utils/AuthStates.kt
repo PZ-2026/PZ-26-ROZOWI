@@ -86,3 +86,27 @@ data class ResetPasswordFormFields(
     val confirmPassword: String = "",
     val passwordVisible: Boolean = false
 )
+
+// ─── Akceptacja zaproszenia ──────────────────────────────────────────
+
+/** Stan ekranu „Akceptuj zaproszenie”. */
+sealed interface AcceptInvitationState {
+    data object Idle : AcceptInvitationState
+    data object Loading : AcceptInvitationState
+    data class Success(val message: String) : AcceptInvitationState
+    data class Error(val message: String) : AcceptInvitationState
+}
+
+/** Zdarzenia ekranu „Akceptuj zaproszenie”. */
+sealed interface AcceptInvitationEvent {
+    data object NavigateToLogin : AcceptInvitationEvent
+    data class ShowSnackbar(val message: String) : AcceptInvitationEvent
+}
+
+/** Pola formularza akceptacji zaproszenia. */
+data class AcceptInvitationFormFields(
+    val newPassword: String = "",
+    val confirmPassword: String = "",
+    val passwordVisible: Boolean = false
+)
+

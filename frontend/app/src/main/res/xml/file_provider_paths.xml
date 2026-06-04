@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Katalog cache aplikacji – tu zapisujemy tymczasowe pliki PDF -->
+    <cache-path name="pdf_downloads" path="pdf/" />
+    <cache-path name="announcements" path="announcements/" />
+    <cache-path name="protocols" path="protocols/" />
+</paths>

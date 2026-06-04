@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.FloatingActionButton
@@ -42,6 +43,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.ConservatorDto
 import pl.edu.ur.blokur.dtos.TicketDetailDto
+import pl.edu.ur.blokur.dtos.TicketCommentDto
+import pl.edu.ur.blokur.dtos.TicketImageDto
 import pl.edu.ur.blokur.dtos.TicketStatus
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
@@ -53,6 +56,8 @@ import pl.edu.ur.blokur.ui.theme.SuccessGreen
 import pl.edu.ur.blokur.ui.views.tickets.components.AssignConservatorSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ConservatorActionSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ManagerRejectSheet
+import pl.edu.ur.blokur.ui.views.tickets.components.TicketCommentsSection
+import pl.edu.ur.blokur.ui.views.tickets.components.TicketImagesSection
 import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketDetailsListState
 import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
@@ -63,6 +68,8 @@ fun TicketDetailsContent(
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
+    onAddComment: (String, String) -> Unit = { _, _ -> },
+    onDownloadProtocol: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when (state) {
@@ -72,9 +79,14 @@ fun TicketDetailsContent(
             ticket = state.ticket,
             conservators = state.availableConservators,
             currentUserRole = state.currentUserRole,
+            comments = state.comments,
+            images = state.images,
+            isLoadingComments = state.isLoadingComments,
             onAssignConservator = onAssignConservator,
             onRejectTicket = onRejectTicket,
             onConservatorAction = onConservatorAction,
+            onAddComment = onAddComment,
+            onDownloadProtocol = onDownloadProtocol,
             modifier = modifier
         )
     }
@@ -85,9 +97,14 @@ private fun TicketDetailsSuccessContent(
     ticket: TicketDetailDto,
     conservators: List<ConservatorDto>,
     currentUserRole: String,
+    comments: List<TicketCommentDto>,
+    images: List<TicketImageDto>,
+    isLoadingComments: Boolean,
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
+    onAddComment: (String, String) -> Unit,
+    onDownloadProtocol: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val presentation = ticket.status.toPresentation()
@@ -185,6 +202,23 @@ private fun TicketDetailsSuccessContent(
                 }
             }
 
+            // Sekcja zdjęć
+            if (images.isNotEmpty()) {
+                TicketImagesSection(
+                    images = images,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Sekcja komentarzy
+            TicketCommentsSection(
+                comments = comments,
+                currentRole = currentUserRole,
+                isLoading = isLoadingComments,
+                onAddComment = onAddComment,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(Modifier.height(100.dp))
         }
 
@@ -221,6 +255,22 @@ private fun TicketDetailsSuccessContent(
                                 onClick = { showAssignSheet = true }
                             )
                         }
+                        TicketStatus.ZAKONCZONE_DO_WERYFIKACJI -> {
+                            TicketFab(
+                                icon = Icons.Rounded.CheckCircle,
+                                contentDescription = "Zatwierdź i zamknij",
+                                containerColor = SuccessGreen,
+                                onClick = { conservatorActionType = ConservatorActionType.CLOSE_VERIFICATION }
+                            )
+                        }
+                        TicketStatus.ZAMKNIETE -> {
+                            TicketFab(
+                                icon = Icons.Rounded.PictureAsPdf,
+                                contentDescription = "Pobierz protokół odbioru",
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                onClick = onDownloadProtocol
+                            )
+                        }
                         else -> Unit
                     }
                 }
@@ -247,6 +297,14 @@ private fun TicketDetailsSuccessContent(
                                 contentDescription = "Zakończ pracę",
                                 containerColor = SuccessGreen,
                                 onClick = { conservatorActionType = ConservatorActionType.FINISH }
+                            )
+                        }
+                        TicketStatus.ZAMKNIETE -> {
+                            TicketFab(
+                                icon = Icons.Rounded.PictureAsPdf,
+                                contentDescription = "Pobierz protokół odbioru",
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                onClick = onDownloadProtocol
                             )
                         }
                         else -> Unit

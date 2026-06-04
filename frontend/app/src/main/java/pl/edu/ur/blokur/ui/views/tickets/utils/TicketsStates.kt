@@ -34,12 +34,15 @@ sealed interface TicketDetailsListState {
     data class Success(
         val ticket: TicketDetailDto,
         val availableConservators: List<ConservatorDto> = emptyList(),
-        val currentUserRole: String = "MIESZKANIEC"
+        val currentUserRole: String = "MIESZKANIEC",
+        val comments: List<pl.edu.ur.blokur.dtos.TicketCommentDto> = emptyList(),
+        val images: List<pl.edu.ur.blokur.dtos.TicketImageDto> = emptyList(),
+        val isLoadingComments: Boolean = false
     ) : TicketDetailsListState
 }
 
-/** Akcje konserwatora — typ przekazywany do ConservatorActionSheet */
-enum class ConservatorActionType { START, FINISH, PAUSE_OR_COMMENT }
+/** Akcje konserwatora i zarządcy przy przeglądzie zgłoszenia */
+enum class ConservatorActionType { START, FINISH, PAUSE_OR_COMMENT, CLOSE_VERIFICATION }
 
 sealed interface TicketDetailsScreenEvent {
     data object NavigateBack : TicketDetailsScreenEvent

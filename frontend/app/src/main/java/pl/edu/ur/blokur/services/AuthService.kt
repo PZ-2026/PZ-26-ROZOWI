@@ -108,4 +108,33 @@ class AuthService @Inject constructor(
         return response.body()?.message
             ?: "Hasło zostało zmienione. Możesz się teraz zalogować."
     }
+
+    /**
+     * Ustawia hasło i akceptuje zaproszenie do systemu.
+     *
+     * @param token token zaproszenia z linku.
+     * @param newPassword nowe hasło użytkownika.
+     * @return komunikat z serwera.
+     */
+    suspend fun acceptInvitation(token: String, newPassword: String): String {
+        val response = authApiService.acceptInvitation(
+            pl.edu.ur.blokur.dtos.AcceptInvitationRequestDto(
+                token = token,
+                newPassword = newPassword
+            )
+        )
+
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string()
+            val message = try {
+                Gson().fromJson(errorBody, MessageResponseDto::class.java).message
+            } catch (_: Exception) {
+                "Błąd serwera: ${response.code()}"
+            }
+            throw Exception(message)
+        }
+
+        return response.body()?.message
+            ?: "Konto aktywowane. Możesz się teraz zalogować."
+    }
 }

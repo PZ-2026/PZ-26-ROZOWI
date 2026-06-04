@@ -78,6 +78,8 @@ fun TicketDetailsScreen(
             },
             onRejectTicket = viewModel::onRejectTicket,
             onConservatorAction = viewModel::onConservatorAction,
+            onAddComment = viewModel::addComment,
+            onDownloadProtocol = viewModel::downloadWorkAcceptanceProtocol,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

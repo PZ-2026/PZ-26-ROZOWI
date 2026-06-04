@@ -33,7 +33,8 @@ fun CreateInspectionDialog(
     onScheduledAtChanged: (String) -> Unit,
     onScopeTypeChanged: (ScopeType) -> Unit,
     onScopeIdChanged: (String) -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    confirmLabel: String = "Zapisz"
 ) {
     AlertDialog(
         onDismissRequest = { if (!formState.isSubmitting) onDismiss() },
@@ -161,7 +162,7 @@ fun CreateInspectionDialog(
                 AnimatedContent(formState.isSubmitting, label = "btn") { submitting ->
                     if (submitting) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary)
-                    else Text("Zapisz")
+                    else Text(confirmLabel)
                 }
             }
         },

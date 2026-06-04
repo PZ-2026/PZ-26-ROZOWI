@@ -30,10 +30,10 @@ sealed interface InspectionsListState {
 data class CreateInspectionFormState(
     val title: String = "",
     val description: String = "",
-    val scheduledAt: String = "",         // "YYYY-MM-DDTHH:MM:SS"
+    val scheduledAt: String = "",
     val scopeType: ScopeType = ScopeType.BUDYNEK,
     val scopeId: String = "",
-    val availableScopes: List<Pair<String, String>> = emptyList(), // id to name
+    val availableScopes: List<Pair<String, String>> = emptyList(),
     val isSubmitting: Boolean = false
 ) {
     val isValid: Boolean
@@ -143,6 +143,79 @@ class InspectionsListViewModel @Inject constructor(
                 .onFailure { e ->
                     _formState.value = form.copy(isSubmitting = false)
                     _events.send(InspectionEvent.ShowSnackbar(e.message ?: "Błąd tworzenia przeglądu"))
+                }
+        }
+    }
+
+    // ── Edycja przeglądu ────────────────────────────────────────────────────────
+
+    private val _editingInspection = MutableStateFlow<InspectionResponseDto?>(null)
+    val editingInspection: StateFlow<InspectionResponseDto?> = _editingInspection.asStateFlow()
+
+    private val _editFormState = MutableStateFlow(CreateInspectionFormState())
+    val editFormState: StateFlow<CreateInspectionFormState> = _editFormState.asStateFlow()
+
+    fun openEditDialog(inspection: InspectionResponseDto) {
+        _editingInspection.value = inspection
+        _editFormState.value = CreateInspectionFormState(
+            title = inspection.title,
+            description = inspection.description ?: "",
+            scheduledAt = inspection.scheduledAt,
+            scopeType = ScopeType.BUDYNEK
+        )
+        viewModelScope.launch {
+            runCatching { propertyService.getBuildingTree() }
+                .onSuccess { tree ->
+                    val scopes = tree.map { b -> b.id to "Budynek ${b.address}" }
+                    _editFormState.value = _editFormState.value.copy(availableScopes = scopes)
+                }
+        }
+    }
+
+    fun closeEditDialog() { _editingInspection.value = null }
+
+    fun onEditTitleChanged(v: String) { _editFormState.value = _editFormState.value.copy(title = v) }
+    fun onEditDescriptionChanged(v: String) { _editFormState.value = _editFormState.value.copy(description = v) }
+    fun onEditScheduledAtChanged(v: String) { _editFormState.value = _editFormState.value.copy(scheduledAt = v) }
+    fun onEditScopeIdChanged(v: String) { _editFormState.value = _editFormState.value.copy(scopeId = v) }
+
+    fun submitUpdate() {
+        val inspection = _editingInspection.value ?: return
+        val form = _editFormState.value
+        if (!form.isValid) return
+        viewModelScope.launch {
+            _editFormState.value = form.copy(isSubmitting = true)
+            val request = InspectionRequestDto(
+                title = form.title.trim(),
+                description = form.description.trim().takeIf { it.isNotBlank() },
+                scheduledAt = form.scheduledAt.trim(),
+                scopeType = inspection.scopeType,
+                scopeId = inspection.scopeId
+            )
+            runCatching { inspectionService.update(inspection.id, request) }
+                .onSuccess {
+                    closeEditDialog()
+                    _events.send(InspectionEvent.ShowSnackbar("Przegląd został zaktualizowany"))
+                    load()
+                }
+                .onFailure { e ->
+                    _editFormState.value = form.copy(isSubmitting = false)
+                    _events.send(InspectionEvent.ShowSnackbar(e.message ?: "Błąd aktualizacji przeglądu"))
+                }
+        }
+    }
+
+    // ── Usuwanie przeglądu ──────────────────────────────────────────────────────
+
+    fun deleteInspection(id: String) {
+        viewModelScope.launch {
+            runCatching { inspectionService.delete(id) }
+                .onSuccess {
+                    _events.send(InspectionEvent.ShowSnackbar("Przegląd został usunięty"))
+                    load()
+                }
+                .onFailure { e ->
+                    _events.send(InspectionEvent.ShowSnackbar(e.message ?: "Błąd usuwania przeglądu"))
                 }
         }
     }

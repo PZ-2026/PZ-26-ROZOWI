@@ -11,6 +11,8 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,7 +30,6 @@ import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.theme.InfoBlue
 import pl.edu.ur.blokur.ui.theme.InfoBlueBg
-import pl.edu.ur.blokur.ui.theme.ShadowOverlay
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionEvent
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListState
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListViewModel
@@ -43,6 +44,8 @@ fun InspectionsListScreen(
     val state by viewModel.state.collectAsState()
     val showDialog by viewModel.showCreateDialog.collectAsState()
     val formState by viewModel.formState.collectAsState()
+    val editingInspection by viewModel.editingInspection.collectAsState()
+    val editFormState by viewModel.editFormState.collectAsState()
     val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -53,6 +56,7 @@ fun InspectionsListScreen(
         }
     }
 
+    // Dialog tworzenia przeglądu
     if (showDialog) {
         CreateInspectionDialog(
             formState = formState,
@@ -63,6 +67,21 @@ fun InspectionsListScreen(
             onScopeTypeChanged = viewModel::onScopeTypeChanged,
             onScopeIdChanged = viewModel::onScopeIdChanged,
             onConfirm = viewModel::submitCreate
+        )
+    }
+
+    // Dialog edycji — ten sam komponent co tworzenia, ale prefillowany danymi
+    if (editingInspection != null) {
+        CreateInspectionDialog(
+            formState = editFormState,
+            onDismiss = viewModel::closeEditDialog,
+            onTitleChanged = viewModel::onEditTitleChanged,
+            onDescriptionChanged = viewModel::onEditDescriptionChanged,
+            onScheduledAtChanged = viewModel::onEditScheduledAtChanged,
+            onScopeTypeChanged = {},
+            onScopeIdChanged = viewModel::onEditScopeIdChanged,
+            onConfirm = viewModel::submitUpdate,
+            confirmLabel = "Zaktualizuj"
         )
     }
 
@@ -130,7 +149,12 @@ fun InspectionsListScreen(
                         contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp)
                     ) {
                         items(s.inspections, key = { it.id }) { inspection ->
-                            InspectionCard(inspection = inspection)
+                            InspectionCard(
+                                inspection = inspection,
+                                isManager = isManager,
+                                onEdit = { viewModel.openEditDialog(inspection) },
+                                onDelete = { viewModel.deleteInspection(inspection.id) }
+                            )
                         }
                     }
                 }
@@ -139,9 +163,14 @@ fun InspectionsListScreen(
     }
 }
 
+// ── Karta przeglądu ────────────────────────────────────────────────────────────
+
 @Composable
 private fun InspectionCard(
-    inspection: InspectionResponseDto
+    inspection: InspectionResponseDto,
+    isManager: Boolean = false,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
     val isUpcoming = inspection.isUpcoming
     val statusColor = if (isUpcoming) InfoBlue else MaterialTheme.colorScheme.onSurfaceVariant
@@ -158,7 +187,6 @@ private fun InspectionCard(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Ikona
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -168,11 +196,7 @@ private fun InspectionCard(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                Icons.Rounded.Build, null,
-                tint = statusColor,
-                modifier = Modifier.size(26.dp)
-            )
+            Icon(Icons.Rounded.Build, null, tint = statusColor, modifier = Modifier.size(26.dp))
         }
 
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -182,26 +206,32 @@ private fun InspectionCard(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2
             )
-            
             val dateLabel = try {
                 val ldt = java.time.LocalDateTime.parse(inspection.scheduledAt)
                 "${ldt.toLocalDate()} ${ldt.toLocalTime().withSecond(0)}"
             } catch (_: Exception) { inspection.scheduledAt }
-
-            Text("Termin: $dateLabel", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            
-            Text("Zasięg: ${inspection.scopeTypeLabel}", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                
+            Text(
+                "Termin: $dateLabel",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "Zasięg: ${inspection.scopeTypeLabel}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             inspection.description?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
             }
-
             Spacer(Modifier.height(4.dp))
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -215,8 +245,32 @@ private fun InspectionCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(statusIcon, null, tint = statusColor, modifier = Modifier.size(12.dp))
-                        Text(statusText, style = MaterialTheme.typography.labelSmall,
-                            color = statusColor, fontWeight = FontWeight.Bold)
+                        Text(
+                            statusText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = statusColor,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                if (isManager && isUpcoming) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                Icons.Rounded.Edit,
+                                contentDescription = "Edytuj",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "Usuń",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +25,7 @@ import pl.edu.ur.blokur.ui.theme.PreviewTheme
 @Composable
 fun SampleAnnouncementsContent(
     state: AnnouncementsState,
+    onDownloadAttachment: (id: String, title: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -69,12 +71,13 @@ fun SampleAnnouncementsContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (announcement.hasAttachment) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "📎 Ogłoszenie zawiera załącznik PDF",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = { onDownloadAttachment(announcement.id, announcement.title) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("📎 Pobierz załącznik PDF")
+                            }
                         }
                     }
                 }

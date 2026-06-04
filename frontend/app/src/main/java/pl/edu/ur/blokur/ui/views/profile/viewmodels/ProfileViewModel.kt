@@ -17,17 +17,43 @@ import pl.edu.ur.blokur.ui.views.profile.utils.ProfileEvent
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 import javax.inject.Inject
 
+import pl.edu.ur.blokur.services.UserService
+import javax.inject.Inject
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val userService: UserService
 ) : ViewModel() {
 
     /** Zwraca true jeśli zalogowany użytkownik ma rolę ZARZADCA. */
     suspend fun isManager(): Boolean =
         authService.getCurrentUserRole() == UserRole.ZARZADCA
 
-    private val _state = MutableStateFlow<ProfileState>(ProfileState.Data())
+    private val _state = MutableStateFlow<ProfileState>(ProfileState.Loading)
     val state: StateFlow<ProfileState> = _state.asStateFlow()
+
+    init {
+        loadUserProfile()
+    }
+
+    private fun loadUserProfile() {
+        viewModelScope.launch {
+            try {
+                _state.value = ProfileState.Loading
+                val userProfile = userService.getMe()
+                _state.value = ProfileState.Data(
+                    name = userProfile.fullName,
+                    email = userProfile.email,
+                    phone = userProfile.phone ?: ""
+                )
+            } catch (e: Exception) {
+                _events.send(ProfileEvent.ShowSnackbar(e.message ?: "Błąd ładowania profilu"))
+                // Można dodać stan Error, lub zostawić na pustym z fallbackiem
+                _state.value = ProfileState.Data(name = "Błąd", email = "", phone = "")
+            }
+        }
+    }
 
     private val _events = Channel<ProfileEvent>()
     val events: Flow<ProfileEvent> = _events.receiveAsFlow()

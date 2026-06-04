@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.services.AuthService
+import pl.edu.ur.blokur.services.DeviceService
+import pl.edu.ur.blokur.services.FcmTokenProvider
 import pl.edu.ur.blokur.ui.views.main.utils.BottomNavItem
 import pl.edu.ur.blokur.ui.views.main.utils.NavBarOption
 import pl.edu.ur.blokur.ui.views.main.utils.ResidentMainEvent
@@ -26,7 +28,9 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ResidentMainViewModel @Inject constructor(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val deviceService: DeviceService,
+    private val fcmTokenProvider: FcmTokenProvider
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ResidentMainState>(ResidentMainState.Loading)
@@ -67,6 +71,14 @@ class ResidentMainViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
+            try {
+                val token = fcmTokenProvider.getToken()
+                if (token != null) {
+                    deviceService.unregisterDevice(token)
+                }
+            } catch (e: Exception) {
+                // Ciche przechwycenie błędu
+            }
             authService.logout()
             _events.send(ResidentMainEvent.Logout)
         }

@@ -157,6 +157,11 @@ object NetworkModule {
     fun providePdfApiService(@Named("main") retrofit: Retrofit): PdfApiService =
         retrofit.create(PdfApiService::class.java)
 
+    @Provides
+    @Singleton
+    fun provideUserApiService(@Named("main") retrofit: Retrofit): UserApiService =
+        retrofit.create(UserApiService::class.java)
+
     private fun loggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
 }
