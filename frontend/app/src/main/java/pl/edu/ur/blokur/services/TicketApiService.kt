@@ -106,7 +106,4 @@ interface TicketApiService {
         @Path("id") ticketId: String,
         @Body request: TicketStatusChangeRequest
     ): Response<TicketDetailDto>
-
-    @GET("api/tickets/{id}/history")
-    suspend fun getTicketHistory(@Path("id") ticketId: String): Response<List<pl.edu.ur.blokur.dtos.TicketHistoryDto>>
 }

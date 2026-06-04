@@ -35,10 +35,8 @@ fun EditUserScreen(
     val state by viewModel.state.collectAsState()
     val formState by viewModel.formState.collectAsState()
     val isSubmitting by viewModel.isSubmitting.collectAsState()
-    val isDeleting by viewModel.isDeleting.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -47,25 +45,6 @@ fun EditUserScreen(
                 is EditUserEvent.NavigateBack -> onNavigateBack()
             }
         }
-    }
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            icon = { Icon(Icons.Rounded.DeleteForever, null, tint = ErrorRed) },
-            title = { Text("Trwale usuń konto") },
-            text = { Text("Czy na pewno chcesz usunąć to konto? Ta operacja jest nieodwracalna.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    viewModel.deleteUser()
-                }) { Text("Usuń na zawsze", color = ErrorRed) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Anuluj") }
-            },
-            shape = RoundedCornerShape(20.dp)
-        )
     }
 
     Scaffold(
@@ -104,20 +83,20 @@ fun EditUserScreen(
                         Button(
                             onClick = viewModel::submitChanges,
                             modifier = Modifier.weight(1f).height(50.dp),
-                            enabled = formState.isValid && !isSubmitting && !isDeleting,
+                            enabled = formState.isValid && !isSubmitting,
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             if (isSubmitting) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                             } else {
-                                Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Rounded.Save, null, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Zapisz")
+                                Text("Zapisz", fontWeight = FontWeight.Bold)
                             }
                         }
-                    }
-                }
-            }
+                        }
+                        }
+                        }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
@@ -134,7 +113,7 @@ fun EditUserScreen(
                     ) {
                         // ── Dane podstawowe ──────────────────────────────────
                         Text("Dane podstawowe", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        
+
                         OutlinedTextField(
                             value = formState.email,
                             onValueChange = {},
@@ -173,7 +152,7 @@ fun EditUserScreen(
                         // ── Rola ─────────────────────────────────────────────
                         Spacer(Modifier.height(8.dp))
                         Text("Rola w systemie", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        
+
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             val roles = listOf("MIESZKANIEC" to "Mieszkaniec", "KONSERWATOR" to "Konserwator", "ZARZADCA" to "Zarządca")
                             roles.forEach { (key, label) ->
@@ -291,45 +270,14 @@ fun EditUserScreen(
                                 }
                             }
                         }
-                        
-                        // ── Danger Zone ──────────────────────────────────────
-                        Spacer(Modifier.height(16.dp))
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
-                                .padding(16.dp)
-                        ) {
-                            Text("Strefa niebezpieczna", color = ErrorRed, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Spacer(Modifier.height(8.dp))
-                            Text("Usunięcie konta jest nieodwracalne i spowoduje bezpowrotną utratę dostępu przez tego użytkownika.", 
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(12.dp))
-                            Button(
-                                onClick = { showDeleteConfirm = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                enabled = !isDeleting && !isSubmitting
-                            ) {
-                                if (isDeleting) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-                                } else {
-                                    Icon(Icons.Rounded.DeleteForever, null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Usuń konto trwale")
-                                }
-                            }
-                        }
-                        
+
                         Spacer(Modifier.height(40.dp)) // padding dla BottomBar
                     }
                 }
             }
-            
+
             // Szare tło podczas zapisu
-            if (isSubmitting || isDeleting) {
+            if (isSubmitting) {
                 Box(modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.3f)))

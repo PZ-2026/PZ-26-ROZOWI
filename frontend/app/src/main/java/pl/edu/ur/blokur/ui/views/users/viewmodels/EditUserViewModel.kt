@@ -51,9 +51,6 @@ class EditUserViewModel @Inject constructor(
 
     private val _isSubmitting = MutableStateFlow(false)
     val isSubmitting: StateFlow<Boolean> = _isSubmitting.asStateFlow()
-    
-    private val _isDeleting = MutableStateFlow(false)
-    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
 
     init {
         loadUser()
@@ -164,21 +161,6 @@ class EditUserViewModel @Inject constructor(
                     _events.send(EditUserEvent.ShowSnackbar(it.message ?: "Błąd zapisu"))
                 }
             _isSubmitting.value = false
-        }
-    }
-
-    fun deleteUser() {
-        viewModelScope.launch {
-            _isDeleting.value = true
-            runCatching { adminUserService.deleteUser(userId) }
-                .onSuccess {
-                    _events.send(EditUserEvent.ShowSnackbar("Konto usunięte trwale"))
-                    _events.send(EditUserEvent.NavigateBack)
-                }
-                .onFailure {
-                    _events.send(EditUserEvent.ShowSnackbar(it.message ?: "Błąd usuwania"))
-                }
-            _isDeleting.value = false
         }
     }
 }

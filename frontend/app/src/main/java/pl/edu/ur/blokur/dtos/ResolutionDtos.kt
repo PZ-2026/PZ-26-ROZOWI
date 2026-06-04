@@ -29,8 +29,7 @@ data class ResolutionDetailDto(
     @SerializedName("buildingId") val buildingId: String?,
     @SerializedName("authorName") val authorName: String?,
     @SerializedName("options") val options: List<ResolutionOptionDto>,
-    @SerializedName("results") val results: List<ResolutionOptionResultDto>?,
-    @SerializedName("userVoted") val userVoted: Boolean?
+    @SerializedName("results") val results: List<ResolutionOptionResultDto>?
 ) {
     val isActive: Boolean
         get() = try {

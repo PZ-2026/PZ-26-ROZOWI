@@ -17,14 +17,7 @@ import retrofit2.http.Query
 interface AdminUserApiService {
 
     @GET("api/admin/users")
-    suspend fun getAllUsers(
-        @Query("page") page: Int,
-        @Query("size") size: Int,
-        @Query("search") search: String? = null
-    ): Response<PageDto<AdminUserDto>>
-
-    @GET("api/admin/users/{id}")
-    suspend fun getUserById(@Path("id") id: String): Response<AdminUserDto>
+    suspend fun getAllUsers(): Response<List<AdminUserDto>>
 
     @POST("api/admin/users")
     suspend fun createUser(@Body request: CreateAdminUserRequest): Response<AdminUserDto>
@@ -37,7 +30,4 @@ interface AdminUserApiService {
 
     @PATCH("api/admin/users/{id}/deactivate")
     suspend fun deactivateUser(@Path("id") id: String): Response<Unit>
-
-    @DELETE("api/admin/users/{id}")
-    suspend fun deleteUser(@Path("id") id: String): Response<Unit>
 }

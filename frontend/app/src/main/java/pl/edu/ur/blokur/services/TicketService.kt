@@ -134,14 +134,6 @@ class TicketService @Inject constructor(
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
-    /** GET /api/tickets/{id}/history — historia statusów zgłoszenia. */
-    suspend fun getTicketHistory(ticketId: String): List<TicketHistoryDto> {
-        return runCatching {
-            val response = api.getTicketHistory(ticketId)
-            handleResponse(response, "Błąd podczas pobierania historii zgłoszenia")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
-    }
-
     private fun <T> handleResponse(response: retrofit2.Response<T>, defaultErrorMessage: String): T {
         if (!response.isSuccessful) {
             val message = when (response.code()) {
@@ -157,5 +149,3 @@ class TicketService @Inject constructor(
         return response.body() ?: throw Exception("Pusta odpowiedź z serwera")
     }
 }
-
-

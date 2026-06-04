@@ -33,9 +33,8 @@ interface MeterApiService {
     @GET("api/apartments/{apartmentId}/meter-readings")
     suspend fun getMeterReadingsByApartment(
         @Path("apartmentId") apartmentId: String,
-        @Query("meterId") meterId: String? = null,
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 50
+        @Query("page") page: Int,
+        @Query("size") size: Int
     ): Response<PaginatedResponse<MeterReadingResponseDto>>
 
     @POST("api/apartments/{apartmentId}/meter-readings")

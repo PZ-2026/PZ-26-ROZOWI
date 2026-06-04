@@ -42,12 +42,28 @@ class MeterService @Inject constructor(
     }
 
     suspend fun getMeterReadingsByApartment(apartmentId: String, meterId: String? = null, page: Int = 0, size: Int = 15): PaginatedResponse<MeterReadingResponseDto> = withContext(Dispatchers.IO) {
-        val response = api.getMeterReadingsByApartment(apartmentId, meterId, page, size)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Pusta odpowiedź z serwera")
+        val response = api.getMeterReadingsByApartment(apartmentId, 0, 1000)
+        if (!response.isSuccessful) throw Exception(handleError(response.code(), "pobierania odczytów"))
+        val body = response.body() ?: throw Exception("Pusta odpowiedź z serwera")
+
+        val filteredContent = if (meterId != null) {
+            body.content.filter { it.meterId == meterId }
         } else {
-            throw Exception(handleError(response.code(), "pobierania odczytów"))
+            body.content
         }
+
+        val start = page * size
+        val end = minOf(start + size, filteredContent.size)
+        val pagedContent = if (start < filteredContent.size) filteredContent.subList(start, end) else emptyList()
+        val totalPages = (filteredContent.size + size - 1) / size
+
+        PaginatedResponse(
+            content = pagedContent,
+            totalElements = filteredContent.size.toLong(),
+            totalPages = if (totalPages == 0) 1 else totalPages,
+            number = page,
+            size = size
+        )
     }
 
     suspend fun createMeterReading(apartmentId: String, request: MeterReadingRequestDto): MeterReadingResponseDto = withContext(Dispatchers.IO) {

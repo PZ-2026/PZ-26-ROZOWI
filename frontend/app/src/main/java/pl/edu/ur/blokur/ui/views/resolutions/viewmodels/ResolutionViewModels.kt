@@ -74,7 +74,7 @@ data class CreateResolutionFormState(
 ) {
     val isValid: Boolean
         get() = title.isNotBlank() && description.isNotBlank() &&
-                endDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")) && 
+                endDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")) &&
                 options.size >= 2 &&
                 options.all { it.isNotBlank() } && targetBuildingId.isNotBlank()
 }
@@ -220,7 +220,7 @@ class ResolutionDetailViewModel @Inject constructor(
                         detail = detail,
                         selectedOptionId = null,
                         isVoting = false,
-                        hasVoted = detail.userVoted ?: false,
+                        hasVoted = false, // backend doesn't support userVoted
                         isManager = isManager,
                         isDownloadingReport = false
                     )

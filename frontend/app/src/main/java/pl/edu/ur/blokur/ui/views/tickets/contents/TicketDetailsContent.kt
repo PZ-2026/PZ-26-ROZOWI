@@ -57,7 +57,6 @@ import pl.edu.ur.blokur.ui.views.tickets.components.AssignConservatorSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ConservatorActionSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ManagerRejectSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketCommentsSection
-import pl.edu.ur.blokur.ui.views.tickets.components.TicketHistoryTimeline
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketImagesSection
 import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketDetailsListState
@@ -84,8 +83,6 @@ fun TicketDetailsContent(
             comments = state.comments,
             images = state.images,
             isLoadingComments = state.isLoadingComments,
-            history = state.history,
-            historyError = state.historyError,
             isDownloadingProtocol = state.isDownloadingProtocol,
             onAssignConservator = onAssignConservator,
             onRejectTicket = onRejectTicket,
@@ -106,8 +103,6 @@ private fun TicketDetailsSuccessContent(
     comments: List<TicketCommentDto>,
     images: List<TicketImageDto>,
     isLoadingComments: Boolean,
-    history: List<pl.edu.ur.blokur.dtos.TicketHistoryDto>?,
-    historyError: String?,
     isDownloadingProtocol: Boolean,
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
@@ -159,7 +154,7 @@ private fun TicketDetailsSuccessContent(
                 MetadataRow(Icons.Rounded.Article, "Numer zgłoszenia", ticket.ticketNumber)
                 HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                 MetadataRow(Icons.Rounded.Person, "Zgłaszający", ticket.authorName)
-                
+
                 ticket.locationLabel?.takeIf { it.isNotBlank() }?.let { location ->
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.Place, "Lokalizacja", location)
@@ -182,7 +177,7 @@ private fun TicketDetailsSuccessContent(
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.CheckCircle, "Data zamknięcia", formatDateTime(it))
                 }
-                
+
                 ticket.plannedVisitAt?.let {
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.CalendarToday, "Planowana wizyta", formatDateTime(it))
@@ -227,12 +222,6 @@ private fun TicketDetailsSuccessContent(
                 currentRole = currentUserRole,
                 isLoading = isLoadingComments,
                 onAddComment = onAddComment,
-                modifier = Modifier.fillMaxWidth()
-            )
-            // Sekcja osi czasu (historia statusów)
-            TicketHistoryTimeline(
-                history = history,
-                historyError = historyError,
                 modifier = Modifier.fillMaxWidth()
             )
 

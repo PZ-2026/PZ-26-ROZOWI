@@ -66,10 +66,9 @@ class TicketDetailsViewModel @Inject constructor(
                     availableConservators = conservators,
                     currentUserRole = role
                 )
-                // Ładuj komentarze, zdjęcia i historię równolegle po załadowaniu ticketu
+                // Ładuj komentarze i zdjęcia równolegle po załadowaniu ticketu
                 loadComments(ticket.id)
                 loadImages(ticket.id)
-                loadHistory(ticket.id)
             }.onFailure { e ->
                 _state.value = TicketDetailsListState.Error(e.message ?: "Błąd ładowania zgłoszenia")
             }
@@ -107,26 +106,6 @@ class TicketDetailsViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd ładowania obrazów"))
-                }
-        }
-    }
-
-    private fun loadHistory(ticketId: String) {
-        viewModelScope.launch {
-            runCatching { ticketService.getTicketHistory(ticketId) }
-                .onSuccess { history ->
-                    val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
-                    _state.value = s.copy(
-                        history = history,
-                        historyError = null
-                    )
-                }
-                .onFailure { error ->
-                    val s = _state.value as? TicketDetailsListState.Success ?: return@onFailure
-                    _state.value = s.copy(
-                        history = emptyList(), // Pusta lista by ukryć loading
-                        historyError = error.message ?: "Błąd ładowania historii zgłoszenia"
-                    )
                 }
         }
     }
@@ -265,7 +244,7 @@ class TicketDetailsViewModel @Inject constructor(
             }.onSuccess { file ->
                 val s = _state.value as? TicketDetailsListState.Success
                 if (s != null) _state.value = s.copy(isDownloadingProtocol = false)
-                
+
                 val uri = FileProvider.getUriForFile(
                     context, "${context.packageName}.provider", file
                 )

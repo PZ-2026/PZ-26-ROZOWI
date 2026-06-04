@@ -21,7 +21,6 @@ import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.FinancialLedgerService
 import pl.edu.ur.blokur.services.PropertyService
-import pl.edu.ur.blokur.services.UserApiService
 import pl.edu.ur.blokur.services.UserDocumentService
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesEvent
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesState
@@ -33,7 +32,6 @@ import javax.inject.Inject
 class FinancesViewModel @Inject constructor(
     private val ledgerService: FinancialLedgerService,
     private val propertyService: PropertyService,
-    private val userApiService: UserApiService,
     private val authService: AuthService,
     private val userDocumentService: UserDocumentService,
     @ApplicationContext private val context: Context
@@ -54,13 +52,10 @@ class FinancesViewModel @Inject constructor(
             _state.value = FinancesState.Loading
             runCatching {
                 val isManager = authService.getCurrentUserRole() == UserRole.ZARZADCA
-                val me = userApiService.getMe().body()
-                val apartmentId = me?.apartmentId ?: run {
-                    if (isManager) {
+                val apartmentId = if (isManager) {
                         val tree = propertyService.getBuildingTree()
                         tree.firstOrNull()?.staircases?.firstOrNull()?.apartments?.firstOrNull()?.id
                     } else null
-                }
 
                 val transactionsData = if (apartmentId != null) {
                     ledgerService.getTransactions(apartmentId)

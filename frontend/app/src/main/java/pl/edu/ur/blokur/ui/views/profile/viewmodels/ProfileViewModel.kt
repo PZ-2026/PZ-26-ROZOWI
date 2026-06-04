@@ -17,12 +17,9 @@ import pl.edu.ur.blokur.ui.views.profile.utils.ProfileEvent
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 import javax.inject.Inject
 
-import pl.edu.ur.blokur.services.UserService
-
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authService: AuthService,
-    private val userService: UserService
+    private val authService: AuthService
 ) : ViewModel() {
 
     /** Zwraca true jeśli zalogowany użytkownik ma rolę ZARZADCA. */
@@ -40,11 +37,11 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _state.value = ProfileState.Loading
-                val userProfile = userService.getMe()
+                // Backend nie posiada endpointu do pobierania swojego profilu, wyświetlamy puste dane
                 _state.value = ProfileState.Data(
-                    name = userProfile.fullName,
-                    email = userProfile.email,
-                    phone = userProfile.phone ?: ""
+                    name = "Użytkownik",
+                    email = "Zalogowany",
+                    phone = ""
                 )
             } catch (e: Exception) {
                 _events.send(ProfileEvent.ShowSnackbar(e.message ?: "Błąd ładowania profilu"))
