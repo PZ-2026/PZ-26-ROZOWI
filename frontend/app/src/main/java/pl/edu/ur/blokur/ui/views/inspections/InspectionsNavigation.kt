@@ -17,6 +17,9 @@ sealed interface InspectionRoutes : AppRoute {
 fun NavGraphBuilder.inspectionsGraph(navController: NavController) {
     composable<InspectionRoutes.List> {
         val viewModel: InspectionsListViewModel = hiltViewModel()
-        InspectionsListScreen(viewModel = viewModel)
+        InspectionsListScreen(
+            viewModel = viewModel,
+            onNavigateBack = { navController.popBackStack() }
+        )
     }
 }

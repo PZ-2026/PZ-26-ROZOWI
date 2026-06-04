@@ -8,6 +8,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.views.main.utils.BottomNavItem
 import pl.edu.ur.blokur.ui.views.main.utils.NavBarOption
@@ -35,6 +36,11 @@ fun BottomNavBar(
         is ResidentMainState.ViewingProfile -> NavBarOption.PROFILE
         is ResidentMainState.ViewingTickets -> NavBarOption.TICKETS
         is ResidentMainState.ViewingProperties -> NavBarOption.PROPERTIES
+        is ResidentMainState.ViewingUsers -> NavBarOption.USERS
+        is ResidentMainState.ViewingCategories -> NavBarOption.CATEGORIES
+        is ResidentMainState.ViewingResolutions -> NavBarOption.RESOLUTIONS
+        is ResidentMainState.ViewingInspections -> NavBarOption.INSPECTIONS
+        is ResidentMainState.ViewingNotifications -> NavBarOption.NOTIFICATIONS
         else -> NavBarOption.NONE
     }
 
@@ -54,7 +60,12 @@ fun BottomNavBar(
                     Icon(imageVector = item.icon, contentDescription = item.label)
                 },
                 label = {
-                    Text(text = item.label, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = item.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,

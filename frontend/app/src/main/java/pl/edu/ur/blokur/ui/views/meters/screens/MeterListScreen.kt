@@ -24,6 +24,16 @@ import pl.edu.ur.blokur.dtos.MeterResponseDto
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.components.TopBar
+import pl.edu.ur.blokur.ui.theme.MeterGas
+import pl.edu.ur.blokur.ui.theme.MeterGasBg
+import pl.edu.ur.blokur.ui.theme.MeterHeat
+import pl.edu.ur.blokur.ui.theme.MeterHeatBg
+import pl.edu.ur.blokur.ui.theme.MeterWaterCold
+import pl.edu.ur.blokur.ui.theme.MeterWaterColdBg
+import pl.edu.ur.blokur.ui.theme.MeterWaterHot
+import pl.edu.ur.blokur.ui.theme.MeterWaterHotBg
+import pl.edu.ur.blokur.ui.theme.ShadowOverlay
+import pl.edu.ur.blokur.ui.theme.SuccessGreen
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterEvent
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterListState
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterListViewModel
@@ -124,7 +134,7 @@ private fun MeterCard(
     onClick: () -> Unit
 ) {
     val isActive = meter.active
-    val statusColor = if (isActive) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+    val statusColor = if (isActive) SuccessGreen else MaterialTheme.colorScheme.error
     val statusText = if (isActive) "Aktywny" else "Nieaktywny"
 
     // Wybór ikony w zależności od medium
@@ -136,11 +146,19 @@ private fun MeterCard(
     }
 
     val iconTint = when (meter.mediumType) {
-        "ZIMNA_WODA" -> Color(0xFF1976D2)
-        "CIEPLA_WODA" -> Color(0xFFD32F2F)
-        "GAZ" -> Color(0xFFF57C00)
-        "CIEPLO" -> Color(0xFFE64A19)
+        "ZIMNA_WODA" -> MeterWaterCold
+        "CIEPLA_WODA" -> MeterWaterHot
+        "GAZ" -> MeterGas
+        "CIEPLO" -> MeterHeat
         else -> MaterialTheme.colorScheme.primary
+    }
+
+    val iconBg = when (meter.mediumType) {
+        "ZIMNA_WODA" -> MeterWaterColdBg
+        "CIEPLA_WODA" -> MeterWaterHotBg
+        "GAZ" -> MeterGasBg
+        "CIEPLO" -> MeterHeatBg
+        else -> MaterialTheme.colorScheme.primaryContainer
     }
 
     Row(
@@ -157,7 +175,7 @@ private fun MeterCard(
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(iconTint.copy(alpha = 0.12f), RoundedCornerShape(14.dp)),
+                .background(iconBg, MaterialTheme.shapes.small),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, null, tint = iconTint, modifier = Modifier.size(26.dp))

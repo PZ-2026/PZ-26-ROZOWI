@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.ResolutionDto
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
+import pl.edu.ur.blokur.ui.theme.SuccessGreen
+import pl.edu.ur.blokur.ui.theme.SuccessGreenBgLight
+import pl.edu.ur.blokur.ui.theme.ShadowOverlay
 import pl.edu.ur.blokur.ui.views.resolutions.viewmodels.ResolutionEvent
 import pl.edu.ur.blokur.ui.views.resolutions.viewmodels.ResolutionsListState
 import pl.edu.ur.blokur.ui.views.resolutions.viewmodels.ResolutionsListViewModel
@@ -129,7 +132,7 @@ private fun ResolutionCard(
     onClick: () -> Unit
 ) {
     val isActive = resolution.isActive
-    val statusColor = if (isActive) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+    val statusColor = if (isActive) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant
     val statusIcon = if (isActive) Icons.Rounded.HourglassBottom else Icons.Rounded.CheckCircle
     val statusText = if (isActive) "Aktywne" else "Zakończone"
 
@@ -149,8 +152,8 @@ private fun ResolutionCard(
             modifier = Modifier
                 .size(48.dp)
                 .background(
-                    if (isActive) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surfaceVariant,
-                    RoundedCornerShape(14.dp)
+                    if (isActive) SuccessGreenBgLight else MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.shapes.small
                 ),
             contentAlignment = Alignment.Center
         ) {

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CalendarToday
@@ -25,14 +26,19 @@ import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.InspectionResponseDto
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
+import pl.edu.ur.blokur.ui.theme.InfoBlue
+import pl.edu.ur.blokur.ui.theme.InfoBlueBg
+import pl.edu.ur.blokur.ui.theme.ShadowOverlay
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionEvent
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListState
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionsListScreen(
     viewModel: InspectionsListViewModel,
-    isManager: Boolean = true // Panel jest tylko dla zarządcy
+    isManager: Boolean = true,
+    onNavigateBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val showDialog by viewModel.showCreateDialog.collectAsState()
@@ -63,6 +69,29 @@ fun InspectionsListScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Harmonogram przeglądów",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Wróć",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
         floatingActionButton = {
             if (isManager) {
                 ExtendedFloatingActionButton(
@@ -115,7 +144,7 @@ private fun InspectionCard(
     inspection: InspectionResponseDto
 ) {
     val isUpcoming = inspection.isUpcoming
-    val statusColor = if (isUpcoming) Color(0xFF1976D2) else MaterialTheme.colorScheme.onSurfaceVariant
+    val statusColor = if (isUpcoming) InfoBlue else MaterialTheme.colorScheme.onSurfaceVariant
     val statusIcon = if (isUpcoming) Icons.Rounded.CalendarToday else Icons.Rounded.CheckCircle
     val statusText = if (isUpcoming) "Zaplanowane" else "Odbyte"
 
@@ -134,8 +163,8 @@ private fun InspectionCard(
             modifier = Modifier
                 .size(48.dp)
                 .background(
-                    if (isUpcoming) Color(0xFFE3F2FD) else MaterialTheme.colorScheme.surfaceVariant,
-                    RoundedCornerShape(14.dp)
+                    if (isUpcoming) InfoBlueBg else MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.shapes.small
                 ),
             contentAlignment = Alignment.Center
         ) {

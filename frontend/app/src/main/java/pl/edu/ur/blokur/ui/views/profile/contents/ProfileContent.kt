@@ -14,9 +14,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.components.NormalCard
 import pl.edu.ur.blokur.ui.components.PrimaryButton
+import pl.edu.ur.blokur.ui.components.SecondaryButton
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 
@@ -51,6 +54,8 @@ fun ProfileContent(
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
+    onNavigateToInspections: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when (state) {
@@ -67,6 +72,8 @@ fun ProfileContent(
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
+            onNavigateToInspections = onNavigateToInspections,
+            onNavigateToCategories = onNavigateToCategories,
             modifier = modifier
         )
     }
@@ -85,6 +92,8 @@ private fun ProfileDataContent(
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
+    onNavigateToInspections: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (showSaveDialog) {
@@ -137,7 +146,7 @@ private fun ProfileDataContent(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
-            PrimaryButton(
+            SecondaryButton(
                 text = "Wyślij powiadomienie testowe",
                 onClick = onSendNotification,
                 modifier = Modifier.fillMaxWidth()
@@ -183,6 +192,24 @@ private fun ProfileDataContent(
                     isFirst = false,
                     isLast = false,
                     onClick = onNavigateToDocumentDistribution
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                AdminNavRow(
+                    icon = Icons.Rounded.DateRange,
+                    title = "Harmonogram przeglądów",
+                    subtitle = "Planowanie i historia przeglądów",
+                    isFirst = false,
+                    isLast = false,
+                    onClick = onNavigateToInspections
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                AdminNavRow(
+                    icon = Icons.Rounded.Settings,
+                    title = "Kategorie zgłoszeń",
+                    subtitle = "Zarządzaj typami usterek i zgłoszeń",
+                    isFirst = false,
+                    isLast = false,
+                    onClick = onNavigateToCategories
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 AdminNavRow(

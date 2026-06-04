@@ -18,7 +18,9 @@ fun NavGraphBuilder.profileGraph(
     navController: NavController,
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
-    onNavigateToDocumentDistribution: () -> Unit = {}
+    onNavigateToDocumentDistribution: () -> Unit = {},
+    onNavigateToInspections: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {}
 ) {
     composable<ProfileRoutes.Main> {
         val viewModel: ProfileViewModel = hiltViewModel()
@@ -26,7 +28,9 @@ fun NavGraphBuilder.profileGraph(
             viewModel = viewModel,
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
-            onNavigateToDocumentDistribution = onNavigateToDocumentDistribution
+            onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
+            onNavigateToInspections = onNavigateToInspections,
+            onNavigateToCategories = onNavigateToCategories
         )
     }
 }

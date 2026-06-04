@@ -28,7 +28,9 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
-    onNavigateToDocumentDistribution: () -> Unit = {}
+    onNavigateToDocumentDistribution: () -> Unit = {},
+    onNavigateToInspections: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -68,6 +70,8 @@ fun ProfileScreen(
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
+            onNavigateToInspections = onNavigateToInspections,
+            onNavigateToCategories = onNavigateToCategories,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

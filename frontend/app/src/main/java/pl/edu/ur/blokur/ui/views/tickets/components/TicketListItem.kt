@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -63,7 +64,7 @@ fun TicketListItem(
             Box(
                 modifier = Modifier
                     .width(4.dp)
-                    .height(90.dp)
+                    .fillMaxHeight()
                     .background(
                         brush = Brush.verticalGradient(listOf(color, color.copy(alpha = 0.3f))),
                         shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)

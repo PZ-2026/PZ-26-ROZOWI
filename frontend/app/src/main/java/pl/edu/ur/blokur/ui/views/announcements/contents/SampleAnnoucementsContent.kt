@@ -2,6 +2,7 @@ package pl.edu.ur.blokur.ui.views.announcements.contents
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -42,7 +43,9 @@ fun SampleAnnouncementsContent(
                 description = state.message
             )
             is AnnouncementsState.Success -> LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(state.announcements, key = { it.id }) { announcement ->
                     NormalCard {

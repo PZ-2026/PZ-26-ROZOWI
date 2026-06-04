@@ -22,9 +22,9 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.Divider
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -130,34 +130,34 @@ private fun TicketDetailsSuccessContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 MetadataRow(Icons.Rounded.Article, "Numer zgłoszenia", ticket.ticketNumber)
-                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                 MetadataRow(Icons.Rounded.Person, "Zgłaszający", ticket.authorName)
                 
                 ticket.locationLabel?.takeIf { it.isNotBlank() }?.let { location ->
-                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.Place, "Lokalizacja", location)
                 }
 
                 ticket.assignedToName?.let {
-                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.Person, "Przypisany konserwator", it)
                 }
 
-                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                 MetadataRow(Icons.Rounded.CalendarToday, "Data utworzenia", formatDateTime(ticket.createdAt))
 
                 ticket.updatedAt?.let {
-                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.CalendarToday, "Ostatnia aktualizacja", formatDateTime(it))
                 }
 
                 ticket.closedAt?.let {
-                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.CheckCircle, "Data zamknięcia", formatDateTime(it))
                 }
                 
                 ticket.plannedVisitAt?.let {
-                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.CalendarToday, "Planowana wizyta", formatDateTime(it))
                 }
             }

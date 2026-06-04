@@ -126,9 +126,9 @@ data class CreateReadingFormState(
     val readingDate: String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
     val isSubmitting: Boolean = false
 ) {
-    val isValid: Boolean get() = value.isNotBlank() && 
-            readingDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}$")) && 
-            value.replace(",", ".").toDoubleOrNull() != null
+    val isValid: Boolean get() = value.isNotBlank() &&
+            readingDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}$")) &&
+            value.replace(",", ".").toBigDecimalOrNull() != null
 }
 
 @HiltViewModel
@@ -185,14 +185,14 @@ class MeterDetailViewModel @Inject constructor(
 
     fun submitCreate() {
         val form = _formState.value
-        val valDouble = form.value.replace(",", ".").toDoubleOrNull()
-        if (!form.isValid || valDouble == null) return
+        val valBigDecimal = form.value.replace(",", ".").toBigDecimalOrNull()
+        if (!form.isValid || valBigDecimal == null) return
 
         viewModelScope.launch {
             _formState.value = form.copy(isSubmitting = true)
             val req = MeterReadingRequestDto(
                 meterId = meterId,
-                value = valDouble,
+                value = valBigDecimal,
                 readingDate = form.readingDate.trim()
             )
             runCatching { meterService.createMeterReading(apartmentId, req) }

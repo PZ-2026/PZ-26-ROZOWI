@@ -93,6 +93,12 @@ fun AppNavHost(
                     },
                     onNavigateToDocumentDistribution = {
                         bottomNavController.navigate(DocumentRoutes.Distribution)
+                    },
+                    onNavigateToInspections = {
+                        bottomNavController.navigate(InspectionRoutes.List)
+                    },
+                    onNavigateToCategories = {
+                        bottomNavController.navigate(CategoryRoutes.List)
                     }
                 )
                 ticketsGraph(bottomNavController)
