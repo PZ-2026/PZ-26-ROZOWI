@@ -131,14 +131,6 @@ fun CreateTicketFormContent(
             shape = RoundedCornerShape(12.dp)
         )
 
-        if (submitState is CreateTicketSubmitState.Error) {
-            Text(
-                text = submitState.message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
         FormLabel("Zdjęcia (opcjonalnie)")
         PhotoPlaceholderRow()
 

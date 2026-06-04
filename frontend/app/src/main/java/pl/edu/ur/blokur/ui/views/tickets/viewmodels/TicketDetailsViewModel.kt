@@ -66,9 +66,10 @@ class TicketDetailsViewModel @Inject constructor(
                     availableConservators = conservators,
                     currentUserRole = role
                 )
-                // Ładuj komentarze i zdjęcia równolegle po załadowaniu ticketu
+                // Ładuj komentarze, zdjęcia i historię równolegle po załadowaniu ticketu
                 loadComments(ticket.id)
                 loadImages(ticket.id)
+                loadHistory(ticket.id)
             }.onFailure { e ->
                 _state.value = TicketDetailsListState.Error(e.message ?: "Błąd ładowania zgłoszenia")
             }
@@ -87,9 +88,10 @@ class TicketDetailsViewModel @Inject constructor(
                         isLoadingComments = false
                     )
                 }
-                .onFailure {
+                .onFailure { e ->
                     val s = _state.value as? TicketDetailsListState.Success ?: return@onFailure
                     _state.value = s.copy(isLoadingComments = false)
+                    _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd ładowania komentarzy"))
                 }
         }
     }
@@ -101,6 +103,29 @@ class TicketDetailsViewModel @Inject constructor(
                     val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
                     _state.value = s.copy(
                         images = if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+                    )
+                }
+                .onFailure { e ->
+                    _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd ładowania obrazów"))
+                }
+        }
+    }
+
+    private fun loadHistory(ticketId: String) {
+        viewModelScope.launch {
+            runCatching { ticketService.getTicketHistory(ticketId) }
+                .onSuccess { history ->
+                    val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
+                    _state.value = s.copy(
+                        history = history,
+                        historyError = null
+                    )
+                }
+                .onFailure { error ->
+                    val s = _state.value as? TicketDetailsListState.Success ?: return@onFailure
+                    _state.value = s.copy(
+                        history = emptyList(), // Pusta lista by ukryć loading
+                        historyError = error.message ?: "Błąd ładowania historii zgłoszenia"
                     )
                 }
         }
@@ -122,6 +147,20 @@ class TicketDetailsViewModel @Inject constructor(
         }
     }
 
+    fun deleteImage(imageId: String) {
+        val current = _state.value as? TicketDetailsListState.Success ?: return
+        viewModelScope.launch {
+            runCatching { imageApi.deleteImage(imageId) }
+                .onSuccess {
+                    loadImages(current.ticket.id)
+                    _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zdjęcie zostało usunięte pomyślnie"))
+                }
+                .onFailure { e ->
+                    _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd usuwania obrazu"))
+                }
+        }
+    }
+
     fun onNavigateBack() {
         viewModelScope.launch { _events.send(TicketDetailsScreenEvent.NavigateBack) }
     }
@@ -137,7 +176,7 @@ class TicketDetailsViewModel @Inject constructor(
                 )
             }.onSuccess {
                 loadTicket()
-                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar("Konserwator został przypisany pomyślnie"))
             }.onFailure { e ->
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd przypisywania"))
             }
@@ -154,7 +193,7 @@ class TicketDetailsViewModel @Inject constructor(
                 )
             }.onSuccess {
                 loadTicket()
-                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zgłoszenie odrzucone"))
             }.onFailure { e ->
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd odrzucania zgłoszenia"))
             }
@@ -168,7 +207,7 @@ class TicketDetailsViewModel @Inject constructor(
                 ticketService.closeTicket(ticketId = currentState.ticket.id)
             }.onSuccess {
                 loadTicket()
-                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zgłoszenie zostało zamknięte"))
             }.onFailure { e ->
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd zamykania zgłoszenia"))
             }
@@ -195,7 +234,7 @@ class TicketDetailsViewModel @Inject constructor(
                 }
             }.onSuccess {
                 loadTicket()
-                _events.send(TicketDetailsScreenEvent.ShowSnackbar)
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zaktualizowano status zgłoszenia"))
             }.onFailure { e ->
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd wykonywania akcji"))
             }

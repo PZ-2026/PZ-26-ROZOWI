@@ -45,4 +45,8 @@ interface TicketImageApiService {
     @Headers("Accept: image/jpeg, image/png, application/octet-stream")
     @GET("/api/images/{id}")
     suspend fun serveImage(@Path("id") imageId: String): Response<ResponseBody>
+
+    /** DELETE /api/images/{id} — usuń zdjęcie. */
+    @retrofit2.http.DELETE("/api/images/{id}")
+    suspend fun deleteImage(@Path("id") imageId: String): Response<Unit>
 }

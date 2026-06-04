@@ -87,9 +87,9 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Odświeżenie widoku / powrót na listę po udanej akcji.
 
 **Kryteria akceptacji:**
- - [ ] Metody `assign`, `close`, `reject`, `suspend` zmienione na `POST`.
- - [ ] Ścieżka dla pracy zmieniona na `POST /api/tickets/{id}/start-work`.
- - [ ] Ścieżka zakończenia na `POST /api/tickets/{id}/complete`.
+ - [x] Metody `assign`, `close`, `reject`, `suspend` zmienione na `POST`.
+ - [x] Ścieżka dla pracy zmieniona na `POST /api/tickets/{id}/start-work`.
+ - [x] Ścieżka zakończenia na `POST /api/tickets/{id}/complete`.
 
 **ID:** FRONT-006
 **Tytuł:** Paginacja i filtrowanie listy zgłoszeń (Server-Side)
@@ -104,8 +104,8 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Pozostaje bez zmian.
 
 **Kryteria akceptacji:**
- - [ ] Interfejs API przyjmuje `@Query("page")`, `@Query("size")`, `@Query("status")` itd.
- - [ ] Po dojechaniu na dół ekranu automatyczne doładowywanie starych zgłoszeń (stan loading w LazyColumn).
+ - [x] Interfejs API przyjmuje `@Query("page")`, `@Query("size")`, `@Query("status")` itd.
+ - [x] Po dojechaniu na dół ekranu automatyczne doładowywanie starych zgłoszeń (stan loading w LazyColumn).
 
 **ID:** FRONT-007
 **Tytuł:** Widok Osi Historii Zgłoszenia (Timeline)
@@ -120,8 +120,8 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Scroll na sam dół widoku szczegółów ujawnia nową sekcję, brak nowych tras.
 
 **Kryteria akceptacji:**
- - [ ] Interfejs użytkownika w postaci prostej listy lub stepper'a z informacjami historycznymi.
- - [ ] Obsługa przypadku `empty state` (brak historii).
+ - [x] Interfejs użytkownika w postaci prostej listy lub stepper'a z informacjami historycznymi.
+ - [x] Obsługa przypadku `empty state` (brak historii).
 
 **ID:** FRONT-008
 **Tytuł:** Poprawa obsługi błędów ładowania załączników zgłoszenia
@@ -136,8 +136,8 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Brak zmian.
 
 **Kryteria akceptacji:**
- - [ ] Ekran uwzględnia stany błędu i rzuca Snackbar w interfejsie.
- - [ ] Dodać akcję (przycisk) usunięcia omyłkowo wgranego obrazka z poziomu UI.
+ - [x] Ekran uwzględnia stany błędu i rzuca Snackbar w interfejsie.
+ - [x] Dodać akcję (przycisk) usunięcia omyłkowo wgranego obrazka z poziomu UI.
 
 ### Grupa 3: Finanse
 

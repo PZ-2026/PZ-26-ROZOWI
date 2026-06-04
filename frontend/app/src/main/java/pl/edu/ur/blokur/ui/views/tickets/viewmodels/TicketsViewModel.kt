@@ -28,55 +28,86 @@ class TicketsViewModel @Inject constructor(
     private val _events = Channel<TicketsScreenEvent>()
     val events: Flow<TicketsScreenEvent> = _events.receiveAsFlow()
 
+    private var currentPage = 0
+    private val pageSize = 20
+    private val currentTickets = mutableListOf<TicketSummaryDto>()
+    private var currentFilter = TicketFilterState()
+    private var isFetching = false
+    private var hasReachedEnd = false
+
     init {
-        loadTickets()
+        loadTickets(reset = true)
     }
 
-    fun loadTickets() {
+    fun loadTickets(reset: Boolean = false) {
+        if (isFetching || (hasReachedEnd && !reset)) return
+
         viewModelScope.launch {
-            _state.value = TicketsListState.Loading
+            isFetching = true
+            
+            if (reset) {
+                currentPage = 0
+                currentTickets.clear()
+                hasReachedEnd = false
+                _state.value = TicketsListState.Loading
+            } else {
+                val currentState = _state.value as? TicketsListState.Success
+                if (currentState != null) {
+                    _state.value = currentState.copy(isFetchingNextPage = true)
+                }
+            }
+
             runCatching {
-                val tickets = ticketService.getTickets()
-                val role = ticketService.getCurrentUserRole()
-                tickets to role
-            }.onSuccess { (tickets, role) ->
-                val currentFilter = (_state.value as? TicketsListState.Success)?.filterState
-                    ?: TicketFilterState()
-                _state.value = TicketsListState.Success(
-                    allTickets = tickets,
-                    filteredTickets = applyFilter(tickets, currentFilter),
-                    currentUserRole = role,
-                    filterState = currentFilter
+                val statusParam = if (currentFilter.selectedStatus.isBlank()) null else currentFilter.selectedStatus
+                val searchParam = if (currentFilter.searchQuery.isBlank()) null else currentFilter.searchQuery
+                
+                val fetchedTickets = ticketService.getTickets(
+                    status = statusParam,
+                    search = searchParam,
+                    page = currentPage,
+                    size = pageSize
                 )
+                val role = ticketService.getCurrentUserRole()
+                fetchedTickets to role
+            }.onSuccess { (fetchedTickets, role) ->
+                currentTickets.addAll(fetchedTickets)
+                if (fetchedTickets.size < pageSize) {
+                    hasReachedEnd = true
+                }
+                
+                _state.value = TicketsListState.Success(
+                    tickets = currentTickets.toList(),
+                    currentUserRole = role,
+                    filterState = currentFilter,
+                    isFetchingNextPage = false,
+                    hasReachedEnd = hasReachedEnd
+                )
+                
+                currentPage++
+                isFetching = false
             }.onFailure { e ->
-                _state.value = TicketsListState.Error(e.message ?: "Błąd ładowania zgłoszeń")
+                isFetching = false
+                if (reset) {
+                    _state.value = TicketsListState.Error(e.message ?: "Błąd ładowania zgłoszeń")
+                } else {
+                    val currentState = _state.value as? TicketsListState.Success
+                    if (currentState != null) {
+                        _state.value = currentState.copy(isFetchingNextPage = false)
+                    }
+                }
             }
         }
     }
 
     fun onFilterChanged(newFilter: TicketFilterState) {
-        val current = _state.value as? TicketsListState.Success ?: return
-        _state.value = current.copy(
-            filteredTickets = applyFilter(current.allTickets, newFilter),
-            filterState = newFilter
-        )
+        if (currentFilter != newFilter) {
+            currentFilter = newFilter
+            loadTickets(reset = true)
+        }
     }
 
-    private fun applyFilter(
-        tickets: List<TicketSummaryDto>,
-        filter: TicketFilterState
-    ): List<TicketSummaryDto> {
-        return tickets.filter { ticket ->
-            val matchesSearch = if (filter.searchQuery.isBlank()) true else {
-                ticket.title.contains(filter.searchQuery, ignoreCase = true) ||
-                ticket.ticketNumber.contains(filter.searchQuery, ignoreCase = true) ||
-                ticket.categoryName.contains(filter.searchQuery, ignoreCase = true)
-            }
-            val matchesStatus = if (filter.selectedStatus.isBlank()) true else {
-                ticket.status.name == filter.selectedStatus
-            }
-            matchesSearch && matchesStatus
-        }
+    fun loadNextPage() {
+        loadTickets(reset = false)
     }
 
     fun onTicketClicked(ticketId: String) {

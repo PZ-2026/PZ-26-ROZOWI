@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -24,8 +25,10 @@ import pl.edu.ur.blokur.ui.components.FloatingActionButton
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.ui.Alignment
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketFilterPanel
-import pl.edu.ur.blokur.ui.views.tickets.contents.TicketListContent
+import pl.edu.ur.blokur.ui.views.tickets.components.TicketListItem
+import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsListState
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsScreenEvent
 import pl.edu.ur.blokur.ui.views.tickets.viewmodels.TicketsViewModel
@@ -68,44 +71,75 @@ fun TicketsScreen(
             is TicketsListState.Loading -> LoadingIndicator()
             is TicketsListState.Error -> EmptyState(title = "Błąd", description = s.message)
             is TicketsListState.Success -> {
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
                         .padding(innerPadding)
                         .padding(horizontal = 16.dp)
-                        .verticalScroll(rememberScrollState())
                         .navigationBarsPadding(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Spacer(Modifier.height(4.dp))
+                    item { Spacer(Modifier.height(4.dp)) }
 
                     // ── Panel wyszukiwania i filtrów ──
-                    TicketFilterPanel(
-                        filterState = s.filterState,
-                        totalCount = s.allTickets.size,
-                        filteredCount = s.filteredTickets.size,
-                        onFilterChanged = viewModel::onFilterChanged,
-                        onRefresh = viewModel::loadTickets,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // ── Lista zgłoszeń ──
-                    if (s.filteredTickets.isEmpty()) {
-                        val (title, desc) = if (s.allTickets.isEmpty()) {
-                            "Brak zgłoszeń" to "Nie masz żadnych aktywnych zgłoszeń serwisowych."
-                        } else {
-                            "Brak wyników" to "Żadne zgłoszenie nie pasuje do wybranych filtrów."
-                        }
-                        EmptyState(title = title, description = desc)
-                    } else {
-                        TicketListContent(
-                            tickets = s.filteredTickets,
-                            onTicketClicked = viewModel::onTicketClicked
+                    item {
+                        TicketFilterPanel(
+                            filterState = s.filterState,
+                            totalCount = s.tickets.size,
+                            filteredCount = s.tickets.size,
+                            onFilterChanged = viewModel::onFilterChanged,
+                            onRefresh = { viewModel.loadTickets(reset = true) },
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
-                    Spacer(Modifier.height(80.dp))
+                    // ── Lista zgłoszeń ──
+                    if (s.tickets.isEmpty()) {
+                        item {
+                            EmptyState(title = "Brak wyników", description = "Nie znaleziono zgłoszeń dla podanych kryteriów.")
+                        }
+                    } else {
+                        itemsIndexed(s.tickets) { index, ticket ->
+                            val presentation = ticket.status.toPresentation()
+                            val assignedTo = ticket.assignedToName
+                            val dateOrAssignee = if (assignedTo != null)
+                                "${ticket.createdAt.take(10)} • Przypisane: $assignedTo"
+                            else
+                                "${ticket.createdAt.take(10)} • Brak przypisania"
+
+                            TicketListItem(
+                                title = ticket.title,
+                                date = dateOrAssignee,
+                                categoryName = ticket.categoryName,
+                                statusText = presentation.label,
+                                statusColorHex = presentation.color.value.toLong(),
+                                onClick = { viewModel.onTicketClicked(ticket.id) }
+                            )
+
+                            // Pagination check
+                            if (index == s.tickets.lastIndex && !s.isFetchingNextPage && !s.hasReachedEnd) {
+                                LaunchedEffect(ticket.id) {
+                                    viewModel.loadNextPage()
+                                }
+                            }
+                        }
+                    }
+
+                    if (s.isFetchingNextPage) {
+                        item {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+
+                    item { Spacer(Modifier.height(80.dp)) }
                 }
             }
         }

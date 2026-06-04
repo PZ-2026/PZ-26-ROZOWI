@@ -18,7 +18,6 @@ import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 import javax.inject.Inject
 
 import pl.edu.ur.blokur.services.UserService
-import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(

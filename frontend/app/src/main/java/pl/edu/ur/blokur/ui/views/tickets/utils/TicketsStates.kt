@@ -8,14 +8,12 @@ sealed interface TicketsListState {
     data object Loading : TicketsListState
     data class Error(val message: String) : TicketsListState
     data class Success(
-        val allTickets: List<TicketSummaryDto>,
-        val filteredTickets: List<TicketSummaryDto>,
+        val tickets: List<TicketSummaryDto>,
         val currentUserRole: String = "MIESZKANIEC",
-        val filterState: TicketFilterState = TicketFilterState()
-    ) : TicketsListState {
-        // Alias dla kompatybilności wstecznej
-        val tickets: List<TicketSummaryDto> get() = filteredTickets
-    }
+        val filterState: TicketFilterState = TicketFilterState(),
+        val isFetchingNextPage: Boolean = false,
+        val hasReachedEnd: Boolean = false
+    ) : TicketsListState
 }
 
 data class TicketFilterState(
@@ -37,7 +35,9 @@ sealed interface TicketDetailsListState {
         val currentUserRole: String = "MIESZKANIEC",
         val comments: List<pl.edu.ur.blokur.dtos.TicketCommentDto> = emptyList(),
         val images: List<pl.edu.ur.blokur.dtos.TicketImageDto> = emptyList(),
-        val isLoadingComments: Boolean = false
+        val isLoadingComments: Boolean = false,
+        val history: List<pl.edu.ur.blokur.dtos.TicketHistoryDto>? = null,
+        val historyError: String? = null
     ) : TicketDetailsListState
 }
 
@@ -49,7 +49,7 @@ sealed interface TicketDetailsScreenEvent {
     data class AssignConservator(val conservatorEmail: String, val scheduledAt: String) : TicketDetailsScreenEvent
     data class RejectTicket(val reason: String) : TicketDetailsScreenEvent
     data class ConservatorAction(val type: ConservatorActionType, val comment: String, val pause: Boolean = false) : TicketDetailsScreenEvent
-    data object ShowSnackbar : TicketDetailsScreenEvent
+    data class ShowSnackbar(val message: String) : TicketDetailsScreenEvent
     data class ShowError(val message: String) : TicketDetailsScreenEvent
 }
 

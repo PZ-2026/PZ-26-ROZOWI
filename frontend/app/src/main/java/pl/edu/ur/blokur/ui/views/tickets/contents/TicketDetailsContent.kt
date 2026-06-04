@@ -57,6 +57,7 @@ import pl.edu.ur.blokur.ui.views.tickets.components.AssignConservatorSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ConservatorActionSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ManagerRejectSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketCommentsSection
+import pl.edu.ur.blokur.ui.views.tickets.components.TicketHistoryTimeline
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketImagesSection
 import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketDetailsListState
@@ -69,6 +70,7 @@ fun TicketDetailsContent(
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     onAddComment: (String, String) -> Unit = { _, _ -> },
+    onDeleteImage: (String) -> Unit = {},
     onDownloadProtocol: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -82,10 +84,13 @@ fun TicketDetailsContent(
             comments = state.comments,
             images = state.images,
             isLoadingComments = state.isLoadingComments,
+            history = state.history,
+            historyError = state.historyError,
             onAssignConservator = onAssignConservator,
             onRejectTicket = onRejectTicket,
             onConservatorAction = onConservatorAction,
             onAddComment = onAddComment,
+            onDeleteImage = onDeleteImage,
             onDownloadProtocol = onDownloadProtocol,
             modifier = modifier
         )
@@ -100,10 +105,13 @@ private fun TicketDetailsSuccessContent(
     comments: List<TicketCommentDto>,
     images: List<TicketImageDto>,
     isLoadingComments: Boolean,
+    history: List<pl.edu.ur.blokur.dtos.TicketHistoryDto>?,
+    historyError: String?,
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     onAddComment: (String, String) -> Unit,
+    onDeleteImage: (String) -> Unit,
     onDownloadProtocol: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -206,6 +214,7 @@ private fun TicketDetailsSuccessContent(
             if (images.isNotEmpty()) {
                 TicketImagesSection(
                     images = images,
+                    onDeleteImage = onDeleteImage,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -216,6 +225,12 @@ private fun TicketDetailsSuccessContent(
                 currentRole = currentUserRole,
                 isLoading = isLoadingComments,
                 onAddComment = onAddComment,
+                modifier = Modifier.fillMaxWidth()
+            )
+            // Sekcja osi czasu (historia statusów)
+            TicketHistoryTimeline(
+                history = history,
+                historyError = historyError,
                 modifier = Modifier.fillMaxWidth()
             )
 

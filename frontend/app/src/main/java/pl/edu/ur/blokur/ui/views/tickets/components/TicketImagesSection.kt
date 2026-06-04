@@ -3,6 +3,8 @@ package pl.edu.ur.blokur.ui.views.tickets.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import pl.edu.ur.blokur.dtos.TicketImageDto
 @Composable
 fun TicketImagesSection(
     images: List<TicketImageDto>,
+    onDeleteImage: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (images.isEmpty()) return
@@ -37,10 +40,10 @@ fun TicketImagesSection(
         )
 
         if (before.isNotEmpty()) {
-            ImageGroupSection("Przed pracami", before, Color(0xFF1565C0))
+            ImageGroupSection("Przed pracami", before, Color(0xFF1565C0), onDeleteImage)
         }
         if (after.isNotEmpty()) {
-            ImageGroupSection("Po pracach", after, Color(0xFF2E7D32))
+            ImageGroupSection("Po pracach", after, Color(0xFF2E7D32), onDeleteImage)
         }
     }
 }
@@ -49,7 +52,8 @@ fun TicketImagesSection(
 private fun ImageGroupSection(
     label: String,
     images: List<TicketImageDto>,
-    labelColor: Color
+    labelColor: Color,
+    onDelete: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -96,6 +100,13 @@ private fun ImageGroupSection(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+                IconButton(onClick = { onDelete(img.id) }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Usuń zdjęcie",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }

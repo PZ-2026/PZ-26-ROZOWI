@@ -21,7 +21,9 @@ class TicketService @Inject constructor(
         assignedTo: String? = null,
         dateFrom: String? = null,
         dateTo: String? = null,
-        search: String? = null
+        search: String? = null,
+        page: Int = 0,
+        size: Int = 20
     ): List<TicketSummaryDto> {
         return runCatching {
             val response = api.getTickets(
@@ -32,7 +34,9 @@ class TicketService @Inject constructor(
                 assignedTo = assignedTo,
                 dateFrom = dateFrom,
                 dateTo = dateTo,
-                search = search
+                search = search,
+                page = page,
+                size = size
             )
             handleResponse(response, "Błąd podczas pobierania zgłoszeń")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
@@ -127,6 +131,14 @@ class TicketService @Inject constructor(
         return runCatching {
             val response = api.completeWork(ticketId, TicketCompletionRequest(workDescription = workDescription))
             handleResponse(response, "Błąd podczas zgłaszania zakończenia prac")
+        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+    }
+
+    /** GET /api/tickets/{id}/history — historia statusów zgłoszenia. */
+    suspend fun getTicketHistory(ticketId: String): List<TicketHistoryDto> {
+        return runCatching {
+            val response = api.getTicketHistory(ticketId)
+            handleResponse(response, "Błąd podczas pobierania historii zgłoszenia")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 

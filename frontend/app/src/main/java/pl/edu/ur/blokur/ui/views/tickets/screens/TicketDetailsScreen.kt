@@ -49,7 +49,7 @@ fun TicketDetailsScreen(
                 is TicketDetailsScreenEvent.ConservatorAction ->
                     snackbarHostState.showSnackbar("Zaktualizowano status zgłoszenia")
                 is TicketDetailsScreenEvent.ShowSnackbar ->
-                    snackbarHostState.showSnackbar("Konserwator został przypisany pomyślnie")
+                    snackbarHostState.showSnackbar(event.message)
                 is TicketDetailsScreenEvent.ShowError ->
                     snackbarHostState.showSnackbar("Błąd: ${event.message}")
             }
@@ -79,6 +79,7 @@ fun TicketDetailsScreen(
             onRejectTicket = viewModel::onRejectTicket,
             onConservatorAction = viewModel::onConservatorAction,
             onAddComment = viewModel::addComment,
+            onDeleteImage = viewModel::deleteImage,
             onDownloadProtocol = viewModel::downloadWorkAcceptanceProtocol,
             modifier = Modifier
                 .fillMaxSize()
