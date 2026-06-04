@@ -154,8 +154,8 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Po kliknięciu na kafelek szczegółów przejście do LedgerScreen.
 
 **Kryteria akceptacji:**
- - [ ] Usunięte mocki kwot finansowych w `FinancesScreen`.
- - [ ] Sumowanie i formatowanie balansu na podstawie realnych danych per użytkownik.
+ - [x] Usunięte mocki kwot finansowych w `FinancesScreen`.
+ - [x] Sumowanie i formatowanie balansu na podstawie realnych danych per użytkownik.
 
 ### Grupa 4: Ogłoszenia i Uchwały
 

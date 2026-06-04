@@ -19,16 +19,21 @@ import kotlinx.coroutines.withContext
 import pl.edu.ur.blokur.dtos.UserDocumentDto
 import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.services.AuthService
-import pl.edu.ur.blokur.services.FinancesService
+import pl.edu.ur.blokur.services.FinancialLedgerService
+import pl.edu.ur.blokur.services.PropertyService
+import pl.edu.ur.blokur.services.UserApiService
 import pl.edu.ur.blokur.services.UserDocumentService
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesEvent
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesState
 import java.io.File
+import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
 class FinancesViewModel @Inject constructor(
-    private val financesService: FinancesService,
+    private val ledgerService: FinancialLedgerService,
+    private val propertyService: PropertyService,
+    private val userApiService: UserApiService,
     private val authService: AuthService,
     private val userDocumentService: UserDocumentService,
     @ApplicationContext private val context: Context
@@ -46,15 +51,30 @@ class FinancesViewModel @Inject constructor(
 
     private fun loadData() {
         viewModelScope.launch {
+            _state.value = FinancesState.Loading
             runCatching {
-                Triple(
-                    financesService.getBalance(),
-                    financesService.getTransactions(),
-                    // Dokumenty z prawdziwego API zamiast mocka
-                    userDocumentService.getDocuments()
+                val isManager = authService.getCurrentUserRole() == UserRole.ZARZADCA
+                val me = userApiService.getMe().body()
+                val apartmentId = me?.apartmentId ?: run {
+                    if (isManager) {
+                        val tree = propertyService.getBuildingTree()
+                        tree.firstOrNull()?.staircases?.firstOrNull()?.apartments?.firstOrNull()?.id
+                    } else null
+                }
+
+                val transactionsData = if (apartmentId != null) {
+                    ledgerService.getTransactions(apartmentId)
+                } else null
+
+                val documents = userDocumentService.getDocuments()
+
+                Pair(transactionsData, documents)
+            }.onSuccess { (transactionsData, documents) ->
+                _state.value = FinancesState.Data(
+                    currentBalance = transactionsData?.currentBalance ?: BigDecimal.ZERO,
+                    transactions = transactionsData?.transactions?.sortedByDescending { it.transactionDate } ?: emptyList(),
+                    documents = documents
                 )
-            }.onSuccess { (balance, transactions, documents) ->
-                _state.value = FinancesState.Data(balance, transactions, documents)
             }.onFailure { e ->
                 _state.value = FinancesState.Error(e.message ?: "Błąd ładowania finansów")
             }

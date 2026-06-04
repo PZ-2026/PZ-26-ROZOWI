@@ -55,7 +55,7 @@ fun FinancesOverviewContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            BalanceCard(balance = state.balance)
+            BalanceCard(currentBalance = state.currentBalance, transactions = state.transactions)
             SectionHeader(title = "Przejdź do")
             FinancesNavItem(
                 icon = Icons.Rounded.AccountBalanceWallet,

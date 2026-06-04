@@ -11,9 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.ApartmentBalanceDto
-import pl.edu.ur.blokur.dtos.TransactionDto
+import pl.edu.ur.blokur.dtos.FinancialTransactionDto
 import pl.edu.ur.blokur.ui.components.EmptyState
+import java.math.BigDecimal
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
 import pl.edu.ur.blokur.ui.views.finances.components.BalanceCard
@@ -29,7 +29,7 @@ fun TransactionsContent(
         is FinancesState.Loading -> LoadingIndicator()
         is FinancesState.Error -> EmptyState(title = "Błąd", description = state.message)
         is FinancesState.Data -> TransactionsListContent(
-            balance = state.balance,
+            currentBalance = state.currentBalance,
             transactions = state.transactions,
             modifier = modifier
         )
@@ -38,8 +38,8 @@ fun TransactionsContent(
 
 @Composable
 private fun TransactionsListContent(
-    balance: ApartmentBalanceDto,
-    transactions: List<TransactionDto>,
+    currentBalance: BigDecimal,
+    transactions: List<FinancialTransactionDto>,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -47,7 +47,7 @@ private fun TransactionsListContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item { Spacer(modifier = Modifier.height(4.dp)) }
-        item { BalanceCard(balance = balance) }
+        item { BalanceCard(currentBalance = currentBalance, transactions = transactions) }
         item {
             Text(
                 text = "Ostatnie 24 miesiące · ${transactions.size} operacji",

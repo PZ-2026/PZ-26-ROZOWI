@@ -13,21 +13,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.ApartmentBalanceDto
-import pl.edu.ur.blokur.dtos.BalanceStatus
+import pl.edu.ur.blokur.dtos.FinancialTransactionDto
 import pl.edu.ur.blokur.ui.components.NormalCard
 import pl.edu.ur.blokur.ui.components.StatusBadge
 import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.SuccessGreen
+import java.math.BigDecimal
 
 @Composable
-fun BalanceCard(balance: ApartmentBalanceDto) {
-    val (label, color) = when (balance.status) {
-        BalanceStatus.NADPLATA -> "Nadpłata" to SuccessGreen
-        BalanceStatus.ZALEGLOSC -> "Zaległość" to ErrorRed
-        BalanceStatus.WYZEROWANY -> "Wyrównane" to MaterialTheme.colorScheme.onSurface
+fun BalanceCard(currentBalance: BigDecimal, transactions: List<FinancialTransactionDto>) {
+    val totalPaid = transactions.filter { it.isCredit }.sumOf { it.amount }
+    val totalCharged = transactions.filter { !it.isCredit }.sumOf { it.amount }
+
+    val (label, color) = when {
+        currentBalance > BigDecimal.ZERO -> "Nadpłata" to SuccessGreen
+        currentBalance < BigDecimal.ZERO -> "Zaległość" to ErrorRed
+        else -> "Wyrównane" to MaterialTheme.colorScheme.onSurface
     }
-    val amountText = formatAmount(balance.currentBalance, balance.currency)
+    val amountText = formatAmount(currentBalance, "PLN")
 
     NormalCard {
         Text("Bieżące saldo", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -43,17 +46,17 @@ fun BalanceCard(balance: ApartmentBalanceDto) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Suma wpłat", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("+${"%.2f".format(balance.totalPaid)} PLN", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = SuccessGreen)
+                Text("+${"%.2f".format(totalPaid)} PLN", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = SuccessGreen)
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text("Suma naliczeń", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${"%.2f".format(balance.totalCharged)} PLN", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = ErrorRed)
+                Text("${"%.2f".format(totalCharged)} PLN", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = ErrorRed)
             }
         }
     }
 }
 
-private fun formatAmount(amount: Double, currency: String): String {
-    val prefix = if (amount >= 0) "+" else ""
+private fun formatAmount(amount: BigDecimal, currency: String): String {
+    val prefix = if (amount >= BigDecimal.ZERO) "+" else ""
     return "$prefix${"%.2f".format(amount)} $currency"
 }

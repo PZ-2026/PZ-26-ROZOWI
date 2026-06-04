@@ -25,8 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.TransactionDto
-import pl.edu.ur.blokur.dtos.TransactionType
+import pl.edu.ur.blokur.dtos.FinancialTransactionDto
 import pl.edu.ur.blokur.ui.components.NormalCard
 import pl.edu.ur.blokur.ui.components.StatusBadge
 import pl.edu.ur.blokur.ui.theme.ErrorRed
@@ -35,20 +34,22 @@ import pl.edu.ur.blokur.ui.theme.SuccessGreen
 
 private data class TransactionPresentation(val label: String, val color: Color, val icon: ImageVector)
 
-private fun TransactionType.toPresentation() = when (this) {
-    TransactionType.WPLATA -> TransactionPresentation("Wpłata", SuccessGreen, Icons.Rounded.ArrowDownward)
-    TransactionType.NALICZENIE -> TransactionPresentation("Naliczenie", ErrorRed, Icons.Rounded.ArrowUpward)
-    TransactionType.KOREKTA -> TransactionPresentation("Korekta", InfoBlue, Icons.Rounded.SwapVert)
+@Composable
+private fun String.toPresentation() = when (this.uppercase()) {
+    "WPLATA" -> TransactionPresentation("Wpłata", SuccessGreen, Icons.Rounded.ArrowDownward)
+    "NALICZENIE" -> TransactionPresentation("Naliczenie", ErrorRed, Icons.Rounded.ArrowUpward)
+    "KOREKTA" -> TransactionPresentation("Korekta", InfoBlue, Icons.Rounded.SwapVert)
+    else -> TransactionPresentation(this, MaterialTheme.colorScheme.onSurface, Icons.Rounded.SwapVert)
 }
 
 @Composable
-fun TransactionItem(transaction: TransactionDto) {
+fun TransactionItem(transaction: FinancialTransactionDto) {
     val presentation = transaction.type.toPresentation()
     val amountText = run {
-        val prefix = if (transaction.amount >= 0) "+" else ""
+        val prefix = if (transaction.amount >= java.math.BigDecimal.ZERO) "+" else ""
         "$prefix${"%.2f".format(transaction.amount)} PLN"
     }
-    val amountColor = if (transaction.amount >= 0) SuccessGreen else ErrorRed
+    val amountColor = if (transaction.amount >= java.math.BigDecimal.ZERO) SuccessGreen else ErrorRed
 
     NormalCard {
         Row(
