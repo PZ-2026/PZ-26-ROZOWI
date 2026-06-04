@@ -305,8 +305,7 @@ public class ResolutionService {
                 resolution.getBuilding().getId(),
                 authorName,
                 options,
-                results,
-                hasVoted);
+                results);
     }
 
     /**

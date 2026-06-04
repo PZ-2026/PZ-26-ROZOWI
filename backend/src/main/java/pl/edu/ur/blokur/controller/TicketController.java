@@ -26,7 +26,6 @@ import pl.edu.ur.blokur.dto.TicketRequest;
 import pl.edu.ur.blokur.dto.TicketStatusChangeRequest;
 import pl.edu.ur.blokur.dto.TicketSummaryDto;
 import pl.edu.ur.blokur.dto.TicketSuspendRequest;
-import pl.edu.ur.blokur.dto.TicketHistoryDto;
 import pl.edu.ur.blokur.service.TicketService;
 
 /** REST controller obsługujący operacje na zgłoszeniach serwisowych. */
@@ -163,20 +162,5 @@ public class TicketController {
             @Valid @RequestBody TicketStatusChangeRequest request,
             Principal principal) {
         return ResponseEntity.ok(ticketService.changeStatus(id, request, principal.getName()));
-    }
-
-    /**
-     * Zwraca historię zmian statusów (oś czasu) dla danego zgłoszenia.
-     *
-     * @param id identyfikator zgłoszenia
-     * @return lista DTO historii z informacjami o statusach i autorach zmian
-     */
-    @GetMapping("/{id}/history")
-    public ResponseEntity<List<TicketHistoryDto>> getTicketHistory(
-            @PathVariable UUID id, Principal principal) {
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        return ResponseEntity.ok(ticketService.getTicketHistory(id, principal.getName()));
     }
 }

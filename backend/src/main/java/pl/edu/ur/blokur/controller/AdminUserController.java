@@ -4,20 +4,15 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.edu.ur.blokur.dto.CreateUserRequest;
 import pl.edu.ur.blokur.dto.UpdateUserRequest;
@@ -38,35 +33,13 @@ public class AdminUserController {
     }
 
     /**
-     * Zwraca stronicowaną listę użytkowników systemu wraz z rolą, lokalem i statusem aktywności.
+     * Zwraca listę wszystkich użytkowników systemu wraz z rolą, lokalem i statusem aktywności.
      *
-     * @param page numer strony (0-indexed)
-     * @param size rozmiar strony
-     * @param search fraza wyszukiwania
-     * @return strona użytkowników z kodem 200
+     * @return lista użytkowników z kodem 200
      */
     @GetMapping
-    public ResponseEntity<Page<UserResponse>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "15") int size,
-            @RequestParam(required = false) String search) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(adminUserService.getUsersPage(search, pageable));
-    }
-
-    /**
-     * Zwraca dane pojedynczego użytkownika po jego identyfikatorze.
-     *
-     * @param id identyfikator użytkownika
-     * @return DTO użytkownika z kodem 200, lub 404 jeśli nie znaleziono
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
-        try {
-            return ResponseEntity.ok(adminUserService.getUserById(id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(adminUserService.getAllUsers());
     }
 
     /**
@@ -147,23 +120,6 @@ public class AdminUserController {
     public ResponseEntity<?> deactivateUser(@PathVariable UUID id) {
         try {
             adminUserService.deactivateUser(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    /**
-     * Usuwa bezpowrotnie użytkownika o podanym identyfikatorze z systemu.
-     *
-     * @param id identyfikator użytkownika
-     * @return kod 204 po sukcesie, lub 404 jeśli użytkownik nie istnieje
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
-        try {
-            adminUserService.deleteUser(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

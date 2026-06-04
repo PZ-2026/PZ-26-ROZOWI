@@ -67,12 +67,11 @@ public class MeterReadingController {
     @PreAuthorize("hasAnyRole('ZARZADCA', 'KONSERWATOR', 'MIESZKANIEC')")
     public ResponseEntity<Page<MeterReadingResponse>> getAllByApartment(
             @PathVariable UUID apartmentId,
-            @RequestParam(required = false) UUID meterId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Principal principal) {
         Page<MeterReadingResponse> readings =
-                meterReadingService.getAllByApartment(apartmentId, meterId, page, size, principal.getName());
+                meterReadingService.getAllByApartment(apartmentId, page, size, principal.getName());
         return ResponseEntity.ok(readings);
     }
 

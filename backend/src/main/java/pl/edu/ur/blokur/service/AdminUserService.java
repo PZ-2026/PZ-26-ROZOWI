@@ -3,8 +3,6 @@ package pl.edu.ur.blokur.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.CreateUserRequest;
@@ -72,63 +70,6 @@ public class AdminUserService {
                                     apartmentId);
                         })
                 .toList();
-    }
-
-    /**
-     * Zwraca stronicowaną i filtrowaną listę użytkowników.
-     *
-     * @param search   tekst do wyszukania po imieniu, nazwisku lub emailu
-     * @param pageable informacje o stronicowaniu
-     * @return strona z DTO użytkowników
-     */
-    @Transactional(readOnly = true)
-    public Page<UserResponse> getUsersPage(String search, Pageable pageable) {
-        return userRepository.searchUsers(search, pageable).map(
-                user -> {
-                    UUID apartmentId =
-                            user.getUserApartments().isEmpty()
-                                    ? null
-                                    : user.getUserApartments()
-                                            .get(0)
-                                            .getApartment()
-                                            .getId();
-                    return new UserResponse(
-                            user.getId(),
-                            user.getFirstName(),
-                            user.getLastName(),
-                            user.getEmail(),
-                            user.getPhone(),
-                            user.getRole(),
-                            user.isActive(),
-                            user.getCreatedAt(),
-                            apartmentId);
-                });
-    }
-
-    /**
-     * Zwraca dane pojedynczego użytkownika.
-     *
-     * @param id identyfikator użytkownika
-     * @return DTO użytkownika
-     * @throws IllegalArgumentException jeśli użytkownik nie istnieje
-     */
-    @Transactional(readOnly = true)
-    public UserResponse getUserById(UUID id) {
-        var user = userRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Użytkownik o podanym ID nie istnieje."));
-        UUID apartmentId = user.getUserApartments().isEmpty()
-                ? null
-                : user.getUserApartments().get(0).getApartment().getId();
-        return new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getPhone(),
-                user.getRole(),
-                user.isActive(),
-                user.getCreatedAt(),
-                apartmentId);
     }
 
     /**
