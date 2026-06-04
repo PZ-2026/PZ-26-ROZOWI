@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -21,9 +23,11 @@ import pl.edu.ur.blokur.ui.views.announcements.viewmodels.AnnouncementsViewModel
 @Composable
 fun AnnouncementsScreen(
     viewModel: AnnouncementsViewModel,
+    onNavigateToCreate: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
+    val isManager by viewModel.isManager.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -35,13 +39,30 @@ fun AnnouncementsScreen(
         }
     }
 
-    SampleAnnouncementsContent(
-        state = state,
-        onDownloadAttachment = viewModel::downloadAttachment,
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp)
-            .navigationBarsPadding()
-    )
+    androidx.compose.material3.Scaffold(
+        modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            if (isManager) {
+                androidx.compose.material3.FloatingActionButton(onClick = onNavigateToCreate) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "Dodaj ogłoszenie"
+                    )
+                }
+            }
+        }
+    ) { paddingValues ->
+        SampleAnnouncementsContent(
+            state = state,
+            isManager = isManager,
+            onDownloadAttachment = viewModel::downloadAttachment,
+            onDeleteAnnouncement = viewModel::deleteAnnouncement,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+        )
+    }
 }

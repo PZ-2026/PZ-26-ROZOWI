@@ -17,6 +17,7 @@ public class ResolutionDetailDto {
     private String authorName;
     private List<ResolutionOptionDto> options;
     private List<ResolutionOptionResultDto> results;
+    private Boolean userVoted;
 
     /**
      * Tworzy DTO szczegółów uchwały z wynikami głosowania.
@@ -38,7 +39,8 @@ public class ResolutionDetailDto {
             UUID buildingId,
             String authorName,
             List<ResolutionOptionDto> options,
-            List<ResolutionOptionResultDto> results) {
+            List<ResolutionOptionResultDto> results,
+            Boolean userVoted) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -47,5 +49,6 @@ public class ResolutionDetailDto {
         this.authorName = authorName;
         this.options = options;
         this.results = results;
+        this.userVoted = userVoted;
     }
 }

@@ -37,7 +37,8 @@ sealed interface TicketDetailsListState {
         val images: List<pl.edu.ur.blokur.dtos.TicketImageDto> = emptyList(),
         val isLoadingComments: Boolean = false,
         val history: List<pl.edu.ur.blokur.dtos.TicketHistoryDto>? = null,
-        val historyError: String? = null
+        val historyError: String? = null,
+        val isDownloadingProtocol: Boolean = false
     ) : TicketDetailsListState
 }
 

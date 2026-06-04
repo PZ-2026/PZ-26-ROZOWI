@@ -220,7 +220,7 @@ class ResolutionDetailViewModel @Inject constructor(
                         detail = detail,
                         selectedOptionId = null,
                         isVoting = false,
-                        hasVoted = false,
+                        hasVoted = detail.userVoted ?: false,
                         isManager = isManager,
                         isDownloadingReport = false
                     )

@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.services.AnnouncementService
+import pl.edu.ur.blokur.services.AuthService
+import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.ui.views.announcements.utils.AnnouncementsEvent
 import pl.edu.ur.blokur.ui.views.announcements.utils.AnnouncementsState
 import java.io.File
@@ -24,6 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AnnouncementsViewModel @Inject constructor(
     private val announcementService: AnnouncementService,
+    private val authService: AuthService,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -33,7 +36,13 @@ class AnnouncementsViewModel @Inject constructor(
     private val _events = Channel<AnnouncementsEvent>()
     val events: Flow<AnnouncementsEvent> = _events.receiveAsFlow()
 
+    private val _isManager = MutableStateFlow(false)
+    val isManager: StateFlow<Boolean> = _isManager.asStateFlow()
+
     init {
+        viewModelScope.launch {
+            _isManager.value = authService.getCurrentUserRole() == UserRole.ZARZADCA
+        }
         loadAnnouncements()
     }
 
@@ -77,6 +86,19 @@ class AnnouncementsViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     _events.send(AnnouncementsEvent.ShowError(e.message ?: "Błąd pobierania załącznika"))
+                }
+        }
+    }
+
+    fun deleteAnnouncement(id: String) {
+        viewModelScope.launch {
+            runCatching { announcementService.deleteAnnouncement(id) }
+                .onSuccess {
+                    _events.send(AnnouncementsEvent.ShowError("Usunięto ogłoszenie"))
+                    loadAnnouncements()
+                }
+                .onFailure { e ->
+                    _events.send(AnnouncementsEvent.ShowError(e.message ?: "Błąd usuwania ogłoszenia"))
                 }
         }
     }

@@ -172,9 +172,9 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Przycisk Floating Action Button (FAB) na liście do /create i nawigacja powrotna (`popBackStack()`) po udanym zapisaniu.
 
 **Kryteria akceptacji:**
- - [ ] Ekran dodawania z polami tekstowymi.
- - [ ] Integracja operacji Tworzenia, Edytowania i Usuwania (`DELETE`).
- - [ ] Reaktywna zmiana stanu głównej listy.
+ - [x] Ekran dodawania z polami tekstowymi.
+ - [x] Integracja operacji Tworzenia, Edytowania i Usuwania (`DELETE`).
+ - [x] Reaktywna zmiana stanu głównej listy.
 
 **ID:** FRONT-011
 **Tytuł:** Perzystentna informacja o oddanym głosie (Uchwały)
@@ -189,7 +189,7 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Brak zmian.
 
 **Kryteria akceptacji:**
- - [ ] Mapowanie odpowiedzi backendu w ResolutionDTO pod UI state i zmiana zachowania przycisku oraz radio buttons.
+ - [x] Mapowanie odpowiedzi backendu w ResolutionDTO pod UI state i zmiana zachowania przycisku oraz radio buttons.
 
 **ID:** FRONT-012
 **Tytuł:** Wskaźnik ładowania podczas pobierania PDF Uchwały
@@ -204,8 +204,8 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Pomyślne pobranie pliku może uruchomić `Intent ACTION_VIEW` z otworzeniem zewnętrznej aplikacji PDF.
 
 **Kryteria akceptacji:**
- - [ ] Stan w viewmodelu blokujący dwukrotne pobieranie.
- - [ ] Wizualny loader.
+ - [x] Stan w viewmodelu blokujący dwukrotne pobieranie.
+ - [x] Wizualny loader.
 
 ### Grupa 5: Drzewo Nieruchomości i Przeglądy
 

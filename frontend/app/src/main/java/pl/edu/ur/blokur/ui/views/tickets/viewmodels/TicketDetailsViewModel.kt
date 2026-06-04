@@ -243,8 +243,10 @@ class TicketDetailsViewModel @Inject constructor(
 
     fun downloadWorkAcceptanceProtocol() {
         val currentState = _state.value as? TicketDetailsListState.Success ?: return
+        if (currentState.isDownloadingProtocol) return
         val ticket = currentState.ticket
         viewModelScope.launch {
+            _state.value = currentState.copy(isDownloadingProtocol = true)
             runCatching {
                 val request = WorkAcceptanceProtocolRequestDto(
                     ticketNumber = ticket.ticketNumber,
@@ -261,6 +263,9 @@ class TicketDetailsViewModel @Inject constructor(
                     file
                 }
             }.onSuccess { file ->
+                val s = _state.value as? TicketDetailsListState.Success
+                if (s != null) _state.value = s.copy(isDownloadingProtocol = false)
+                
                 val uri = FileProvider.getUriForFile(
                     context, "${context.packageName}.provider", file
                 )
@@ -270,6 +275,8 @@ class TicketDetailsViewModel @Inject constructor(
                 }
                 context.startActivity(intent)
             }.onFailure { e ->
+                val s = _state.value as? TicketDetailsListState.Success
+                if (s != null) _state.value = s.copy(isDownloadingProtocol = false)
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd pobierania protokołu"))
             }
         }

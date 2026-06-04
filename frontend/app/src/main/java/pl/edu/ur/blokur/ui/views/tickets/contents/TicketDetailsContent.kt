@@ -86,6 +86,7 @@ fun TicketDetailsContent(
             isLoadingComments = state.isLoadingComments,
             history = state.history,
             historyError = state.historyError,
+            isDownloadingProtocol = state.isDownloadingProtocol,
             onAssignConservator = onAssignConservator,
             onRejectTicket = onRejectTicket,
             onConservatorAction = onConservatorAction,
@@ -107,6 +108,7 @@ private fun TicketDetailsSuccessContent(
     isLoadingComments: Boolean,
     history: List<pl.edu.ur.blokur.dtos.TicketHistoryDto>?,
     historyError: String?,
+    isDownloadingProtocol: Boolean,
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
@@ -283,6 +285,7 @@ private fun TicketDetailsSuccessContent(
                                 icon = Icons.Rounded.PictureAsPdf,
                                 contentDescription = "Pobierz protokół odbioru",
                                 containerColor = MaterialTheme.colorScheme.secondary,
+                                isLoading = isDownloadingProtocol,
                                 onClick = onDownloadProtocol
                             )
                         }
@@ -319,6 +322,7 @@ private fun TicketDetailsSuccessContent(
                                 icon = Icons.Rounded.PictureAsPdf,
                                 contentDescription = "Pobierz protokół odbioru",
                                 containerColor = MaterialTheme.colorScheme.secondary,
+                                isLoading = isDownloadingProtocol,
                                 onClick = onDownloadProtocol
                             )
                         }
@@ -369,6 +373,7 @@ private fun TicketFab(
     contentDescription: String,
     containerColor: androidx.compose.ui.graphics.Color,
     contentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.White,
+    isLoading: Boolean = false,
     onClick: () -> Unit
 ) {
     FloatingActionButton(
@@ -377,7 +382,15 @@ private fun TicketFab(
         contentColor = contentColor,
         elevation = FloatingActionButtonDefaults.elevation(4.dp)
     ) {
-        Icon(icon, contentDescription = contentDescription)
+        if (isLoading) {
+            androidx.compose.material3.CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = contentColor,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Icon(icon, contentDescription = contentDescription)
+        }
     }
 }
 

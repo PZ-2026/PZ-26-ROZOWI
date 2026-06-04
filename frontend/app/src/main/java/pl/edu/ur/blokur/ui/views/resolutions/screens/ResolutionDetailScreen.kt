@@ -133,7 +133,7 @@ private fun ResolutionDetailContent(
     modifier: Modifier = Modifier
 ) {
     val showResults = hasVoted || !detail.isActive
-    val showVoting = detail.isActive && !hasVoted
+    val showVoting = detail.isActive
 
     LazyColumn(
         modifier = modifier
@@ -180,30 +180,41 @@ private fun ResolutionDetailContent(
                 VotingOptionRow(
                     option = option,
                     isSelected = selectedOptionId == option.id,
-                    isEnabled = !isVoting,
+                    isEnabled = !isVoting && !hasVoted,
                     onSelect = { onOptionSelected(option.id) }
                 )
             }
             item {
-                Button(
-                    onClick = onVote,
-                    enabled = selectedOptionId != null && !isVoting,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    AnimatedContent(isVoting, label = "vote") { voting ->
-                        if (voting) {
-                            Row(verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary)
-                                Text("Zapisuję głos...")
-                            }
-                        } else {
-                            Row(verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(Icons.Rounded.HowToVote, null, modifier = Modifier.size(18.dp))
-                                Text("Oddaj głos", fontWeight = FontWeight.Bold)
+                if (hasVoted) {
+                    Button(
+                        onClick = { },
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text("Twój głos został zapisany", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Button(
+                        onClick = onVote,
+                        enabled = selectedOptionId != null && !isVoting,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        AnimatedContent(isVoting, label = "vote") { voting ->
+                            if (voting) {
+                                Row(verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary)
+                                    Text("Zapisuję głos...")
+                                }
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(Icons.Rounded.HowToVote, null, modifier = Modifier.size(18.dp))
+                                    Text("Oddaj głos", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }

@@ -2,6 +2,7 @@ package pl.edu.ur.blokur.ui.views.announcements.contents
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +28,9 @@ import pl.edu.ur.blokur.ui.theme.PreviewTheme
 @Composable
 fun SampleAnnouncementsContent(
     state: AnnouncementsState,
+    isManager: Boolean = false,
     onDownloadAttachment: (id: String, title: String) -> Unit = { _, _ -> },
+    onDeleteAnnouncement: (id: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -51,11 +56,29 @@ fun SampleAnnouncementsContent(
             ) {
                 items(state.announcements, key = { it.id }) { announcement ->
                     NormalCard {
-                        Text(
-                            text = announcement.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = announcement.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (isManager) {
+                                androidx.compose.material3.IconButton(
+                                    onClick = { onDeleteAnnouncement(announcement.id) }
+                                ) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = Icons.Rounded.Delete,
+                                        contentDescription = "Usuń ogłoszenie",
+                                        tint = pl.edu.ur.blokur.ui.theme.ErrorRed
+                                    )
+                                }
+                            }
+                        }
                         if (!announcement.authorName.isNullOrBlank()) {
                             Text(
                                 text = announcement.authorName,
@@ -90,7 +113,7 @@ fun SampleAnnouncementsContent(
 @Composable
 private fun AnnouncementsLoadingPreview() {
     PreviewTheme {
-        SampleAnnouncementsContent(AnnouncementsState.Loading)
+        SampleAnnouncementsContent(state = AnnouncementsState.Loading)
     }
 }
 
