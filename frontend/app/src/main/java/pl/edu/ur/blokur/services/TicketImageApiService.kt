@@ -21,11 +21,6 @@ import retrofit2.http.Path
  */
 interface TicketImageApiService {
 
-    /**
-     * POST /api/tickets/{id}/images — wgraj zdjęcie do zgłoszenia.
-     * @param imageType "BEFORE" lub "AFTER" — przekazywany jako część formularza multipart
-     * @param file      plik obrazu jako MultipartBody.Part (JPEG lub PNG)
-     */
     @Multipart
     @POST("api/tickets/{id}/images")
     suspend fun uploadImage(
@@ -34,19 +29,10 @@ interface TicketImageApiService {
         @Part file: MultipartBody.Part
     ): Response<TicketImageDto>
 
-    /** GET /api/tickets/{id}/images — lista metadanych zdjęć przypisanych do zgłoszenia. */
     @GET("api/tickets/{id}/images")
     suspend fun getImagesForTicket(@Path("id") ticketId: String): Response<List<TicketImageDto>>
 
-    /**
-     * GET /api/images/{id} — serwuje plik obrazu z dysku serwera.
-     * Odpowiedź to strumień bajtów (image/jpeg lub image/png).
-     */
     @Headers("Accept: image/jpeg, image/png, application/octet-stream")
     @GET("api/images/{id}")
     suspend fun serveImage(@Path("id") imageId: String): Response<ResponseBody>
-
-    /** DELETE /api/images/{id} — usuń zdjęcie. */
-    @retrofit2.http.DELETE("api/images/{id}")
-    suspend fun deleteImage(@Path("id") imageId: String): Response<Unit>
 }

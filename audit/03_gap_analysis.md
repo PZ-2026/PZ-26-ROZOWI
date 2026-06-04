@@ -1,464 +1,355 @@
-# Gap Analysis — Analiza Pokrycia Frontend vs Backend
+# Gap Analysis — BlokUR
 
-Ten dokument zawiera szczegółowe porównanie endpointów backendu z ich wywołaniami w aplikacjach klienckich frontendu.
+**Data rozpoczęcia:** 2026-06-05  
+**Źródła:** `audit/01_backend_inventory.md`, `audit/02_frontend_inventory.md`, weryfikacja kodu `frontend/`
 
-## MODUŁ 4 — Zgłoszenia Serwisowe (Tickets)
+**Legenda statusów:**
+- ✅ **POKRYTY** — frontend wywołuje endpoint i obsługuje sukces + błąd
+- ⚠️ **CZĘŚCIOWO** — wywołanie istnieje, brakuje elementów (błędy, loading, role, hardkod)
+- ❌ **BRAK** — endpoint backendowy nie jest wywoływany z frontendu
 
-### Analiza endpointów
-
-1. **`POST /api/tickets`**
-   - Status: ✅ POKRYTY
-   - Opis: Działa poprawnie w `CreateTicketViewModel`, uwzględnia obsługę błędów (400, 403, 422).
-
-2. **`GET /api/tickets`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Endpoint udostępnia na backendzie rozbudowane filtrowanie (po statusie, kategorii, przypisaniu, dacie). Frontend pobiera jednak pełną listę i filtruje ją po stronie klienta, co przy dużej liczbie zgłoszeń spowoduje problemy wydajnościowe.
-
-3. **`GET /api/tickets/{id}`**
-   - Status: ✅ POKRYTY
-   - Opis: Działa poprawnie w `TicketDetailsViewModel`.
-
-4. **`POST /api/tickets/{id}/assign`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Krytyczna niezgodność kontraktu. Frontend wywołuje `PATCH /api/tickets/{id}/assign`, podczas gdy backend oczekuje `POST`.
-
-5. **`POST /api/tickets/{id}/close`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Niezgodność kontraktu. Frontend wysyła request używając metody `PATCH` zamiast `POST`.
-
-6. **`POST /api/tickets/{id}/reject`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Niezgodność kontraktu. Frontend wysyła request używając metody `PATCH` zamiast `POST`.
-
-7. **`POST /api/tickets/{id}/start-work`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Niezgodność kontraktu i ścieżki. Frontend odwołuje się do `PATCH /api/tickets/{id}/start`.
-
-8. **`POST /api/tickets/{id}/suspend`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Niezgodność kontraktu. Frontend wysyła request używając metody `PATCH` zamiast `POST`.
-
-9. **`POST /api/tickets/{id}/complete`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Niezgodność ścieżki. Frontend odwołuje się do `POST /api/tickets/{id}/completion`.
-
-10. **`PATCH /api/tickets/{id}/status`**
-    - Status: ❌ BRAK
-    - Rola: ZARZĄDCA / KONSERWATOR
-    - Priorytet: NISKI — Frontend używa dedykowanych endpointów (wymienionych wyżej), mimo ich błędnych kontraktów HTTP.
-
-11. **`GET /api/tickets/{id}/history`**
-    - Status: ❌ BRAK
-    - Rola: ZARZĄDCA / KONSERWATOR
-    - Priorytet: ŚREDNI — Brak widoku w UI, uniemożliwia przeglądanie historii przejść statusów zgłoszenia, co obniża transparentność audytu.
-
-12. **`POST /api/tickets/{ticketId}/comments`**
-    - Status: ✅ POKRYTY
-    - Opis: Dodawanie komentarza zaimplementowane z uwzględnieniem komunikatu błędu.
-
-13. **`GET /api/tickets/{ticketId}/comments`**
-    - Status: ⚠️ CZĘŚCIOWO
-    - Opis: Brak obsługi błędu w UI (ciche logowanie błędu, brak komunikatu dla użytkownika).
-
-14. **`POST /api/tickets/{ticketId}/images`**
-    - Status: ✅ POKRYTY
-    - Opis: Obsługa multipart zaimplementowana pomyślnie.
-
-15. **`GET /api/tickets/{ticketId}/images`**
-    - Status: ⚠️ CZĘŚCIOWO
-    - Opis: Błąd cichy — w przypadku niepowodzenia ładowania obrazów, użytkownik nie otrzymuje komunikatu błędu.
-
-16. **`GET /api/images/{imageId}`**
-    - Status: ✅ POKRYTY
-    - Opis: Działa, zwraca surowe dane binarne zdjęć.
-
-17. **`DELETE /api/images/{imageId}`**
-    - Status: ❌ BRAK
-    - Rola: MIESZKANIEC / ZARZĄDCA / KONSERWATOR
-    - Priorytet: NISKI — Edge case. Użytkownik nie może usunąć omyłkowo dodanego zdjęcia.
-
-18. **`GET /api/categories`**
-    - Status: ⚠️ CZĘŚCIOWO
-    - Opis: Wykorzystywane przez menedżera oraz przez mieszkańca przy tworzeniu zgłoszenia. W ekranie `CreateTicketScreen` w razie błędu ładowania wyświetlana jest pusta lista bez powiadomienia użytkownika o błędzie.
-
-19. **`GET /api/admin/categories`**
-    - Status: ❌ BRAK
-    - Rola: ZARZĄDCA
-    - Priorytet: ŚREDNI — Frontend w widoku zarządcy używa ogólnodostępnego `GET /api/categories` z pominięciem specjalistycznego widoku dla adminów (który może zwracać np. dezaktywowane kategorie).
-
-20. **`POST /api/admin/categories`**
-    - Status: ✅ POKRYTY
-    - Opis: Działa wraz z weryfikacją błędów 400 i 409.
-
-21. **`PUT /api/admin/categories/{id}`**
-    - Status: ✅ POKRYTY
-    - Opis: Edycja działa i obsługuje statusy błędów.
-
-22. **`PATCH /api/admin/categories/{id}/sla`**
-    - Status: ✅ POKRYTY
-    - Opis: Modyfikacja czasu SLA działa i obsługuje błędy.
-
-23. **`DELETE /api/admin/categories/{id}`**
-    - Status: ⚠️ CZĘŚCIOWO
-    - Opis: Niezgodność metody na warstwie interfejsów API. Frontend wysyła żądanie dezaktywacji na adres `PATCH /api/admin/categories/{id}/deactivate` (prawdopodobnie stary kontrakt API).
-
-## MODUŁ 3 — Nieruchomości i Struktura Budynku
-
-### Analiza endpointów
-
-1. **`GET /api/properties`**
-   - Status: ✅ POKRYTY
-   - Opis: Wywoływane dla formularza wyboru przy tworzeniu budynku.
-
-2. **`GET /api/properties/{id}`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA
-   - Priorytet: NISKI — Frontend opiera się na pełnym drzewie, nie wykorzystując osobnego odpytywania o szczegóły jednej nieruchomości.
-
-3. **`POST /api/properties`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowane w `PropertyTreeViewModel` (tryb ADD).
-
-4. **`PUT /api/properties/{id}`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowane w `PropertyTreeViewModel` (tryb EDIT).
-
-5. **`POST /api/properties/{id}/logo`**
-   - Status: ✅ POKRYTY
-   - Opis: Wgrywanie pliku logo jest podpięte w `CommunityLogoScreen` w osobnym widoku ustawień.
-
-6. **`GET /api/buildings`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Frontend wywołuje endpoint pod adresem `/api/buildings/tree` zamiast `/api/buildings` (niezgodność ścieżki wpisanej w kliencie względem dokumentacji).
-
-7. **`POST /api/buildings`**
-   - Status: ✅ POKRYTY
-   - Opis: Tworzenie budynku jest zaimplementowane.
-
-8. **`PUT /api/buildings/{id}`**
-   - Status: ✅ POKRYTY
-   - Opis: Edycja działa.
-
-9. **`DELETE /api/buildings/{id}`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA
-   - Priorytet: ŚREDNI — Logika serwisowa w interfejsie API istnieje, ale w widoku UI (`PropertyTreeScreen`) brakuje przycisku/akcji do usunięcia węzła z drzewa.
-
-10. **`POST /api/buildings/{buildingId}/staircases`**
-    - Status: ✅ POKRYTY
-    - Opis: Dodawanie klatek schodowych działa.
-
-11. **`PUT /api/buildings/{buildingId}/staircases/{staircaseId}`**
-    - Status: ✅ POKRYTY
-    - Opis: Edycja klatek zaimplementowana.
-
-12. **`DELETE /api/buildings/{buildingId}/staircases/{staircaseId}`**
-    - Status: ❌ BRAK
-    - Rola: ZARZĄDCA
-    - Priorytet: ŚREDNI — Podobnie jak dla budynków, brakuje wywołania usunięcia z poziomu UI.
-
-13. **`POST /api/staircases/{staircaseId}/apartments`**
-    - Status: ✅ POKRYTY
-    - Opis: Dodawanie lokali zaimplementowane.
-
-14. **`PUT /api/staircases/{staircaseId}/apartments/{apartmentId}`**
-    - Status: ✅ POKRYTY
-    - Opis: Edycja lokali w drzewie zaimplementowana.
-
-15. **`DELETE /api/staircases/{staircaseId}/apartments/{apartmentId}`**
-    - Status: ❌ BRAK
-    - Rola: ZARZĄDCA
-    - Priorytet: ŚREDNI — Brak wywołania operacji usuwania z UI.
-
-## MODUŁ 7 — Liczniki i Odczyty Liczników
-
-### Analiza endpointów
-
-1. **`GET /api/apartments/{apartmentId}/meters`**
-   - Status: ✅ POKRYTY
-   - Opis: Działa w `MeterListViewModel`.
-
-2. **`POST /api/apartments/{apartmentId}/meters`**
-   - Status: ✅ POKRYTY
-   - Opis: Dodawanie licznika zaimplementowane.
-
-3. **`PATCH /api/apartments/{apartmentId}/meters/{meterId}/deactivate`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Niezgodność struktury URL. Frontend używa ścieżki `/api/meters/{id}/deactivate`, pomijając `apartmentId`, czego wymaga kontrakt backendu.
-
-4. **`GET /api/apartments/{apartmentId}/meter-readings`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Frontend wywołuje ten endpoint z na sztywno przypisanymi parametrami paginacji (`?page=0&size=100`). Spowoduje to brak wyświetlania odczytów przekraczających 100 wpisów. Ponadto UI pobiera dane dla całego lokalu i filtruje licznik po stronie klienta, zamiast korzystać z endpointu odfiltrowującego dane per licznik (jeśli dostępny) lub nie ma optymalizacji.
-
-5. **`POST /api/apartments/{apartmentId}/meter-readings`**
-   - Status: ✅ POKRYTY
-   - Opis: Dodawanie nowego odczytu jest w pełni wspierane.
-
-6. **`GET /api/meter-readings/{id}`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA / MIESZKANIEC
-   - Priorytet: NISKI — UI wyświetla szczegóły na podstawie listy załadowanych odczytów, przez co dedykowane zapytanie o pojedynczy szczegół odczytu nie jest wywoływane.
-
-7. **`PUT /api/meter-readings/{id}`**
-   - Status: ✅ POKRYTY
-   - Opis: Aktualizacja wybranej wartości odczytu zaimplementowana z formularzem edycji.
-
-8. **`DELETE /api/meter-readings/{id}`**
-   - Status: ✅ POKRYTY
-   - Opis: Usuwanie odczytu (204) jest zaimplementowane wraz ze snacbarem informacyjnym.
-
-## MODUŁ 2 — Zarządzanie Użytkownikami
-
-### Analiza endpointów
-
-1. **`GET /api/admin/users`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Działa i wyświetla listę, ale filtrowanie (po frazie) działa po stronie klienta (z pamięci RAM). Może to rodzić obciążenie przy dużej ilości kont.
-
-2. **`POST /api/admin/users`**
-   - Status: ✅ POKRYTY
-   - Opis: Tworzenie konta, włącznie z kaskadowym przypisywaniem mieszkań (drzewo budynków), jest zaimplementowane. Posiada weryfikację błędów API.
-
-3. **`PUT /api/admin/users/{id}`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA
-   - Priorytet: KRYTYCZNY — Brak interfejsu w panelu UI do zaktualizowania profilu/danych/numeru użytkownika. Ponadto sam serwis API po stronie frontendu ma błędnie zdefiniowaną metodę `PATCH api/admin/users/{id}`. 
-
-4. **`PATCH /api/admin/users/{id}/deactivate`**
-   - Status: ✅ POKRYTY
-   - Opis: Operacja dezaktywacji jest obsługiwana pomyślnie.
-
-5. **`DELETE /api/admin/users/{id}`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA
-   - Priorytet: ŚREDNI — Aplikacja mobilna wspiera wyłącznie operację soft-delete (dezaktywację), całkowite usunięcie (tzw. hard delete) nie jest w ogóle podpięte.
-
-6. **`GET /api/users`**
-   - Status: ✅ POKRYTY
-   - Opis: Wykorzystane z sukcesem w komponencie biletów `TicketDetailsViewModel` do pobrania listy konserwatorów poprzez `?role=KONSERWATOR`.
-
-## MODUŁ 1 — Uwierzytelnianie i Sesja
-
-### Analiza endpointów
-
-1. **`POST /api/auth/login`**
-   - Status: ✅ POKRYTY
-   - Opis: Pełna obsługa logowania wraz z komunikatami błędów.
-
-2. **`POST /api/auth/refresh`**
-   - Status: ✅ POKRYTY
-   - Opis: Działa automatycznie po stronie sieciowej (Authenticator).
-
-3. **`POST /api/auth/forgot-password`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowane w `ForgotPasswordViewModel`.
-
-4. **`POST /api/auth/reset-password`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowane z uwzględnieniem deeplinkowania (`ResetPasswordScreen`).
-
-5. **`POST /api/auth/accept-invitation`**
-   - Status: ❌ BRAK
-   - Rola: MIESZKANIEC / KONSERWATOR
-   - Priorytet: KRYTYCZNY — Brak interfejsu i wywołania dla akceptacji zaproszenia po utworzeniu użytkownika przez Zarządcę. Oznacza to, że osoby zaproszone do systemu nie mogą skutecznie utworzyć hasła i rozpocząć sesji korzystając z aplikacji mobilnej.
-
-## MODUŁ 5 — Ogłoszenia
-
-### Analiza endpointów
-
-1. **`GET /api/announcements`**
-   - Status: ✅ POKRYTY
-   - Opis: Działa poprawnie w liście po stronie mieszkańca oraz zarządcy.
-
-2. **`GET /api/announcements/{id}/attachment`**
-   - Status: ✅ POKRYTY
-   - Opis: Otwieranie/pobieranie załączników PDF działa poprzez `Intent ACTION_VIEW`.
-
-3. **`POST /api/announcements`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA
-   - Priorytet: WYSOKI — Klasa serwisowa posiada kontrakt, ale nie istnieją żadne ekrany tworzenia (`CreateAnnouncementScreen`), więc zarządca z poziomu aplikacji nie doda ogłoszenia.
-
-4. **`PUT /api/announcements/{id}`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA
-   - Priorytet: ŚREDNI — Podobnie jak przy tworzeniu, interfejs graficzny edycji nie został przygotowany.
-
-5. **`DELETE /api/announcements/{id}`**
-   - Status: ❌ BRAK
-   - Rola: ZARZĄDCA
-   - Priorytet: ŚREDNI — Brak integracji usuwania ogłoszenia z poziomu UI na liście.
-
-## MODUŁ 6 — Uchwały i Głosowania
-
-### Analiza endpointów
-
-1. **`GET /api/resolutions`**
-   - Status: ✅ POKRYTY
-   - Opis: Lista uchwał jest ładowana poprawnie.
-
-2. **`GET /api/resolutions/{id}`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Działa poprawnie, jednak backend nie zwraca wprost informacji czy dany mieszkaniec już oddał głos. Frontend zapisuje flagę `hasVoted` wyłącznie w pamięci ulotnej widoku, co skutkuje brakiem blokady głosowania po ponownym wejściu w ten sam ekran (aż do odrzucenia przez backend).
-
-3. **`POST /api/resolutions`**
-   - Status: ✅ POKRYTY
-   - Opis: Tworzenie zaimplementowane wraz z uwzględnieniem opcji wyboru (dynamicznych).
-
-4. **`POST /api/resolutions/{id}/vote`**
-   - Status: ✅ POKRYTY
-   - Opis: Oddawanie głosu jest podpięte, po błędzie wyświetla Snackbar.
-
-5. **`GET /api/resolutions/{id}/report`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Endpoint podpięty, jednak aplikacja mobilna nie informuje o stanie ładowania dla pobierania raportu (brak widocznego wskaźnika w UI podczas generowania PDF).
-
-## MODUŁ 8 — Finanse i Transakcje
-
-### Analiza endpointów
-
-1. **`GET /api/apartments/{apartmentId}/transactions`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Zaimplementowane na ekranie `FinancialLedgerScreen` używając realnego API, jednak główny ekran `FinancesScreen` (zakładka przeglądu) korzysta wyłącznie z twardo zakodowanych (hardcoded) danych (mock `FinancesService`).
-
-2. **`POST /api/apartments/{apartmentId}/transactions`**
-   - Status: ✅ POKRYTY
-   - Opis: Ręczne dodawanie transakcji przez zarządcę (np. WPLATA, NALICZENIE) działa w 100%.
-
-3. **`POST /api/finance/import`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowany ekran wgrywania CSV (`CsvImportScreen`) działa pomyślnie.
-
-4. **`GET /api/admin/apartments/balances`**
-   - Status: ✅ POKRYTY
-   - Opis: Rozliczenia zbiorcze i filtrowanie działają po stronie zarządcy z odpowiednim mapowaniem błędów.
-
-## MODUŁ 9 — Dokumenty
-
-### Analiza endpointów
-
-1. **`GET /api/documents`**
-   - Status: ✅ POKRYTY
-   - Opis: Działa, lista pobierana prawidłowo w `FinancesViewModel`.
-
-2. **`GET /api/documents/{id}/download`**
-   - Status: ✅ POKRYTY
-   - Opis: Pobieranie zaimplementowane pomyślnie.
-
-3. **`POST /api/admin/documents/rate-change`**
-   - Status: ✅ POKRYTY
-   - Opis: Wykorzystywane przez moduł dystrybucji dokumentów (Zarządca).
-
-4. **`POST /api/admin/documents/annual-settlement`**
-   - Status: ✅ POKRYTY
-   - Opis: Wykorzystywane przez moduł dystrybucji dokumentów (Zarządca).
-
-## MODUŁ 10 — PDF (Generowanie)
-
-### Analiza endpointów
-
-1. **`POST /api/pdf/work-acceptance-protocol`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowane w zgłoszeniach serwisowych do pobierania protokołu odbioru prac.
-
-2. **`GET /api/pdf/balances-report`**
-   - Status: ✅ POKRYTY
-   - Opis: Wykorzystywane przy eksporcie sald mieszkańców na ekranie `ApartmentBalancesScreen`.
-
-## MODUŁ 11 — Przeglądy Techniczne
-
-### Analiza endpointów
-
-1. **`GET /api/inspections`**
-   - Status: ✅ POKRYTY
-   - Opis: Lista przeglądów poprawnie pobierana.
-
-2. **`POST /api/inspections`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Tworzenie zaimplementowane dla klatek i budynków, jednak w wypadku wybrania zasięgu NIERUCHOMOŚĆ (Property) brakuje implementacji po stronie widoku formularza (`TODO: pobranie ID nieruchomości`), co uniemożliwia utworzenie takiego przeglądu.
-
-3. **`PUT /api/inspections/{id}`**
-   - Status: ✅ POKRYTY
-   - Opis: Aktualizacja przeglądu zaimplementowana.
-
-4. **`DELETE /api/inspections/{id}`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowano usuwanie z komunikatem potwierdzenia.
-
-## MODUŁ 12 — Powiadomienia Push i Urządzenia
-
-### Analiza endpointów
-
-1. **`POST /api/devices`**
-   - Status: ⚠️ CZĘŚCIOWO
-   - Opis: Niezgodność struktury URI. Frontend odwołuje się do `POST /api/devices/register` w `AuthViewModel.tryRegisterFcmToken()`, zamiast do oczekiwanego przez serwer `/api/devices`. Rejestracja urządzeń nie powiedzie się.
-
-2. **`DELETE /api/devices`**
-   - Status: ❌ BRAK
-   - Rola: MIESZKANIEC / ZARZĄDCA / KONSERWATOR
-   - Priorytet: ŚREDNI — Pod kątem bezpieczeństwa, po wylogowaniu się użytkownika z telefonu, aplikacja nie wysyła żądania usunięcia swojego FCM Tokena z backendu. Może to poskutkować dalszym wysyłaniem powiadomień.
-
-3. **`GET /api/admin/notifications/settings`**
-   - Status: ✅ POKRYTY
-   - Opis: Działa.
-
-4. **`PATCH /api/admin/notifications/settings/{eventType}`**
-   - Status: ✅ POKRYTY
-   - Opis: Zaimplementowane z tzw. *optimistic update* w interfejsie.
+**Kolejność analizy:** moduły backendu 4→3→5→1→2→8→9→6→7→10→11→12 (zaakceptowano 2026-06-05).
 
 ---
 
-## FAZA 2 — Analiza UX i Nawigacji (End-to-End)
+## Moduł 4: Zgłoszenia serwisowe (20 endpointów)
 
-### Ocena przepływów z perspektywy ról
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/tickets` | ✅ | `CreateTicketViewModel` — Loading/Error/Success; walidacja 403/400 w `TicketService` | — | — |
+| GET | `/api/tickets` | ⚠️ | Wywoływany; filtry tylko `status` + `search` (brak category/building/assignedTo/dat); paginacja wysyłana, backend jej nie obsługuje — UX „load more” może być mylący; błąd przy `loadNextPage` bez snackbara | ZARZĄDCA | ŚREDNI |
+| GET | `/api/tickets/{id}` | ✅ | `TicketDetailsViewModel` — Error state | — | — |
+| PATCH | `/api/tickets/{id}/assign` | ✅ | Tylko UI ZARZĄDCA; snackbar + reload | — | — |
+| PATCH | `/api/tickets/{id}/close` | ✅ | ZARZĄDCA z FAB; błędy przez `TicketService.handleResponse` | — | — |
+| PATCH | `/api/tickets/{id}/reject` | ✅ | `ManagerRejectSheet` + obsługa błędów | — | — |
+| PATCH | `/api/tickets/{id}/start` | ✅ | KONSERWATOR — `ConservatorActionSheet` | — | — |
+| PATCH | `/api/tickets/{id}/suspend` | ✅ | j.w. | — | — |
+| POST | `/api/tickets/{id}/completion` | ✅ | j.w. (`FINISH`) | — | — |
+| PATCH | `/api/tickets/{id}/status` | ❌ | Zdefiniowany w `TicketApiService.changeStatus`, **nigdzie nie wywołany**; wznowienie ze `WSTRZYMANO` otwiera sheet przypisania zamiast zmiany statusu | ZARZĄDCA | WYSOKI |
+| POST | `/api/tickets/{id}/comments` | ⚠️ | Wywołanie jest, ale **brak sprawdzenia `response.isSuccessful`** — ciche niepowodzenie; brak loading przy wysyłce | M/Z/K | ŚREDNI |
+| GET | `/api/tickets/{id}/comments` | ⚠️ | Przy HTTP≠200 → pusta lista **bez** komunikatu (tylko `onFailure` przy wyjątku sieci); `isLoadingComments` OK | M/Z/K | ŚREDNI |
+| POST | `/api/tickets/{id}/images` | ❌ | `TicketMediaServices.uploadImage` istnieje, **brak powiązania z ViewModel/UI** — konserwator nie może dodać zdjęć | KONSERWATOR / MIESZKANIEC | **KRYTYCZNY** |
+| GET | `/api/tickets/{id}/images` | ⚠️ | Lista metadanych ładowana; UI pokazuje emoji 📷 zamiast miniaturek; przycisk „usuń” woła **nieistniejący** backendowo `DELETE /api/images/{id}` | M/Z/K | WYSOKI |
+| GET | `/api/images/{id}` | ❌ | `serveImage` w Retrofit, **nigdy nie używany** w UI | KONSERWATOR | **KRYTYCZNY** |
+| GET | `/api/categories` | ✅ | `CreateTicketViewModel` + `CategoriesViewModel`; publiczny endpoint | — | — |
+| POST | `/api/admin/categories` | ✅ | `CategoriesViewModel` — błędy → snackbar | ZARZĄDCA | — |
+| PUT | `/api/admin/categories/{id}` | ✅ | j.w. | ZARZĄDCA | — |
+| PATCH | `/api/admin/categories/{id}/sla` | ✅ | j.w. | ZARZĄDCA | — |
+| PATCH | `/api/admin/categories/{id}/deactivate` | ✅ | j.w. | ZARZĄDCA | — |
 
-#### 1. MIESZKANIEC
-Z perspektywy Mieszkańca, kluczowe ścieżki wyglądają następująco:
-- **Logowanie i autoryzacja:** Nowy użytkownik zaproszony przez zarządcę do systemu natrafia na tzw. "ścianę" – w aplikacji brakuje wywołania punktu końcowego `accept-invitation`. Może się zalogować tylko, jeśli wcześniej aktywował konto inną drogą (np. przez platformę web).
-- **Zgłoszenia:** Może swobodnie zgłaszać problemy (z obsługą zdjęć i kategorii), lecz z racji braku implementacji widoku historii zgłoszenia nie ma klarownego wglądu w proces rozwiązywania problemu.
-- **Finanse:** Przepływ ten jest mylący, bowiem na stronie głównej Finansów UI dostarcza "mockowane", twardo zapisane dane. Poprawne i rzeczywiste informacje odczyta dopiero przechodząc do Księgi Głównej (Ledger).
-- **Komunikacja:** Mieszkaniec może bez trudu wyświetlać bieżące ogłoszenia oraz odbierać raporty PDF z ankiet.
+**Uwagi modułowe:**
+- FAB „Utwórz zgłoszenie” widoczny dla ZARZĄCY i MIESZKAŃCA (`TicketsScreen`), backend `POST /api/tickets` = tylko **MIESZKANIEC** → zarządca dostanie 403.
+- PDF protokół (`POST /api/pdf/work-acceptance-protocol`) — ✅ w `TicketDetailsViewModel` (moduł 12).
+- `GET /api/users?role=KONSERWATOR` — ✅ przy przypisaniu.
 
-#### 2. ZARZĄDCA
-- **Zarządzanie zgłoszeniami:** Podstawowy przepływ odrzucenia/zakończenia bądź delegowania zgłoszeń jest **CAŁKOWICIE ZABLOKOWANY** ze względu na krytyczną niezgodność kontraktu HTTP (Frontend wysyła `PATCH`, Backend oczekuje `POST`). Zapytania zwrócą błąd 405 Method Not Allowed.
-- **Dokumenty i finanse:** W pełni działające procesy zarządzania finansami, importu dokumentów oraz generacji masowej sald i raportów PDF.
-- **Ogłoszenia:** Przepływ niekompletny – zarządca pozbawiony jest w UI narzędzi do dodawania, edytowania i usuwania ogłoszeń. Może jedynie takowe wyświetlić.
-- **Przeglądy i struktura:** Bardzo dobrze obudowane zarządzanie drzewem (nieruchomości-lokale), aczkolwiek usunięcie węzła bądź przypisanie testu przeglądu bezpośrednio pod korzeń nieruchomości "urywa się" w oknie z twardym komunikatem `TODO`.
-
-#### 3. KONSERWATOR
-- Podobnie jak w kwestii zarządcy, całe działanie konserwatora opiera się na przyjmowaniu i zmienianiu statusu usterek. Błędne podpięcie metod modyfikujących status (`PATCH` w miejsce `POST`) uniemożliwia konserwatorowi raportowanie czasu wykonania zgłoszenia oraz posuwania w przód maszyny stanowej. Upload załączników do usterek jest wspierany pomyślnie.
-
-### Ślepe uliczki w nawigacji i urwane przepływy
-1. **Widok profilu użytkownika (`ProfileScreen`)** — interfejs wspiera wklepywanie nowego "imienia/nazwiska", posiada okienko autoryzacji zmiany, aczkolwiek oparty jest jedynie o symulowane "delay(300)". Backend nie udostępnia endpointu `PUT /api/users/me`, w związku z czym flow aktualizacji profilu nie zadziała.
-2. **Kopia powiadomień ustawień (`NotificationSettingsScreen`) w profilu** — ekran nie dokonuje wywołań do realnego serwera w odróżnieniu od bliźniaczego panelu po stronie Zarządcy.
-3. Przeglądy zablokowane dla poziomu całościowej Nieruchomości z komentarzem TODO w kodzie.
-4. Brak opcji jakiegokolwiek kasowania struktury mieszkaniowej i poszczególnych budynków. Opcje dostępne są na poziomie API, nie po stronie interfejsu.
+**Podsumowanie modułu 4:** ✅ 13 | ⚠️ 4 | ❌ 3
 
 ---
 
-## FAZA 3 — Podsumowanie i Metryki
+## Moduł 3: Nieruchomości (15 endpointów)
 
-### Metryki pokrycia API (w oparciu o sumaryczną liczbę 85 zadeklarowanych endpointów)
-- Liczba endpointów **✅ POKRYTYCH**: **49** (ok. 57.6%)
-- Liczba endpointów **⚠️ CZĘŚCIOWO POKRYTYCH**: **20** (ok. 23.5%)
-- Liczba endpointów **❌ BRAK**: **16** (ok. 18.8%)
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/properties` | ✅ | `PropertyTreeViewModel` — CRUD z Loading/Error | ZARZĄDCA | — |
+| PUT | `/api/properties/{id}` | ✅ | j.w. | ZARZĄDCA | — |
+| GET | `/api/properties` | ✅ | Lista w drzewie + `CommunityLogoViewModel` | ZARZĄDCA | — |
+| GET | `/api/properties/{id}` | ❌ | `getPropertyById` w Retrofit, **brak wywołania** — UI używa listy / pierwszego elementu | ZARZĄDCA | NISKI |
+| PATCH | `/api/properties/{id}/logo` | ✅ | `CommunityLogoViewModel` — multipart, snackbar | ZARZĄDCA | — |
+| GET | `/api/buildings/tree` | ✅ | Drzewo lokali, finanse (mieszkaniec), edycja użytkowników | ZARZĄDCA / M* | — |
+| POST | `/api/buildings` | ✅ | PropertyTree CRUD | ZARZĄDCA | — |
+| PUT | `/api/buildings/{id}` | ✅ | j.w. | ZARZĄDCA | — |
+| DELETE | `/api/buildings/{id}` | ✅ | j.w. | ZARZĄDCA | — |
+| POST | `/api/buildings/{id}/staircases` | ✅ | j.w. | ZARZĄDCA | — |
+| PUT | `/api/buildings/{id}/staircases/{stId}` | ✅ | j.w. | ZARZĄDCA | — |
+| DELETE | `/api/buildings/{id}/staircases/{stId}` | ✅ | j.w. | ZARZĄDCA | — |
+| POST | `/api/staircases/{id}/apartments` | ✅ | j.w. | ZARZĄDCA | — |
+| PUT | `/api/staircases/{id}/apartments/{aptId}` | ✅ | j.w. | ZARZĄDCA | — |
+| DELETE | `/api/staircases/{id}/apartments/{aptId}` | ✅ | j.w. | ZARZĄDCA | — |
 
-### Top 10 najbardziej krytycznych braków w integracji
-*(Od najwyższego priorytetu po najniższe, decydujące o zdatności do wdrożenia)*
+\* `GET /api/buildings/tree` wywoływany także dla mieszkańca w `FinancialLedgerViewModel` (pobranie „pierwszego” lokalu z drzewa — omówione w module 6).
 
-1. **Zepsute zarządzenie procesem Zgłoszeń (Krytyczne HTTP Methods)** — frontend odpytuje endpointy akcji (`assign`, `close`, `reject`, `start`, `suspend`) za pomocą metody `PATCH` oraz stosuje błędną ścieżkę do `completion`, co skutkuje trwałym paraliżem głównego feature’a aplikacji.
-2. **Brak API dla zaproszeń kont** — brak obsługi `/api/auth/accept-invitation` uniemożliwia zaproszonym lokatorom i nowym konserwatorom dołączenie do instancji.
-3. **Hardkodowane dane (Fake data) dla głównego pulpitu Finansów** — udawanie integracji w okienkach zbiorczych może drastycznie wprowadzić mieszkańców w błąd.
-4. **Rozbieżne rejestrowanie powiadomień Push (FCM Token)** — frontend wysyła klucz Firebase pod zły adres (`/api/devices/register`), przez co klienci mobilni nie otrzymają natywnych alertów, dodatkowo nie kasują kluczy po wylogowaniu.
-5. **Brak opcji redakcyjnych dla ogłoszeń** — z poziomu apki menedżerowie wspólnot nie są w stanie wysłać przypomnienia czy opublikować ogłoszenia.
-6. **Brak wsparcia w aktualizacji danych swojego profilu** — profil wizualny to fałszywa pusta makieta.
-7. **Pobieranie listy lokali jako Drzewa (`/api/buildings/tree`)** — powołując się na adres endpointu (złe URI wstrzyknięte).
-8. **Stan uchwał przetrzymywany lokalnie w RAM (Flaga hasVoted)** — Mieszkaniec wchodzi w glosowanie, oddaje je, wychodzi i widzi formularz do glosowania od nowa (błąd logiki biznesowej widoku).
-9. **Stała paginacja w odczytach liczników** — zakodowanie `?page=0&size=100` poskutkuje utratą danych historii na etapie produkcji po dłuższym działaniu aplikacji.
-10. **Brak "hard delete" dla całego węzła mieszkaniowego** — na wypadek drobnego błędu przy dodawaniu struktury bloków, zarządca musi radzić sobie z poziomu bazodanowego z racji ucięcia tego po stronie mobilnej.
+**Podsumowanie modułu 3:** ✅ 14 | ⚠️ 0 | ❌ 1
+
+---
+
+## Moduł 5: Liczniki i odczyty (8 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/apartments/{id}/meters` | ✅ | `MeterListViewModel` — tylko nawigacja z drzewa lokali (ZARZĄDCA) | ZARZĄDCA | — |
+| GET | `/api/apartments/{id}/meters` | ✅ | j.w. | Z/K/M* | — |
+| PATCH | `/api/meters/{id}/deactivate` | ❌ | Brak akcji w UI (`MeterListScreen`) | ZARZĄDCA | ŚREDNI |
+| POST | `/api/apartments/{id}/meter-readings` | ✅ | `MeterDetailViewModel` | ZARZĄDCA / K | — |
+| GET | `/api/apartments/{id}/meter-readings` | ✅ | Lista + paginacja w VM | Z/K/M* | — |
+| GET | `/api/meter-readings/{id}` | ❌ | `MeterService.getMeterReadingById` — **nieużywany**; szczegóły z listy | Z/K/M | NISKI |
+| PUT | `/api/meter-readings/{id}` | ✅ | Dialog edycji w `MeterDetailViewModel` | ZARZĄDCA | — |
+| DELETE | `/api/meter-readings/{id}` | ✅ | j.w. | ZARZĄDCA | — |
+
+\* Backend dopuszcza MIESZKAŃCA/KONSERWATORA do odczytu; **brak ścieżki nawigacji** w aplikacji dla tych ról → funkcja de facto tylko dla zarządcy.
+
+**Podsumowanie modułu 5:** ✅ 6 | ⚠️ 0 | ❌ 2
+
+---
+
+## Moduł 1: Autentykacja (5 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/auth/login` | ⚠️ | ✅ 401/423; **brak obsługi HTTP 429** (rate limit backendu) | wszyscy | ŚREDNI |
+| POST | `/api/auth/refresh` | ✅ | `TokenAuthenticator` — automatyczny retry | wszyscy | — |
+| POST | `/api/auth/forgot-password` | ⚠️ | Działa; brak 429 | wszyscy | NISKI |
+| POST | `/api/auth/reset-password` | ⚠️ | Działa; brak 429; brak obsługi 410 (wygasły token) | wszyscy | ŚREDNI |
+| POST | `/api/auth/accept-invitation` | ✅ | `AcceptInvitationViewModel` | zaproszony | — |
+
+**Podsumowanie modułu 1:** ✅ 2 | ⚠️ 3 | ❌ 0
+
+---
+
+## Moduł 2: Użytkownicy (5 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| GET | `/api/users?role=…` | ✅ | Lista konserwatorów przy przypisaniu zgłoszenia | ZARZĄDCA | — |
+| GET | `/api/admin/users` | ✅ | `UsersViewModel` | ZARZĄDCA | — |
+| POST | `/api/admin/users` | ✅ | `CreateUserDialog` + drzewo lokali | ZARZĄDCA | — |
+| PATCH | `/api/admin/users/{id}` | ✅ | `EditUserViewModel` | ZARZĄDCA | — |
+| PATCH | `/api/admin/users/{id}/deactivate` | ✅ | j.w. | ZARZĄDCA | — |
+
+**Podsumowanie modułu 2:** ✅ 5 | ⚠️ 0 | ❌ 0
+
+---
+
+## Moduł 8: Ogłoszenia (5 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| GET | `/api/announcements` | ✅ | `AnnouncementsViewModel` — Empty/Error/Loading | M/Z | — |
+| POST | `/api/announcements` | ✅ | `CreateAnnouncementViewModel` — multipart | ZARZĄDCA | — |
+| PUT | `/api/announcements/{id}` | ❌ | W Retrofit (`AnnouncementApiService`), **brak ekranu edycji** — tylko create/delete | ZARZĄDCA | WYSOKI |
+| DELETE | `/api/announcements/{id}` | ✅ | ZARZĄDCA na liście | ZARZĄDCA | — |
+| GET | `/api/announcements/{id}/attachment` | ✅ | Pobieranie PDF do cache + Intent | M/Z | — |
+
+**Podsumowanie modułu 8:** ✅ 4 | ⚠️ 0 | ❌ 1
+
+---
+
+## Moduł 9: Uchwały (5 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/resolutions` | ✅ | Dialog tworzenia w `ResolutionsListViewModel` | ZARZĄDCA | — |
+| GET | `/api/resolutions` | ✅ | Lista — Loading/Error | M/Z | — |
+| GET | `/api/resolutions/{id}` | ✅ | `ResolutionDetailViewModel` | M/Z | — |
+| GET | `/api/resolutions/{id}/report` | ✅ | PDF dla zarządcy | ZARZĄDCA | — |
+| POST | `/api/resolutions/{id}/vote` | ✅ | Głosowanie mieszkańca | MIESZKANIEC | — |
+
+**Podsumowanie modułu 9:** ✅ 5 | ⚠️ 0 | ❌ 0
+
+---
+
+## Moduł 6: Finanse (4 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| GET | `/api/apartments/{id}/transactions` | ⚠️ | **Hub `FinancesViewModel`:** dla MIESZKAŃCA `apartmentId=null` → saldo 0, pusta lista **bez wywołania API**; dopiero `FinancialLedgerViewModel` woła API przez `getBuildingTree()` + **pierwszy lokal z drzewa** (niekoniecznie lokal użytkownika) | MIESZKANIEC | **KRYTYCZNY** |
+| POST | `/api/apartments/{id}/transactions` | ✅ | Dialog w kartotece — tylko ZARZĄDCA | ZARZĄDCA | — |
+| POST | `/api/finance/import` | ✅ | `CsvImportScreen` | ZARZĄDCA | — |
+| GET | `/api/admin/apartments/balances` | ✅ | `ApartmentBalancesScreen` + opcjonalnie PDF | ZARZĄDCA | — |
+
+**Podsumowanie modułu 6:** ✅ 3 | ⚠️ 1 | ❌ 0
+
+---
+
+## Moduł 7: Dokumenty (4 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| GET | `/api/documents` | ✅ | `FinancesViewModel` / `UserDocumentService` — backend filtruje po roli | M/Z | — |
+| GET | `/api/documents/{id}/download` | ✅ | Pobieranie PDF + FileProvider | M/Z | — |
+| POST | `/api/admin/documents/rate-change` | ✅ | `DocumentDistributionScreen` | ZARZĄDCA | — |
+| POST | `/api/admin/documents/annual-settlement` | ✅ | j.w. | ZARZĄDCA | — |
+
+**Podsumowanie modułu 7:** ✅ 4 | ⚠️ 0 | ❌ 0
+
+---
+
+## Moduł 10: Przeglądy techniczne (4 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/inspections` | ✅ | `InspectionsListViewModel` | ZARZĄDCA | — |
+| GET | `/api/inspections` | ⚠️ | API podłączone; dostęp **tylko z Profilu → zarządca**; MIESZKANIEC/KONSERWATOR nie mają linku (backend zwraca dane wg roli) | M/K | ŚREDNI |
+| PUT | `/api/inspections/{id}` | ✅ | Dialog edycji | ZARZĄDCA | — |
+| DELETE | `/api/inspections/{id}` | ✅ | j.w. | ZARZĄDCA | — |
+
+**Podsumowanie modułu 10:** ✅ 3 | ⚠️ 1 | ❌ 0
+
+---
+
+## Moduł 11: Powiadomienia i urządzenia (4 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/devices/register` | ⚠️ | Wywołanie po loginie, ale `NoOpFcmTokenProvider` → token **null** → rejestracja zwykle pomijana | wszyscy | WYSOKI |
+| DELETE | `/api/devices/{token}` | ⚠️ | Przy logout; skuteczne tylko jeśli token był zarejestrowany | wszyscy | ŚREDNI |
+| GET | `/api/admin/notifications/settings` | ⚠️ | `NotificationsScreen` + VM **istnieją**, ale Profil prowadzi do `NotificationSettingsScreen` (**hardkod**); `NotificationRoutes.Settings` **bez linku w UI** | ZARZĄDCA | **KRYTYCZNY** |
+| PATCH | `/api/admin/notifications/settings/{eventType}` | ⚠️ | j.w. — kod OK, nawigacja zerowa | ZARZĄDCA | **KRYTYCZNY** |
+
+**Podsumowanie modułu 11:** ✅ 0 | ⚠️ 4 | ❌ 0
+
+---
+
+## Moduł 12: PDF (2 endpointów)
+
+| Metoda | Endpoint | Status | Uwagi | Rola (❌) | Priorytet |
+|--------|----------|--------|-------|-----------|-----------|
+| POST | `/api/pdf/work-acceptance-protocol` | ✅ | `TicketDetailsViewModel` — loading + błąd | Z/K | — |
+| GET | `/api/pdf/balances` | ✅ | `ApartmentBalancesViewModel` | ZARZĄDCA | — |
+
+**Podsumowanie modułu 12:** ✅ 2 | ⚠️ 0 | ❌ 0
+
+---
+
+## FAZA 2 — UX i nawigacja
+
+### MIESZKANIEC — przepływy end-to-end
+
+| Przepływ | Status | Uwagi |
+|----------|--------|-------|
+| Logowanie → Main | ✅ | Auth kompletny (bez 429) |
+| Nowe zgłoszenie | ✅ | FAB + `CreateTicketScreen` |
+| Śledzenie zgłoszeń | ⚠️ | Lista + szczegóły OK; komentarze OK; **brak zdjęć** przy zgłoszeniu; filtry ograniczone |
+| Finanse | ❌ | Ekran główny finansów **nie ładuje transakcji**; kartoteka opiera się na heurystyce drzewa budynków |
+| Dokumenty | ✅ | Lista + pobieranie PDF |
+| Uchwały + głos | ✅ | Lista → szczegóły → głos |
+| Ogłoszenia | ✅ | Odczyt + załącznik |
+| Profil | ❌ | **Hardkod** — brak prawdziwych danych, zapis fikcyjny |
+| Powiadomienia push | ❌ | FCM nieaktywne |
+
+**Werdykt MIESZKANIEC:** rdzeń zgłoszeń i uchwał działa; **finanse na hubie i profil są urwane**; brak dokumentacji fotograficznej w zgłoszeniach.
+
+### ZARZĄDCA — przepływy end-to-end
+
+| Przepływ | Status | Uwagi |
+|----------|--------|-------|
+| Zgłoszenia (przypisanie, odrzucenie, zamknięcie) | ✅ | Pełny zestaw akcji na szczegółach |
+| Wznowienie WSTRZYMANO | ❌ | Brak `PATCH /status` — mylący flow przypisania |
+| Lokale (drzewo CRUD) | ✅ | Kompletny moduł nieruchomości |
+| Użytkownicy | ✅ | CRUD + deaktywacja |
+| Finanse (salda, import, transakcje) | ✅ | Salda + CSV + kartoteka |
+| Dokumenty (dystrybucja) | ✅ | Rate-change + rozliczenie roczne |
+| Ogłoszenia | ⚠️ | Tworzenie/usuwanie OK; **brak edycji** (PUT) |
+| Kategorie SLA | ✅ | Z profilu lub skrótu ze zgłoszeń |
+| Przeglądy | ✅ | Tylko przez profil (nie bottom nav) |
+| Powiadomienia globalne | ❌ | Profil → **zły ekran** (hardkod zamiast API) |
+| Logo wspólnoty | ✅ | PATCH logo |
+| Protokół PDF | ✅ | Po zamknięciu zgłoszenia |
+
+**Werdykt ZARZĄDCA:** najbogatsza rola, większość admin API działa; **powiadomienia i edycja ogłoszeń** to wyraźne luki.
+
+### KONSERWATOR — przepływy end-to-end
+
+| Przepływ | Status | Uwagi |
+|----------|--------|-------|
+| Lista zadań | ✅ | Tylko zakładka Zgłoszenia |
+| Zmiana statusu (start / suspend / complete) | ✅ | `ConservatorActionSheet` |
+| Dokumentacja fotograficzna | ❌ | **Brak uploadu i podglądu** zdjęć |
+| Protokół PDF | ✅ | Po statusie ZAMKNIETE |
+| Profil | ❌ | Hardkod jak inne role |
+| Finanse / ogłoszenia / uchwały | — | Celowo brak w bottom nav |
+
+**Werdykt KONSERWATOR:** workflow statusów działa; **fotografie (kluczowy wymóg biznesowy) całkowicie nieobecne w UI**.
+
+### Ślepe uliczki i urwane przepływy w nawigacji
+
+| Problem | Opis |
+|---------|------|
+| **Dwa ekrany „powiadomień”** | Profil → `SettingsRoutes.Notifications` (hardkod); `NotificationsScreen` (prawdziwe API) zarejestrowany w `notificationsGraph`, ale **nigdzie niepodlinkowany** (`NavBarOption.NOTIFICATIONS` nie występuje w żadnej liście zakładek). |
+| **FAB tworzenia zgłoszenia dla zarządcy** | Widoczny, backend odrzuci — użytkownik w ślepej uliczce błędu 403. |
+| **Usuwanie zdjęcia** | UI wywołuje nieistniejący endpoint → błąd lub brak efektu. |
+| **Zapis profilu** | Dialog sukcesu bez jakiegokolwiek API — fałszywe poczucie zapisu. |
+| **Test snackbar na profilu** | Przycisk developerski bez funkcji produkcyjnej. |
+| **Skróty ze zgłoszeń** | `TicketsScreen` → kategorie/użytkownicy — OK dla zarządcy; dla innych ról nieistotne. |
+| **Liczniki** | Tylko `PropertyTree → MeterRoutes` — brak wejścia dla konserwatora/mieszkańca mimo uprawnień backendu. |
+
+### Diagram przepływu nawigacji (uproszczony)
+
+```mermaid
+flowchart TB
+    Login[AuthRoutes.Login] --> Main[MainRoutes.Main]
+    Main --> BN[Bottom Nav per rola]
+    BN --> T[Zgłoszenia]
+    BN --> F[Finanse - M/Z]
+    BN --> R[Uchwały - M/Z]
+    BN --> A[Ogłoszenia - M]
+    BN --> P[Profil]
+    BN --> L[Lokale - Z]
+    BN --> U[Użytkownicy - Z]
+    P -->|Zarządca link| NS[NotificationSettings HARDKOD]
+    P -->|Brak linku| NA[NotificationsScreen API]
+    P --> I[Przeglądy]
+    P --> C[Kategorie]
+    P --> D[Dystrybucja dokumentów]
+    L --> M[Liczniki]
+    style NS fill:#f99
+    style NA fill:#9f9,stroke-dasharray: 5 5
+```
+
+---
+
+## FAZA 3 — Podsumowanie
+
+### Metryki pokrycia (81 endpointów backendu)
+
+| Status | Liczba | Procent |
+|--------|--------|---------|
+| ✅ POKRYTY | **61** | **75,3%** |
+| ⚠️ CZĘŚCIOWO | **13** | **16,0%** |
+| ❌ BRAK | **7** | **8,6%** |
+
+*Uwaga: endpoint w Retrofit bez wywołania z ViewModel/UI = ❌ BRAK. Ekran z hardkodowanymi danymi bez API = ❌ dla wymaganej funkcji (np. profil).*
+
+### Top 10 najbardziej krytycznych braków
+
+| # | Brak | Uzasadnienie |
+|---|------|--------------|
+| 1 | **POST `/api/tickets/{id}/images` + GET `/api/images/{id}`** | KONSERWATOR nie może dokumentować prac zdjęciami — core flow serwisowy urwany w połowie. |
+| 2 | **Finanse mieszkańca na `FinancesScreen`** | Hub pokazuje 0 zł i pustą listę bez API — mieszkańiec nie widzi stanu konta bez wejścia w kartotekę (która i tak może wskazać zły lokal). |
+| 3 | **Nawigacja do prawdziwych ustawień powiadomień** | API GET/PATCH `/api/admin/notifications/settings` zaimplementowane, ale UI prowadzi do hardkodu — zarządca nie konfiguruje PUSH. |
+| 4 | **PATCH `/api/tickets/{id}/status`** | Wznowienie zawieszonych zgłoszeń — obejście przez ponowne przypisanie jest niepełne i mylące. |
+| 5 | **Integracja FCM (`POST /api/devices/register`)** | `NoOpFcmTokenProvider` — powiadomienia push nie działają end-to-end. |
+| 6 | **Profil użytkownika (brak jakiegokolwiek API)** | Wszystkie role widzą fikcyjne dane; zapis symulowany — niszczy zaufanie do aplikacji. |
+| 7 | **PUT `/api/announcements/{id}`** | Zarządca nie może poprawić ogłoszenia — tylko usuń + utwórz od nowa. |
+| 8 | **GET transakcji — właściwy `apartmentId` mieszkańca** | Obecnie pierwszy lokal z `buildings/tree`, nie ID z konta użytkownika. |
+| 9 | **Obsługa błędów komentarzy/zdjęć** | Ciche niepowodzenia HTTP; DELETE zdjęć woła nieistniejący endpoint. |
+| 10 | **PATCH `/api/meters/{id}/deactivate`** | Zarządca nie może dezaktywować licznika z UI — dane martwe w systemie. |
 
 ### Ogólna ocena stanu frontendu
-Frontend BlokUR to solidnie zbudowany projekt oparty na czystej, warstwowej architekturze w Compose. Pomimo bardzo spójnego szkieletu i przemyślanych wizualnie ekranów projekt znajduje się bliżej fazy "wczesnej wersji Beta" niż wariantu produkcyjnego. 
-Część funkcji funkcjonuje bez zarzutów (np. pobieranie statystyk uchwał, raportów PDF, wczytywanie drzewa hierarchii lokali), jednak w aplikacji pojawiają się **dziury integracyjne dyskwalifikujące jej release**. 
 
-Największą wadą są zaszyte makiety (hardcoded stubs) z poprzednich iteracji, o których zapomniano w momencie przypinania prawdziwego API, oraz literówki w definiowanych REST metodach, niszczące fundamentalne użycie dla 2 z 3 ról (Zarządcy oraz Konserwatora). Projekt po załataniu wymienionych "Ślepych Uliczek" będzie niezwykle potężnym narzędziem w systemie.
+**Co działa end-to-end (solidnie):**
+- Autentykacja (login, reset, zaproszenie, refresh token).
+- Rdzeń zgłoszeń dla trzech ról: lista, szczegóły, akcje statusowe (start/suspend/complete/assign/reject/close), komentarze tekstowe.
+- Moduł zarządcy: drzewo nieruchomości, użytkownicy, kategorie SLA, uchwały, dystrybucja dokumentów, salda i import CSV, większość ogłoszeń.
+- Uchwały i głosowanie mieszkańca.
+- Pobieranie dokumentów PDF i protokołów.
+
+**Co jest szkieletem UI bez pełnej logiki:**
+- Sekcja zdjęć zgłoszeń (metadane + emoji, bez uploadu i podglądu).
+- Ekran główny finansów mieszkańca.
+- Profil i „Ustawienia powiadomień” w profilu (hardkod, TODO WIP).
+- Paginacja listy zgłoszeń (frontend zakłada strony, backend zwraca całość).
+- Rejestracja urządzenia FCM.
+
+**Co jest zupełnie nieobecne lub niedostępne:**
+- Upload zdjęć do zgłoszeń i serwowanie plików obrazów.
+- `PATCH /api/tickets/{id}/status` (maszyna stanów).
+- Edycja ogłoszeń (PUT).
+- Pojedyncze GET property/meter-reading (niski priorytet).
+- Deaktywacja liczników.
+- Ścieżka użytkownika do globalnej konfiguracji powiadomień PUSH (mimo gotowego kodu).
+
+**Ocena ogólna:** Frontend to **~75% endpointów z realnym wywołaniem i obsługą błędów**, ale tylko część z nich tworzy kompletne przepływy E2E — koncentracja jakości w module zgłoszeń (tekst) i panelu zarządcy. Aplikacja **nie jest gotowa produkcyjnie** dla KONSERWATORA (zdjęcia) ani dla MIESZKAŃCA (finanse na pierwszym ekranie, profil). Największy dług techniczny to **rozjazd nawigacji i implementacji** (dwa ekrany powiadomień, martwy graf `NotificationRoutes`) oraz **funkcje zadeklarowane w Retrofit, ale niepodpięte do UI**.
+
+---
+
+**STATUS: FAZA 1–3 zakończone (2026-06-05).**

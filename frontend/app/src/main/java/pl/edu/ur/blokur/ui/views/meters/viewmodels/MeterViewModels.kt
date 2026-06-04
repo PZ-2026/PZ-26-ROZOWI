@@ -111,6 +111,19 @@ class MeterListViewModel @Inject constructor(
                 }
         }
     }
+
+    fun deactivateMeter(meterId: String) {
+        viewModelScope.launch {
+            runCatching { meterService.deactivateMeter(meterId) }
+                .onSuccess {
+                    _events.send(MeterEvent.ShowSnackbar("Licznik został dezaktywowany"))
+                    load()
+                }
+                .onFailure { e ->
+                    _events.send(MeterEvent.ShowSnackbar(e.message ?: "Błąd dezaktywacji licznika"))
+                }
+        }
+    }
 }
 
 // ── Szczegóły Licznika (Odczyty) ────────────────────────────────────────────

@@ -56,6 +56,12 @@ fun FinancesOverviewContent(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
             BalanceCard(currentBalance = state.currentBalance, transactions = state.transactions)
+            if (state.transactions.isEmpty()) {
+                EmptyState(
+                    title = "Brak transakcji",
+                    description = "Nie znaleziono wpłat ani naliczeń dla tego lokalu."
+                )
+            }
             SectionHeader(title = "Przejdź do")
             FinancesNavItem(
                 icon = Icons.Rounded.AccountBalanceWallet,

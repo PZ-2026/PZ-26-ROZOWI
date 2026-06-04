@@ -60,6 +60,11 @@ fun NavGraphBuilder.authGraph(
                 navController.navigate(AuthRoutes.Login) {
                     popUpTo(0) { inclusive = true }
                 }
+            },
+            onNavigateToForgotPassword = {
+                navController.navigate(AuthRoutes.ForgotPassword) {
+                    popUpTo(AuthRoutes.Login) { inclusive = false }
+                }
             }
         )
     }

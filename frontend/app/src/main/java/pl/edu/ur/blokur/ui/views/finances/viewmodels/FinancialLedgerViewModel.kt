@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import pl.edu.ur.blokur.dtos.ApartmentTransactionsDto
 import pl.edu.ur.blokur.dtos.CreateTransactionRequest
 import pl.edu.ur.blokur.dtos.FinancialTransactionDto
 import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.FinancialLedgerService
-import pl.edu.ur.blokur.services.PropertyService
+import pl.edu.ur.blokur.services.UserApartmentException
+import pl.edu.ur.blokur.services.UserApartmentService
 import java.math.BigDecimal
 import java.time.LocalDate
 import javax.inject.Inject
@@ -65,13 +65,11 @@ data class AddTransactionFormState(
 @HiltViewModel
 class FinancialLedgerViewModel @Inject constructor(
     private val ledgerService: FinancialLedgerService,
-    private val propertyService: PropertyService,
+    private val userApartmentService: UserApartmentService,
     private val authService: AuthService,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // apartmentId może być przekazane jako argument nawigacji (zarządca z widoku nieruchomości)
-    // lub pobrane z drzewa budynków (mieszkaniec)
     private val navApartmentId: String? = savedStateHandle["apartmentId"]
 
     private val _state = MutableStateFlow<LedgerUiState>(LedgerUiState.Loading)
@@ -96,24 +94,21 @@ class FinancialLedgerViewModel @Inject constructor(
             val role = authService.getCurrentUserRole()
             val isManager = role == UserRole.ZARZADCA
 
-            // Jeśli zarządca przekazał apartmentId przez nawigację – używamy go.
-            // Jeśli mieszkaniec – pobieramy drzewo i bierzemy pierwszy lokal z niego.
-            val (apartmentId, apartmentLabel) = if (navApartmentId != null) {
-                navApartmentId to ""
-            } else {
-                try {
-                    val tree = propertyService.getBuildingTree()
-                    val firstApartment = tree.firstOrNull()?.staircases
-                        ?.firstOrNull()?.apartments?.firstOrNull()
-                    if (firstApartment == null) {
-                        _state.value = LedgerUiState.Error("Nie znaleziono przypisanego lokalu.")
-                        return@launch
+            val (apartmentId, apartmentLabel) = try {
+                when {
+                    navApartmentId != null -> navApartmentId to ""
+                    role == UserRole.MIESZKANIEC -> {
+                        val info = userApartmentService.resolveForResident()
+                        info.apartmentId to info.label
                     }
-                    firstApartment.id to "Lokal ${firstApartment.number}"
-                } catch (e: Exception) {
-                    _state.value = LedgerUiState.Error(e.message ?: "Błąd ładowania lokalu")
-                    return@launch
+                    role == UserRole.ZARZADCA -> throw UserApartmentException(
+                        "Wybierz lokal z drzewa nieruchomości, aby otworzyć kartotekę."
+                    )
+                    else -> throw UserApartmentException("Brak uprawnień do kartoteki finansowej.")
                 }
+            } catch (e: Exception) {
+                _state.value = LedgerUiState.Error(e.message ?: "Błąd ładowania lokalu")
+                return@launch
             }
 
             runCatching { ledgerService.getTransactions(apartmentId) }
@@ -134,8 +129,6 @@ class FinancialLedgerViewModel @Inject constructor(
                 }
         }
     }
-
-    // ── Dialog ────────────────────────────────────────────────────────────────
 
     fun openAddDialog() {
         _formState.value = AddTransactionFormState()

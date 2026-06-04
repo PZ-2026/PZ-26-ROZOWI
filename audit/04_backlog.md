@@ -1,345 +1,691 @@
-# Backlog i Plan Implementacji Frontend BlokUR
+# BlokUR — Backlog frontendu
 
-Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (część 3). Zadania podzielone są według głównych grup funkcjonalnych systemu.
+**Data:** 2026-06-05  
+**Źródła:** `audit/03_gap_analysis.md`, `audit/01_backend_inventory.md`, `audit/02_frontend_inventory.md`  
+**Zakres:** **wyłącznie frontend** — dostosowanie UI, ViewModeli i warstwy sieci do **istniejącego** API backendu. **Brak nowych endpointów, zmian kontraktów i refaktorów backendu.**
 
-## FAZA 1 — Backlog Zadań
+**Konwencje:**
+- ID: `FRONT-XXX`
+- Szacunek: 1–2 dni robocze / zadanie
+- Zależności: ID innych zadań frontowych lub „brak”
 
-### Grupa 1: Autoryzacja, Powiadomienia i Profil
+---
 
-**ID:** FRONT-001
-**Tytuł:** Ekran i integracja akceptacji zaproszenia
-**Moduł:** Autoryzacja i Sesja
-**Rola:** MIESZKANIEC / KONSERWATOR
-**Priorytet:** KRYTYCZNY
-**Zależności:** brak
+## Grupa A — Fundament (wspólne)
+
+### FRONT-023
+**Tytuł:** Wspólny mapper błędów HTTP dla warstwy serwisów  
+**Moduł:** Infrastruktura / sieć  
+**Rola:** WSZYSTKIE  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** brak  
+**Zakres backendu:** bez zmian — mapowanie istniejących kodów (400, 401, 403, 404, 409, 422, 429, 423).
+
 **Opis:**
-* **Ekrany:** Stworzenie nowego ekranu `AcceptInvitationScreen` z formularzem.
-* **API:** Podpięcie wywołania `POST /api/auth/accept-invitation` po wpisaniu i zatwierdzeniu hasła.
-* **Stany:** Obsługa `loading` (spinner na przycisku akceptacji), `error` (niepoprawne hasło, wygasły link pokazywany w Snackbar lub na ekranie), `success` (przeniesienie do aplikacji).
-* **Nawigacja:** Dodanie routingu z deeplinku do tego ekranu, a po stanie success — nawigacja na widok główny aplikacji.
+- Utworzyć np. `ApiErrorMapper` (lub rozszerzyć wzorzec z `TicketService.handleResponse`) zwracający czytelne komunikaty po polsku.
+- Podłączyć w serwisach, które dziś po cichu ignorują `!isSuccessful` (komentarze, dokumenty, media).
+- ViewModele: przy błędzie ustawiać snackbar / `Error` state — bez nowych endpointów.
 
 **Kryteria akceptacji:**
- - [x] Stworzenie nowego ekranu `AcceptInvitationScreen` w Compose z formularzem podania hasła.
- - [x] Podpięcie metody HTTP `POST /api/auth/accept-invitation` uwzględniającej obsługę błędu 400 (słabe hasło) lub błędu wygasłego tokenu.
- - [x] Zapewnienie stanów `loading`, `error` i `success`.
- - [x] Przejście po sukcesie na widok główny aplikacji.
+- [ ] Przynajmniej `TicketCommentApiService` / `TicketDetailsViewModel` i jeden inny serwis używają wspólnego mappera.
+- [ ] Przy HTTP 403/404 użytkownik widzi snackbar z komunikatem, nie pustą listę bez wyjaśnienia.
+- [ ] Brak zmian w repozytorium `backend/`.
 
-**ID:** FRONT-002
-**Tytuł:** Naprawa rejestracji tokenu Push (FCM)
-**Moduł:** Powiadomienia
-**Rola:** WSZYSTKIE
-**Priorytet:** WYSOKI
-**Zależności:** brak
+---
+
+### FRONT-008
+**Tytuł:** `ApartmentContext` — identyfikacja lokalu mieszkańca z `GET /api/buildings/tree`  
+**Moduł:** Nieruchomości + Finanse  
+**Rola:** MIESZKANIEC (głównie), WSZYSTKIE (odczyt)  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** brak  
+**Zakres backendu:** bez zmian — backend już filtruje drzewo wg roli w serwisie; frontend **nie wymaga** `GET /api/users/me`.
+
 **Opis:**
-* **Ekrany:** Brak modyfikacji wizualnych, zmiany pod spodem (w AuthViewModel).
-* **API:** Podpięcie wywołania `POST /api/devices` zamiast wadliwego `/api/devices/register`.
-* **Stany:** Obsługa stanu `error` (ciche przechwycenie w logach, by błąd rejestracji urządzenia nie zatrzymał logowania). 
-* **Nawigacja:** Brak zmian.
+- Dodać `@Singleton` serwis (np. `UserApartmentService`) cache’ujący wynik `PropertyService.getBuildingTree()` po zalogowaniu / przy wejściu w finanse.
+- Logika: dla `MIESZKANIEC` wybrać lokal przypisany użytkownikowi z drzewa zwróconego przez backend (nie „pierwszy z listy” heurystycznie bez walidacji struktury).
+- Jeśli drzewo puste / brak lokalu → stan `Error` z komunikatem „Brak przypisanego lokalu” (backend zwraca pustą strukturę — obsługa po stronie UI).
+- Udostępnić `apartmentId: String?` przez Hilt do `FinancesViewModel`, `FinancialLedgerViewModel`.
 
 **Kryteria akceptacji:**
- - [x] Zmiana adnotacji Retrofit na ścieżkę `/api/devices`.
- - [x] Ciche przechwycenie błędów (bez rzucania błędem logowania na froncie) w wypadku niedziałającego serwisu Push.
+- [ ] Mieszkaniec z przypisanym lokalem w backendzie dostaje stabilne `apartmentId` bez hardkodu.
+- [ ] Przy braku lokalu w drzewie finanse pokazują ekran błędu, nie fałszywe 0 zł.
+- [ ] Żadna zmiana w `backend/`.
 
-**ID:** FRONT-003
-**Tytuł:** Wyrejestrowanie urządzenia FCM przy wylogowaniu
-**Moduł:** Powiadomienia
-**Rola:** WSZYSTKIE
-**Priorytet:** ŚREDNI
-**Zależności:** FRONT-002
+---
+
+### FRONT-024
+**Tytuł:** Komponent `TicketImageThumbnail` — `GET /api/images/{id}`  
+**Moduł:** Zgłoszenia / media  
+**Rola:** WSZYSTKIE (wyświetlanie)  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** brak  
+**Zakres backendu:** bez zmian — endpoint już istnieje w `TicketImageController`.
+
 **Opis:**
-* **Ekrany:** Brak nowych ekranów.
-* **API:** Podpięcie `DELETE /api/devices` usuwającego wygenerowany token powiadomień.
-* **Stany:** Obsługa `error` (ciche) przy wylogowywaniu.
-* **Nawigacja:** Wylogowanie kończy się standardowo przekierowaniem na LoginScreen.
+- Composable ładujący obraz przez Coil (lub istniejący stack) z URL `${BACKEND_URL}/api/images/{id}` + nagłówek `Authorization` (OkHttp interceptor już dodaje JWT).
+- Stany: loading (placeholder), error (ikona), success.
+- Opcjonalnie: tap → pełny ekran podglądu (lokalny, bez nowego API).
 
 **Kryteria akceptacji:**
- - [x] Dopisanie operacji deaktywacji FCM w sekwencji metody `logout()`.
- - [x] Testowe sprawdzenie, czy wysłanie komunikatu z panelu nie obudzi telefonu po wylogowaniu.
+- [ ] Miniatura renderuje prawdziwy JPEG/PNG z backendu dla znanego `imageId`.
+- [ ] Przy 403/404 wyświetlany jest stan błędu, nie puste miejsce.
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-004
-**Tytuł:** Refaktoryzacja widoku Profilu Użytkownika (Makieta -> Rzeczywiste)
-**Moduł:** Profil Użytkownika
-**Rola:** WSZYSTKIE
-**Priorytet:** ŚREDNI
-**Zależności:** brak
+---
+
+## Grupa B — Zgłoszenia (9 zadań)
+
+### FRONT-001
+**Tytuł:** Galeria zdjęć na ekranie szczegółów zgłoszenia  
+**Moduł:** Zgłoszenia  
+**Rola:** MIESZKANIEC / ZARZĄDCA / KONSERWATOR  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** FRONT-024, FRONT-023  
+**Zakres backendu:** `GET /api/tickets/{id}/images`, `GET /api/images/{id}` — bez zmian.
+
 **Opis:**
-* **Ekrany:** Modyfikacja obecnego `ProfileScreen` — usunięcie makiety i wyświetlenie realnych danych użytkownika.
-* **API:** Podpięcie pobierania danych logowanego użytkownika lub mapowanie stanu z sesji z `GET /api/users/me`.
-* **Stany:** Obsługa stanu `loading` przy odczycie z DataStore/API, oraz `empty` (brak danych z fallbackiem na zdefiniowane wartości).
-* **Nawigacja:** Brak zmian w routingu, ekran zostaje podpięty pod istniejącą pozycję w menu ustawień.
+- Przebudować `TicketImagesSection`: zamiast emoji 📷 użyć `TicketImageThumbnail` per `TicketImageDto.id`.
+- Zachować podział BEFORE / AFTER według `imageType` z API.
+- Loading całej sekcji podczas `getImagesForTicket`; empty gdy lista pusta.
 
 **Kryteria akceptacji:**
- - [x] Usunięte sztywno wpisane dane testowe z `ProfileViewModel`.
- - [x] Zasilanie UI zweryfikowanymi danymi konta.
+- [ ] Użytkownik widzi miniatury zdjęć już wgranych przez inne role.
+- [ ] Sekcja nie wyświetla się jako pusta przy niepustej odpowiedzi API.
+- [ ] Brak wywołań do nieistniejących endpointów.
 
-### Grupa 2: Zgłoszenia Serwisowe (Tickets)
+---
 
-**ID:** FRONT-005
-**Tytuł:** Naprawa krytycznych metod HTTP i ścieżek akcji dla Zgłoszeń
-**Moduł:** Zgłoszenia Serwisowe
-**Rola:** ZARZĄDCA / KONSERWATOR
-**Priorytet:** KRYTYCZNY
-**Zależności:** brak
+### FRONT-002
+**Tytuł:** Upload zdjęć do zgłoszenia (`POST /api/tickets/{id}/images`)  
+**Moduł:** Zgłoszenia  
+**Rola:** KONSERWATOR (wymagane), MIESZKANIEC (opcjonalnie jeśli backend pozwala — ta sama ścieżka API)  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** FRONT-001  
+**Zakres backendu:** multipart `file` + `image_type` (`BEFORE`|`AFTER`) — zgodnie z `TicketImageController`.
+
 **Opis:**
-* **Ekrany:** Brak (jedynie poprawa ViewModelu i Repository wywoływanych z Listy biletów i Detali biletu).
-* **API:** Zmiana metod Retrofit z PATCH na POST dla `assign`, `close`, `reject`, `suspend`. Zmiana endpointów na `POST /api/tickets/{id}/start-work` i `POST /api/tickets/{id}/complete`.
-* **Stany:** Przekazywanie `error` do UI w razie zwrotki np. błędu sieci 500 lub 400. `success` aktualizuje stan lokalny.
-* **Nawigacja:** Odświeżenie widoku / powrót na listę po udanej akcji.
+- W `TicketDetailsViewModel` wstrzyknąć `TicketMediaServices` (już istnieje).
+- FAB lub przyciski „Dodaj zdjęcie przed/po” widoczne dla KONSERWATORA wg `ticket.status` (np. `W_REALIZACJI`, `ZAKONCZONE_DO_WERYFIKACJI`).
+- Photo Picker → `uploadImage(ticketId, file, imageType)` → reload listy; loading overlay podczas uploadu; błąd przez FRONT-023.
 
 **Kryteria akceptacji:**
- - [x] Metody `assign`, `close`, `reject`, `suspend` zmienione na `POST`.
- - [x] Ścieżka dla pracy zmieniona na `POST /api/tickets/{id}/start-work`.
- - [x] Ścieżka zakończenia na `POST /api/tickets/{id}/complete`.
+- [ ] Konservator może wgrać co najmniej jedno zdjęcie AFTER i zobaczyć je w galerii po odświeżeniu.
+- [ ] Przy odrzuceniu przez backend (403/400) snackbar z komunikatem.
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-006
-**Tytuł:** Paginacja i filtrowanie listy zgłoszeń (Server-Side)
-**Moduł:** Zgłoszenia Serwisowe
-**Rola:** WSZYSTKIE
-**Priorytet:** WYSOKI
-**Zależności:** brak
+---
+
+### FRONT-003
+**Tytuł:** Usunięcie martwego „Usuń zdjęcie” (`DELETE /api/images/{id}`)  
+**Moduł:** Zgłoszenia  
+**Rola:** WSZYSTKIE  
+**Priorytet:** WYSOKI  
+**Zależności:** FRONT-001  
+**Zakres backendu:** **nie dodawać** DELETE — backend nie eksponuje tego endpointu; usunąć wywołanie z `TicketImageApiService` / UI.
+
 **Opis:**
-* **Ekrany:** Modyfikacja `TicketsScreen` dla wsparcia nieskończonego przewijania listy i komponentów filtrujących.
-* **API:** Modyfikacja wywołania `GET /api/tickets` o parametry `@Query("page")`, `size`, `status` i wysyłanie ich na backend.
-* **Stany:** `loading` (szkielet lub spinner na dole listy dopisujący itemy), `empty` (brak biletów w tej kategorii), `error` (shimmer przerywający pobieranie).
-* **Nawigacja:** Pozostaje bez zmian.
+- Usunąć `deleteImage` z Retrofit i `TicketDetailsViewModel.deleteImage`.
+- Usunąć `IconButton` usuwania z `TicketImagesSection`.
+- Jeśli produktowo wymagane usuwanie w przyszłości — osobny ticket **backendowy** (poza tym backlogiem).
 
 **Kryteria akceptacji:**
- - [x] Interfejs API przyjmuje `@Query("page")`, `@Query("size")`, `@Query("status")` itd.
- - [x] Po dojechaniu na dół ekranu automatyczne doładowywanie starych zgłoszeń (stan loading w LazyColumn).
+- [ ] Żaden request DELETE na `/api/images/` nie jest wysyłany z aplikacji.
+- [ ] UI nie sugeruje usuwania zdjęć.
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-007
-**Tytuł:** Widok Osi Historii Zgłoszenia (Timeline)
-**Moduł:** Zgłoszenia Serwisowe
-**Rola:** ZARZĄDCA / KONSERWATOR
-**Priorytet:** ŚREDNI
-**Zależności:** brak
+---
+
+### FRONT-004
+**Tytuł:** Wznowienie zgłoszenia — `PATCH /api/tickets/{id}/status`  
+**Moduł:** Zgłoszenia  
+**Rola:** ZARZĄDCA  
+**Priorytet:** WYSOKI  
+**Zależności:** brak (TicketDetails istnieje)  
+**Zakres backendu:** `TicketStatusChangeRequest` — walidacja w `TicketStateMachine` po stronie serwera; frontend tylko wysyła dozwolony status docelowy.
+
 **Opis:**
-* **Ekrany:** Modyfikacja `TicketDetailsScreen` przez doklejenie sekcji historii (Timeline) z przejściami statusów na dole strony.
-* **API:** Podpięcie wywołania `GET /api/tickets/{id}/history`.
-* **Stany:** `loading` przed załadowaniem historii, `empty` dla braku akcji w historii, `error` cicho (lub ze wskaźnikiem) w bloku, by nie zepsuć całego ekranu.
-* **Nawigacja:** Scroll na sam dół widoku szczegółów ujawnia nową sekcję, brak nowych tras.
+- Dodać `changeStatus` do `TicketService` (owinięcie istniejącego Retrofit).
+- Dla `TicketStatus.WSTRZYMANO`: FAB „Wznów” → dialog potwierdzenia → `PATCH` z celem np. `W_REALIZACJI` lub zgodnie z dokumentacją backendu / dozwolonymi przejściami (odczyt z `TicketDetailDto.allowedNextStatuses` jeśli jest w DTO, inaczej stała zgodna z enum backendu).
+- **Nie** otwierać `AssignConservatorSheet` przy wznowieniu.
+- Obsługa 409/422 z FRONT-023.
 
 **Kryteria akceptacji:**
- - [x] Interfejs użytkownika w postaci prostej listy lub stepper'a z informacjami historycznymi.
- - [x] Obsługa przypadku `empty state` (brak historii).
+- [ ] Zarządca wznawia zgłoszenie WSTRZYMANO bez ponownego przypisania konserwatora.
+- [ ] Przy niedozwolonym przejściu użytkownik widzi komunikat błędu z API.
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-008
-**Tytuł:** Poprawa obsługi błędów ładowania załączników zgłoszenia
-**Moduł:** Zgłoszenia Serwisowe
-**Rola:** WSZYSTKIE
-**Priorytet:** NISKI
-**Zależności:** brak
+---
+
+### FRONT-005
+**Tytuł:** Komentarze — poprawna obsługa POST/GET  
+**Moduł:** Zgłoszenia  
+**Rola:** WSZYSTKIE  
+**Priorytet:** ŚREDNI  
+**Zależności:** FRONT-023  
+**Zależności backend:** `TicketCommentController` bez zmian.
+
 **Opis:**
-* **Ekrany:** Modyfikacja UI w `TicketDetailsScreen` oraz formularzu tworzenia `CreateTicketScreen`. 
-* **API:** Implementacja akcji usuwania dla zdjęcia `DELETE /api/images/{imageId}`. Obsługa wyjątków na `GET /comments`.
-* **Stany:** Obsługa `error` wyświetlającego Toast/Snackbar podczas błędu ładowania obrazów lub wysyłania komentarzy. `success` po skasowaniu obrazu w locie aktualizujący listę załączników.
-* **Nawigacja:** Brak zmian.
+- `addComment`: sprawdzać `response.isSuccessful`, przy błędzie snackbar, nie odświeżać listy.
+- Dodać `isSendingComment` w stanie UI (disable przycisku Send).
+- `loadComments`: przy !successful → snackbar „Nie udało się załadować komentarzy”, opcjonalnie zachować poprzednią listę.
 
 **Kryteria akceptacji:**
- - [x] Ekran uwzględnia stany błędu i rzuca Snackbar w interfejsie.
- - [x] Dodać akcję (przycisk) usunięcia omyłkowo wgranego obrazka z poziomu UI.
+- [ ] Nieudany POST nie znika z UI bez komunikatu.
+- [ ] Podczas wysyłki widać stan ładowania.
+- [ ] Brak zmian w backendzie.
 
-### Grupa 3: Finanse
+---
 
-**ID:** FRONT-009
-**Tytuł:** Ekran Pulpitu Finansowego (FinancesScreen) bazujący na API
-**Moduł:** Finanse
-**Rola:** MIESZKANIEC
-**Priorytet:** WYSOKI
-**Zależności:** brak
+### FRONT-006
+**Tytuł:** Lista zgłoszeń — paginacja i błędy doładowania  
+**Moduł:** Zgłoszenia  
+**Rola:** WSZYSTKIE  
+**Priorytet:** ŚREDNI  
+**Zależności:** brak  
+**Zakres backendu:** `GET /api/tickets` **nie obsługuje** `page`/`size` — frontend dostosowuje się (usuwa mylący infinite scroll lub ładuje raz całość).
+
 **Opis:**
-* **Ekrany:** Modyfikacja `FinancesScreen` – zlikwidowanie twardo wpisanych danych mockupowych.
-* **API:** Zastąpienie makiety prawdziwymi strzałami do `/api/apartments/{id}/transactions` lub bilansem.
-* **Stany:** `loading` ładujący cały dashboard, `error` (jeśli backend finansów leży) wyświetlający przycisk "Ponów". 
-* **Nawigacja:** Po kliknięciu na kafelek szczegółów przejście do LedgerScreen.
+- W `TicketsViewModel`: po pierwszym sukcesie ustawić `hasReachedEnd = true` (backend zwraca pełną listę).
+- Usunąć lub ukryć trigger `loadNextPage` jeśli nie ma paginacji po stronie serwera.
+- Przy błędzie pierwszego ładowania: stan `Error` (już jest); przy hipotetycznym retry — snackbar.
+- **Nie** wysyłać PR do backendu o paginację.
 
 **Kryteria akceptacji:**
- - [x] Usunięte mocki kwot finansowych w `FinancesScreen`.
- - [x] Sumowanie i formatowanie balansu na podstawie realnych danych per użytkownik.
+- [ ] Użytkownik nie widzi wiecznego „ładowania kolejnej strony” przy pustej odpowiedzi.
+- [ ] Lista pokazuje wszystkie zgłoszenia zwrócone jednym GET.
+- [ ] Brak zmian w backendzie.
 
-### Grupa 4: Ogłoszenia i Uchwały
+---
 
-**ID:** FRONT-010
-**Tytuł:** Interfejs Zarządzania Ogłoszeniami dla Zarządcy (Tworzenie i Edycja)
-**Moduł:** Ogłoszenia
-**Rola:** ZARZĄDCA
-**Priorytet:** WYSOKI
-**Zależności:** brak
+### FRONT-007
+**Tytuł:** FAB „Nowe zgłoszenie” tylko dla MIESZKAŃCA  
+**Moduł:** Zgłoszenia  
+**Rola:** MIESZKANIEC / ZARZĄDCA  
+**Priorytet:** WYSOKI  
+**Zależności:** brak  
+**Zakres backendu:** `POST /api/tickets` — rola MIESZKANIEC w `@PreAuthorize`; frontend respektuje kontrakt.
+
 **Opis:**
-* **Ekrany:** Dodanie całkowicie nowego widoku `CreateAnnouncementScreen` (formularz z Tytułem, Treścią i załącznikami).
-* **API:** Zaimplementowanie wywołań: `POST /api/announcements`, `PUT /api/announcements/{id}` oraz `DELETE /api/announcements/{id}` z widoku listy.
-* **Stany:** Formularz z walidacją, stany zapisu `loading`, `error` w postaci czerwonego Toastu, `success`.
-* **Nawigacja:** Przycisk Floating Action Button (FAB) na liście do /create i nawigacja powrotna (`popBackStack()`) po udanym zapisaniu.
+- W `TicketsScreen`: `showFab = role == MIESZKANIEC` (z `TicketsListState.currentUserRole` / `UserRole`).
+- ZARZĄDCA i KONSERWATOR: brak FAB; zarządca zarządza istniejącymi zgłoszeniami.
 
 **Kryteria akceptacji:**
- - [x] Ekran dodawania z polami tekstowymi.
- - [x] Integracja operacji Tworzenia, Edytowania i Usuwania (`DELETE`).
- - [x] Reaktywna zmiana stanu głównej listy.
+- [ ] Mieszkaniec widzi FAB i może utworzyć zgłoszenie.
+- [ ] Zarządca nie widzi FAB i nie dostaje 403 przy przypadkowym kliknięciu.
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-011
-**Tytuł:** Perzystentna informacja o oddanym głosie (Uchwały)
-**Moduł:** Uchwały
-**Rola:** MIESZKANIEC
-**Priorytet:** WYSOKI
-**Zależności:** brak
+---
+
+### FRONT-022
+**Tytuł:** Rozszerzone filtry listy zgłoszeń (query params istniejące w API)  
+**Moduł:** Zgłoszenia  
+**Rola:** ZARZĄDCA  
+**Priorytet:** NISKI  
+**Zależności:** FRONT-006  
+**Zakres backendu:** `GET /api/tickets` już akceptuje `categoryId`, `buildingId`, `staircaseId`, `assignedTo`, `dateFrom`, `dateTo` — tylko podpięcie w UI.
+
 **Opis:**
-* **Ekrany:** Modyfikacja ekranu szczegółów uchwały `ResolutionDetailsScreen`.
-* **API:** Sprawdzanie zwrotki z `GET /api/resolutions/{id}` w poszukiwaniu flagi wskazującej na już oddany głos (np. `userVoted`).
-* **Stany:** Obsługa stanu oddanego głosu (`success` blokada) jako zablokowanego widoku (readonly) z szarymi przyciskami radiowymi.
-* **Nawigacja:** Brak zmian.
+- Rozszerzyć `TicketFilterPanel` o pola zgodne z query w `TicketApiService`.
+- Dane słownikowe: kategorie z `GET /api/categories`, budynki z `GET /api/buildings/tree`, konserwatorzy z `GET /api/users?role=KONSERWATOR`.
+- Przekazać parametry w `TicketsViewModel.loadTickets`.
 
 **Kryteria akceptacji:**
- - [x] Mapowanie odpowiedzi backendu w ResolutionDTO pod UI state i zmiana zachowania przycisku oraz radio buttons.
+- [ ] Zarządca może filtrować po kategorii i budynku; lista odświeża się z API.
+- [ ] Brak nowych parametrów po stronie backendu.
 
-**ID:** FRONT-012
-**Tytuł:** Wskaźnik ładowania podczas pobierania PDF Uchwały
-**Moduł:** Uchwały
-**Rola:** WSZYSTKIE
-**Priorytet:** NISKI
-**Zależności:** brak
+---
+
+## Grupa C — Finanse (2 zadania)
+
+### FRONT-009
+**Tytuł:** Hub finansów mieszkańca — `GET /api/apartments/{id}/transactions`  
+**Moduł:** Finanse  
+**Rola:** MIESZKANIEC  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** FRONT-008  
+**Zakres backendu:** istniejący `FinancialTransactionController.getTransactions`.
+
 **Opis:**
-* **Ekrany:** Zmiana wyglądu przycisku pobierania na `ResolutionDetailsScreen` i `TicketDetailsScreen`.
-* **API:** Wywołania generacji PDF `GET /api/resolutions/{id}/report`.
-* **Stany:** `loading` renderowany jako CircularProgressIndicator w samym przycisku, oraz błędu `error` (jeśli strumień pliku polegnie).
-* **Nawigacja:** Pomyślne pobranie pliku może uruchomić `Intent ACTION_VIEW` z otworzeniem zewnętrznej aplikacji PDF.
+- W `FinancesViewModel.loadData`: dla `MIESZKANIEC` pobrać `apartmentId` z `ApartmentContext`, wywołać `FinancialLedgerService.getTransactions`.
+- Wyświetlić `currentBalance` i skróconą listę transakcji na `FinancesScreen` (jak dla zarządcy).
+- Stany: Loading, Error (brak lokalu / błąd sieci), Success, Empty (brak transakcji).
 
 **Kryteria akceptacji:**
- - [x] Stan w viewmodelu blokujący dwukrotne pobieranie.
- - [x] Wizualny loader.
+- [ ] Mieszkaniec na zakładce Finanse widzi prawdziwe saldo z API, nie stałe 0 zł.
+- [ ] Przejście do kartoteki nadal działa.
+- [ ] Brak zmian w backendzie.
 
-### Grupa 5: Drzewo Nieruchomości i Przeglądy
+---
 
-**ID:** FRONT-013
-**Tytuł:** Narzędzia operacji kasowania w Drzewie Nieruchomości
-**Moduł:** Nieruchomości i Budynki
-**Rola:** ZARZĄDCA
-**Priorytet:** ŚREDNI
-**Zależności:** brak
+### FRONT-010
+**Tytuł:** Kartoteka finansowa — `ApartmentContext` zamiast pierwszego lokalu z drzewa  
+**Moduł:** Finanse  
+**Rola:** MIESZKANIEC / ZARZĄDCA  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** FRONT-008, FRONT-009  
+**Zakres backendu:** bez zmian.
+
 **Opis:**
-* **Ekrany:** Modyfikacja widoku zarządzania budynkami `PropertyTreeScreen`.
-* **API:** Poprawa ścieżki na `/api/buildings`. Dodanie implementacji `DELETE /api/buildings/{id}` oraz analogicznych dla klatek i lokali.
-* **Stany:** Konieczność obsługi błędów kasowania np. w przypadku powiązań (409 Conflict) oraz stanu usunięcia `success` przeładowującego drzewko.
-* **Nawigacja:** Popup dialog "Czy na pewno chcesz usunąć" dla każdego itemu z drzewa.
+- `FinancialLedgerViewModel`: dla mieszkańca używać `UserApartmentService.apartmentId`; dla zarządcy — `navApartmentId` z nawigacji (już jest) lub wybór z drzewa.
+- Usunąć logikę `tree.first().staircases.first().apartments.first()`.
 
 **Kryteria akceptacji:**
- - [x] Implementacja wizualnej akcji usunięcia każdego z węzłów hierarchii.
- - [x] Komunikat ostrzegawczy z potwierdzeniem operacji "Usuń".
+- [ ] Kartoteka mieszkańca pokazuje transakcje ** jego** lokalu zgodnie z danymi backendu.
+- [ ] Zarządca otwierający lokal z drzewa nadal widzi właściwy `apartmentId`.
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-014
-**Tytuł:** Przeglądy w zasięgu Nieruchomości
-**Moduł:** Przeglądy Techniczne
-**Rola:** ZARZĄDCA
-**Priorytet:** ŚREDNI
-**Zależności:** brak
+---
+
+## Grupa D — Profil (2 zadania)
+
+### FRONT-011
+**Tytuł:** Profil — dane z sesji (TokenStorage / JWT), bez fałszywego zapisu  
+**Moduł:** Profil  
+**Rola:** WSZYSTKIE  
+**Priorytet:** WYSOKI  
+**Zależności:** brak  
+**Zakres backendu:** **świadomie bez** `GET /api/users/me` — backend nie ma tego endpointu; nie planować jego dodania w tym backlogu.
+
 **Opis:**
-* **Ekrany:** Modyfikacja `CreateInspectionScreen`.
-* **API:** Podczas akcji zapisu, przekazanie z widoku parametrów do `POST /api/inspections`.
-* **Stany:** Usuwa z UI blokujący "TODO state". Pomyślne utworzenie to `success`.
-* **Nawigacja:** Po zamknięciu poprawne wyjście z modalu.
+- `ProfileViewModel`: usunąć hardkod `„Użytkownik”` / `„Zalogowany”`.
+- Wyświetlać: `role` z `TokenStorage`, email jeśli zapisany przy logowaniu (rozszerzyć `TokenStorage.saveTokens` o opcjonalny email z `LoginRequest` — tylko DataStore, bez API).
+- Pola imię/telefon: **read-only** z komunikatem „Edycja profilu będzie dostępna po rozszerzeniu systemu” lub ukryć przycisk zapisu.
+- Usunąć `delay(300)` fake save i dialog sukcesu zapisu.
 
 **Kryteria akceptacji:**
- - [x] Zmiana logiki tworzenia inspekcji pod zasięg Property na wstrzyknięcie poprawnego PropertyID ze stanu lub drzewa.
+- [ ] Po zalogowaniu profil pokazuje rolę i email (jeśli dostępny z loginu).
+- [ ] Użytkownik nie może „zapisać” fikcyjnych zmian z sukcesem.
+- [ ] Brak zmian w backendzie.
 
-### Grupa 6: Użytkownicy i Liczniki
+---
 
-**ID:** FRONT-015
-**Tytuł:** Paginacja użytkowników oraz wyszukiwarka
-**Moduł:** Zarządzanie Użytkownikami
-**Rola:** ZARZĄDCA
-**Priorytet:** WYSOKI
-**Zależności:** brak
+### FRONT-026
+**Tytuł:** Usunięcie elementów developerskich z profilu  
+**Moduł:** Profil  
+**Rola:** WSZYSTKIE  
+**Priorytet:** NISKI  
+**Zależności:** FRONT-011  
+**Zakres backendu:** bez zmian.
+
 **Opis:**
-* **Ekrany:** Przepisanie komponentu listy w sekcji `AdminUsersScreen`.
-* **API:** Transformacja `GET /api/admin/users` do zapytania sparametryzowanego.
-* **Stany:** Obsługa ładowania na szukajce oraz scrollowaniu `loading`. 
-* **Nawigacja:** Brak zmian.
+- Usunąć przycisk „test snackbar” / `sendTestNotification` z `ProfileContent`.
+- Posprzątać martwe eventy w `ProfileViewModel`.
 
 **Kryteria akceptacji:**
- - [x] Opóźnienie na inpucie szukajki w UI omija spam zapytań (debounce np. 500ms).
+- [ ] Profil nie zawiera kontrolek testowych widocznych dla użytkownika końcowego.
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-016
-**Tytuł:** Narzędzia edycji i permanentnego usuwania kont
-**Moduł:** Zarządzanie Użytkownikami
-**Rola:** ZARZĄDCA
-**Priorytet:** WYSOKI
-**Zależności:** brak
+---
+
+## Grupa E — Powiadomienia (4 zadania)
+
+### FRONT-012
+**Tytuł:** Nawigacja profilu → prawdziwe ustawienia PUSH (`NotificationsScreen`)  
+**Moduł:** Powiadomienia  
+**Rola:** ZARZĄDCA  
+**Priorytet:** KRYTYCZNY  
+**Zależności:** brak  
+**Zakres backendu:** `GET/PATCH /api/admin/notifications/settings` — już zaimplementowane w backendzie i `NotificationsViewModel`.
+
 **Opis:**
-* **Ekrany:** Stworzenie nowego podwidoku dla Admina `EditUserScreen` / `UserDetailsScreen`.
-* **API:** Podpięcie `PUT /api/admin/users/{id}` do nadpisywania oraz `DELETE /api/admin/users/{id}` (permanent).
-* **Stany:** Posiadanie stanów `empty` braku profilu, `error` problemów z aktualizacją, oraz wyszarzenie ekranu przy permanentnym usunięciu `loading`.
-* **Nawigacja:** Z listy kliknięcie w kontener przenosi nas na `/users/{id}` z przyciskami aktualizacji.
+- W `ProfileNavigation` / `ProfileScreen`: `onNavigateToNotificationSettings` → nawiguj do `NotificationRoutes.Settings` (istniejący graf), **nie** do `SettingsRoutes.Notifications`.
+- Upewnić się, że `NotificationsScreen` ma przycisk wstecz (`popBackStack`).
+- Opcjonalnie: usunąć duplikat trasy w `settingsGraph` dla powiadomień.
 
 **Kryteria akceptacji:**
- - [x] Stworzenie UI dla edycji użytkownika.
- - [x] Zapewnienie stanów ładowania i notyfikacji o sukcesie akcji.
+- [ ] Zarządca z profilu widzi listę zdarzeń z API i może przełączać `enabled` (PATCH).
+- [ ] Zmiany są widoczne po ponownym wejściu (reload z GET).
+- [ ] Brak zmian w backendzie.
 
-**ID:** FRONT-017
-**Tytuł:** Paginacja historii Odczytów Liczników i url ścieżki
-**Moduł:** Liczniki
-**Rola:** WSZYSTKIE
-**Priorytet:** ŚREDNI
-**Zależności:** brak
+---
+
+### FRONT-013
+**Tytuł:** Wycofanie hardkodowanego `NotificationSettingsScreen`  
+**Moduł:** Powiadomienia  
+**Rola:** ZARZĄDCA  
+**Priorytet:** WYSOKI  
+**Zależności:** FRONT-012  
+**Zakres backendu:** bez zmian.
+
 **Opis:**
-* **Ekrany:** Modyfikacja sekcji detali w widoku `MetersScreen`.
-* **API:** Korekta statycznego `?size=100` na standardową integrację parametrami z `GET /api/apartments/{apartmentId}/meter-readings`. Zmiana adresu przy deaktywacji.
-* **Stany:** Infinite scroll obsługujący dolne dobieranie danych z bazy `loading`.
-* **Nawigacja:** Brak zmian.
+- Usunąć lub oznaczyć `@Deprecated` `NotificationSettingsViewModel` + ekran z `defaultToggles()`.
+- Usunąć composable `SettingsRoutes.Notifications` jeśli nieużywany.
+- Brak „TODO: endpoint per user” wymagającego backendu — admin settings są globalne dla zarządcy (zgodnie z API).
 
 **Kryteria akceptacji:**
- - [x] Skorygowane adnotacje URL (dodanie ścieżki ze wstrzykiwanym kluczem).
+- [ ] W aplikacji nie ma ekranu z fałszywymi przełącznikami powiadomień.
+- [ ] Jedyna ścieżka ustawień PUSH dla zarządcy korzysta z API admin.
+- [ ] Brak zmian w backendzie.
+
+---
+
+### FRONT-014
+**Tytuł:** Integracja Firebase FCM — zastąpienie `NoOpFcmTokenProvider`  
+**Moduł:** Powiadomienia / urządzenia  
+**Rola:** WSZYSTKIE  
+**Priorytet:** WYSOKI  
+**Zależności:** brak  
+**Zakres backendu:** `POST /api/devices/register`, `DELETE /api/devices/{token}` — bez zmian; wymaga `google-services.json` w module `app` (konfiguracja Firebase po stronie klienta).
+
+**Opis:**
+- Dodać zależności Firebase Messaging w `build.gradle`.
+- Implementacja `FcmTokenProvider` pobierająca token FCM.
+- Obsługa braku Google Play Services — graceful fallback (log + pominięcie rejestracji, bez crasha).
+- **Nie** zmieniać `DeviceController` ani payloadu `DeviceRegistrationRequest`.
+
+**Kryteria akceptacji:**
+- [ ] Po logowaniu na urządzeniu z GMS wysyłany jest `POST /api/devices/register` z niepustym `fcmToken`.
+- [ ] `NoOpFcmTokenProvider` nie jest domyślny w buildzie produkcyjnym.
+- [ ] Brak zmian w backendzie.
+
+---
+
+### FRONT-015
+**Tytuł:** Rejestracja i wyrejestrowanie urządzenia — weryfikacja E2E  
+**Moduł:** Powiadomienia / urządzenia  
+**Rola:** WSZYSTKIE  
+**Priorytet:** ŚREDNI  
+**Zależności:** FRONT-014  
+**Zakres backendu:** bez zmian.
+
+**Opis:**
+- `AuthViewModel.tryRegisterFcmToken`: rejestrować tylko gdy token != null; logować błąd 404.
+- `ResidentMainViewModel.logout`: przed `clearTokens` wywołać `DELETE /api/devices/{token}` jeśli token zapisany lokalnie (DataStore).
+- Zapisać ostatni FCM token w DataStore przy rejestracji (do DELETE przy logout).
+
+**Kryteria akceptacji:**
+- [ ] Logout wysyła DELETE gdy rejestracja się powiodła.
+- [ ] Błąd DELETE nie blokuje wylogowania (jak dziś — cicho lub log).
+- [ ] Brak zmian w backendzie.
+
+---
+
+## Grupa F — Ogłoszenia (1 zadanie)
+
+### FRONT-016
+**Tytuł:** Edycja ogłoszenia — `PUT /api/announcements/{id}`  
+**Moduł:** Ogłoszenia  
+**Rola:** ZARZĄDCA  
+**Priorytet:** WYSOKI  
+**Zależności:** brak (lista + create istnieją)  
+**Zakres backendu:** `AnnouncementController.updateAnnouncement` — multipart jak POST.
+
+**Opis:**
+- Dodać `EditAnnouncementScreen` (lub tryb edycji w istniejącym formularzu) z prefill z `AnnouncementDto`.
+- Nawigacja: long press / ikona edycji na `AnnouncementsScreen` (tylko ZARZĄDCA).
+- `AnnouncementService.updateAnnouncement` — owinięcie istniejącego PUT w Retrofit.
+- Stany: Loading, Error, Success → popBack + odświeżenie listy.
+
+**Kryteria akceptacji:**
+- [ ] Zarządca edytuje tytuł/treść ogłoszenia; po zapisie lista pokazuje zmiany.
+- [ ] Opcjonalna zamiana załącznika PDF zgodnie z kontraktem multipart backendu.
+- [ ] Brak zmian w backendzie.
+
+---
+
+## Grupa G — Autentykacja (2 zadania)
+
+### FRONT-017
+**Tytuł:** Obsługa HTTP 429 (rate limit) na ekranach auth  
+**Moduł:** Autentykacja  
+**Rola:** WSZYSTKIE  
+**Priorytet:** ŚREDNI  
+**Zależności:** FRONT-023  
+**Zakres backendu:** `RateLimitFilter` już zwraca 429 + `Retry-After` — frontend tylko odczytuje nagłówek.
+
+**Opis:**
+- W `AuthService` (login, forgot, reset): case 429 → wyjątek z komunikatem zawierającym `Retry-After` jeśli present.
+- ViewModele: `AuthState.Error` / snackbar z tekstem „Zbyt wiele prób. Spróbuj za X min.”
+
+**Kryteria akceptacji:**
+- [ ] Przy symulacji 429 użytkownik widzi zrozumiały komunikat, nie „Błąd 500”.
+- [ ] Brak zmian w backendzie.
+
+---
+
+### FRONT-018
+**Tytuł:** Reset hasła — obsługa wygasłego tokenu  
+**Moduł:** Autentykacja  
+**Rola:** WSZYSTKIE  
+**Priorytet:** ŚREDNI  
+**Zależności:** FRONT-023  
+**Zakres backendu:** bez zmian — jeśli backend zwraca 400/410 przez `IllegalArgumentException` / global handler, mapować kod z odpowiedzi; **nie** wymuszać nowego statusu w backendzie.
+
+**Opis:**
+- `ResetPasswordViewModel` / `AuthService.resetPassword`: mapować body `{message}` przy 400.
+- Jeśli w odpowiedzi jest kod wskazujący wygaśnięcie — CTA „Poproś o nowy link” → nawigacja do `ForgotPassword`.
+- `AcceptInvitationViewModel`: analogiczna obsługa (ten sam token flow).
+
+**Kryteria akceptacji:**
+- [ ] Wygaśnięty token resetu nie kończy się generycznym „Błąd serwera” bez dalszego kroku.
+- [ ] Brak zmian w backendzie.
+
+---
+
+## Grupa H — Liczniki (1 zadanie)
+
+### FRONT-019
+**Tytuł:** Dezaktywacja licznika — `PATCH /api/meters/{id}/deactivate`  
+**Moduł:** Liczniki  
+**Rola:** ZARZĄDCA  
+**Priorytet:** ŚREDNI  
+**Zależności:** brak  
+**Zakres backendu:** endpoint istnieje w `MeterController`.
+
+**Opis:**
+- W `MeterListScreen`: menu kontekstowe / ikona na aktywnym liczniku → potwierdzenie → `MeterService.deactivate(meterId)`.
+- Po sukcesie odświeżyć listę; status „Nieaktywny” w UI.
+- Brak nawigacji dla mieszkańca/konservatora w tym zadaniu (osobna decyzja produktowa).
+
+**Kryteria akceptacji:**
+- [ ] Zarządca dezaktywuje licznik; znika z listy aktywnych lub pokazuje status nieaktywny.
+- [ ] Błąd 403 wyświetla snackbar.
+- [ ] Brak zmian w backendzie.
+
+---
+
+## Grupa I — Nieruchomości (1 zadanie)
+
+### FRONT-020
+**Tytuł:** Wybór wspólnoty przy logo — `GET /api/properties/{id}`  
+**Moduł:** Nieruchomości / ustawienia  
+**Rola:** ZARZĄDCA  
+**Priorytet:** NISKI  
+**Zależności:** brak  
+**Zakres backendu:** `PropertyController.getById` — już istnieje; podpiąć istniejący Retrofit `getPropertyById`.
+
+**Opis:**
+- `CommunityLogoViewModel`: jeśli `getProperties()` zwraca >1 rekord, dropdown wyboru; po wyborze opcjonalnie `getPropertyById` dla szczegółów/logo URL.
+- Upload logo bez zmian (`PATCH /logo`).
+
+**Kryteria akceptacji:**
+- [ ] Przy wielu wspólnotach zarządca wybiera właściwą przed uploadem logo.
+- [ ] Brak zmian w backendzie.
+
+---
+
+## Grupa J — Przeglądy (1 zadanie)
+
+### FRONT-021
+**Tytuł:** Podgląd przeglądów dla mieszkańca (read-only)  
+**Moduł:** Przeglądy  
+**Rola:** MIESZKANIEC  
+**Priorytet:** ŚREDNI  
+**Zależności:** brak  
+**Zakres backendu:** `GET /api/inspections` — backend filtruje wg roli w serwisie; frontend tylko dodaje link.
+
+**Opis:**
+- W `ProfileContent` (sekcja mieszkańca, nie zarządcy): link „Przeglądy w budynku”.
+- Reużyć `InspectionsListScreen` w trybie read-only: ukryć FAB/dodawanie/edycję/usuwanie gdy `role != ZARZADCA`.
+- Ten sam `InspectionsListViewModel` + GET bez nowych endpointów.
+
+**Kryteria akceptacji:**
+- [ ] Mieszkaniec widzi listę przeglądów z API (jeśli backend zwraca dla jego budynku).
+- [ ] Brak przycisków CRUD dla mieszkańca.
+- [ ] Brak zmian w backendzie.
+
+---
+
+## Grupa K — Polish (2 zadania)
+
+### FRONT-028
+**Tytuł:** Spójne stany Empty na listach (zgłoszenia, finanse)  
+**Moduł:** UX / wspólne komponenty  
+**Rola:** WSZYSTKIE  
+**Priorytet:** NISKI  
+**Zależności:** FRONT-006, FRONT-009  
+**Zakres backendu:** bez zmian.
+
+**Opis:**
+- Użyć istniejącego `EmptyState` na `TicketsScreen` gdy `Success` i `tickets.isEmpty()`.
+- Hub finansów: empty gdy brak transakcji ale sukces API.
+
+**Kryteria akceptacji:**
+- [ ] Pusta lista zgłoszeń nie jest białym ekranem bez komunikatu.
+- [ ] Brak zmian w backendzie.
+
+---
+
+### FRONT-030
+**Tytuł:** Dokumentacja ograniczeń API w README frontendu  
+**Moduł:** Dokumentacja  
+**Rola:** —  
+**Priorytet:** NISKI  
+**Zależności:** brak  
+**Zakres backendu:** bez zmian — opis tego, czego **nie ma** w API (profil, DELETE zdjęć, paginacja tickets).
+
+**Opis:**
+- Krótki `frontend/README.md` lub sekcja w istniejącym README: lista świadomych limitów backendu i jak UI je obsługuje.
+- Pomaga uniknąć ponownego dodawania `DELETE /api/images` w Retrofit.
+
+**Kryteria akceptacji:**
+- [ ] README wymienia brak endpointu profilu i DELETE obrazów.
+- [ ] Brak zmian w kodzie backendu (plik tylko w `frontend/`).
+
+---
+
+## Podsumowanie liczbowe
+
+| Grupa | Zadań |
+|-------|-------|
+| A Fundament | 3 |
+| B Zgłoszenia | 8 |
+| C Finanse | 2 |
+| D Profil | 2 |
+| E Powiadomienia | 4 |
+| F Ogłoszenia | 1 |
+| G Auth | 2 |
+| H Liczniki | 1 |
+| I Nieruchomości | 1 |
+| J Przeglądy | 1 |
+| K Polish | 2 |
+| **Razem** | **27** |
+
+Wszystkie zadania: **tylko `frontend/`** (+ opcjonalnie `google-services.json`).
 
 ---
 
 ## FAZA 2 — Roadmapa implementacji
 
-### Etap 1: Fundament (Krytyczne poprawki i blokery)
-*Zadania w tym etapie są warunkiem przejścia do testowania aplikacji przez nowych użytkowników (Zarządcę i Konserwatorów).*
-1. **FRONT-001** (Accept Invitation Screen) - Blokuje w ogóle wejście do aplikacji połowie zaproszonych użytkowników.
-2. **FRONT-005** (Naprawa metod HTTP w Tickets) - Blokuje całkowicie rdzeń działania aplikacji (nie można odrzucać, kończyć zgłoszeń).
-3. **FRONT-002** (FCM Push Fix) - Krytyczne narzędzie dla użyteczności mobilnej, błędne uderzenia blokują system alertów.
+### Zasady kolejności
+1. **Zależności techniczne** (fundament przed feature’ami).
+2. **Kompletność E2E per rola:** KONSERWATOR → MIESZKANIEC → ZARZĄDCA (zgodnie z akceptacją).
+3. **Zero zmian backendu** — jeśli API nie wspiera funkcji (np. usuwanie zdjęć), UI się dostosowuje lub ukrywa akcję.
 
-### Etap 2: Przepływy krytyczne (End-to-End Features)
-*Skompletowanie głównych zarysów funkcji systemu, gdzie brakowało kluczowych klocków.*
-1. **FRONT-009** (Rzeczywiste Finanse z Dashboardu) - Likwiduje drastyczne wprowadzanie w błąd dla lokatora używając fake'owych danych.
-2. **FRONT-010** (Tworzenie i Zarządzanie Ogłoszeniami Zarządca) - Domyka kompletny flow ogłoszeniowy.
-3. **FRONT-011** (Persystencja hasVoted Uchwały) - Zamyka blokowanie podwójnego logowania na formularzach ankiet.
-4. **FRONT-016** (Edycja kont użytkowników dla Admina).
+### Etap 1 — Fundament (≈ 1 tydzień)
+| Kolejność | ID | Tytuł |
+|-----------|-----|-------|
+| 1 | FRONT-023 | Mapper błędów API |
+| 2 | FRONT-008 | ApartmentContext |
+| 3 | FRONT-024 | TicketImageThumbnail |
+| 4 | FRONT-007 | FAB tylko MIESZKANIEC |
+| 5 | FRONT-011 | Profil bez hardkodu |
+| 6 | FRONT-012 | Nav → NotificationsScreen (API) |
 
-### Etap 3: Optymalizacja wydajności (Server-Side)
-*Przebudowa punktów zatykających się przy skalowaniu systemu z małej liczby do setek wpisów.*
-1. **FRONT-006** (Paginacja listy Tickets).
-2. **FRONT-015** (Paginacja Użytkowników).
-3. **FRONT-017** (Paginacja Odczytów Liczników).
+**Wyjście etapu:** stabilne błędy sieci, lokal mieszkańca, podstawa pod media i finanse, zarządca widzi prawdziwe ustawienia PUSH.
 
-### Etap 4: Polerowanie i Edge Cases (UX)
-*Funkcje uzupełniające dla poprawienia transparentności obsługi.*
-1. Opcje usuwania węzłów nieruchomości (**FRONT-013**).
-2. Oś czasu napraw na Zgłoszeniach (**FRONT-007**).
-3. Obsługa loadingu dla PDF i błędów sieci w formularzach komentarzy (**FRONT-008**, **FRONT-012**).
-4. Profil Read/Edit dla użytkownika oraz wyrejestrowywanie tokenów FCM z RAMu przy wyjściu (**FRONT-003**, **FRONT-004**).
+### Etap 2 — Przepływy krytyczne E2E (≈ 2 tygodnie)
+
+**Ścieżka KONSERWATOR (najpierw):**
+| Kolejność | ID |
+|-----------|-----|
+| 7 | FRONT-001 |
+| 8 | FRONT-002 |
+| 9 | FRONT-003 |
+| 10 | FRONT-005 |
+
+**Ścieżka MIESZKANIEC (równolegle po FRONT-008):**
+| Kolejność | ID |
+|-----------|-----|
+| 7 | FRONT-009 |
+| 8 | FRONT-010 |
+| 9 | FRONT-021 (opcjonalnie w tym sprincie) |
+
+**Ścieżka ZARZĄDCA:**
+| Kolejność | ID |
+|-----------|-----|
+| 7 | FRONT-004 |
+| 8 | FRONT-016 |
+| 9 | FRONT-013 |
+| 10 | FRONT-014 → FRONT-015 |
+
+**Wyjście etapu:** KONSERWATOR z foto; MIESZKANIEC z finansami; ZARZĄDCA z wznowieniem zgłoszeń, edycją ogłoszeń, FCM.
+
+### Etap 3 — Uzupełnienia (≈ 1 tydzień)
+| ID | Tytuł |
+|----|-------|
+| FRONT-006 | Paginacja listy zgłoszeń |
+| FRONT-017 | Auth 429 |
+| FRONT-018 | Token wygasły |
+| FRONT-019 | Dezaktywacja licznika |
+| FRONT-026 | Cleanup profilu |
+
+### Etap 4 — Polish (≈ 3–5 dni)
+| ID | Tytuł |
+|----|-------|
+| FRONT-022 | Filtry zgłoszeń ZARZĄDCA |
+| FRONT-020 | Wybór wspólnoty logo |
+| FRONT-028 | Empty states |
+| FRONT-030 | README limitów API |
+
+### Mapa zależności (krytyczna ścieżka)
+
+```
+FRONT-023 ─┬─► FRONT-005
+FRONT-024 ─► FRONT-001 ─► FRONT-002
+           └► FRONT-003
+FRONT-008 ─► FRONT-009 ─► FRONT-010
+FRONT-012 ─► FRONT-013
+FRONT-014 ─► FRONT-015
+```
 
 ---
 
-## FAZA 3 — Ryzyka techniczne i ocena konieczności refaktoryzacji
+## FAZA 3 — Ryzyka techniczne (perspektywa frontendu)
 
-Po przejrzeniu architektury projektowej z inwentaryzacji (02_frontend_inventory.md), mapujemy obszary wysokiego ryzyka:
+| Ryzyko | Opis | Refaktor PRZED nowymi feature? | Uwagi „bez backendu” |
+|--------|------|-------------------------------|----------------------|
+| **R1: Niespójna obsługa błędów** | Część VM używa `runCatching`, inne ignoruje `!isSuccessful` | **TAK** — FRONT-023 przed masowym podpinaniem API | Nie wymaga zmian backendu |
+| **R2: Brak `GET /users/me`** | Profil nie może pokazać imienia/telefonu z API | **NIE** — FRONT-011 obejście sesją; ewentualny endpoint to osobny projekt backendowy **poza scope** | |
+| **R3: ApartmentId mieszkańca** | Heurystyka „pierwszy lokal” jest błędna przy wielu lokalach w drzewie | **TAK** — FRONT-008 przed FRONT-009/010 | Polegać na filtrze backendu w `getBuildingTree()` |
+| **R4: DELETE zdjęć w Retrofit** | Martwy kontrakt w `TicketImageApiService` | **TAK** — FRONT-003 wcześnie; nie dodawać endpointu w backendzie | |
+| **R5: Dwa ekrany powiadomień** | Myląca nawigacja i duplikat kodu | **TAK** — FRONT-012/013 przed FCM | Admin API już jest |
+| **R6: NoOp FCM** | Push nigdy nie zadziała bez Firebase w `app` | **RÓWNOLEGLE** z FRONT-014 — wymaga konfiguracji projektu Firebase (klient), nie zmiany Java API | `DeviceController` bez zmian |
+| **R7: Coil + autoryzowany URL obrazów** | `GET /api/images/{id}` wymaga JWT — zwykły URL w Coil może nie mieć nagłówka | **TAK** — FRONT-024: custom `ImageLoader` / OkHttp z interceptorem | |
+| **R8: Paginacja tickets** | Frontend i backend rozjechane | **TAK** — FRONT-006: dostosować UI do pełnej listy | Nie wysyłać PR o paginację w tym zakresie |
+| **R9: Architektura OK** | Hilt + ViewModel + Retrofit już spójne — **brak** refaktoru Activity/Fragment | **NIE** | |
+| **R10: JWT w interceptorze** | `AuthInterceptor` + `TokenAuthenticator` działają | **NIE** | |
+| **R11: Hardkod URL** | `BuildConfig.BACKEND_URL` — OK | **NIE** | |
+| **R12: `TicketMediaServices` poza Hilt** | Może wymagać modułu DI przed FRONT-002 | **RÓWNOLEGLE** — dodać provider w `NetworkModule` | Bez zmian backendu |
+| **R13: TokenExpiredException / 410** | Backend może nie mapować 410 na accept-invitation | **NIE** — FRONT-018 obsługuje kody faktycznie zwracane; nie zmieniać `AuthController` | |
 
-1. **Brak generycznej (centralnej) obsługi błędów sieciowych**
-   - **Ryzyko:** Jeśli każda metoda (jak dotąd) samodzielnie łapie HTTP 400, 401, 500 z try-catch i ukrywa je w postaci "silent fail" lub wypluwa Snackbar tylko na jednym ekranie, dodanie dziesiątek zadań (np. ekranów zaproszenia, ogłoszeń) mocno zduplikuje ten brzydki wzorzec. Brak też globalnego wylogowania po utracie autoryzacji `401 Unauthorized`.
-   - **Decyzja:** Wymaga to **refaktoru (utworzenia BaseViewModel lub globalnego ErrorHandlera) PRZED lub w TRAKCIE Etapu 1**, dla zachowania spójności.
+### Rekomendacja przed startem kodowania
+1. Zmergować **FRONT-023, FRONT-008, FRONT-024, FRONT-003, FRONT-012** jako pierwszy PR.
+2. Potem **ścieżka KONSERWATOR** (001, 002) — największa luka biznesowa.
+3. Równoległy PR **finanse** (009, 010) dla mieszkańca.
+4. **Żaden PR** w tym planie nie dotyka `backend/src/main/java`.
 
-2. **Hardkodowany Bazowy URL (BaseURL w DI)**
-   - **Ryzyko:** Przy pracy deweloperskiej lokalnie (np. na emulatorze 10.0.2.2 vs serwer hostowany w chmurze) każda zmiana endpointu będzie obarczona commitami zmieniającymi produkcyjny URL.
-   - **Decyzja:** Przepisać wdrożenie Retrofit na użycie `BuildConfig.BASE_URL`. Można to zrobić w 10 minut i **wymaga to natychmiastowego wdrożenia przed resztą nowości**.
+---
 
-3. **Inconsistent Architecture - "Brak warstwy Repository w kilku elementach"**
-   - **Ryzyko:** Czasem, np. podczas dodawania zgłoszeń czy pobierania kategorii, użyto prostego injecta na widoku. Niesie to ze sobą ryzyko pęknięcia testowalności. 
-   - **Decyzja:** Przenosić do ViewModel i Repository przyrostowo **w TRAKCIE implementacji poszczególnych zadań**. Nie wymaga wcześniejszego uderzenia wielkim refaktorem.
-
-4. **Stany UI (UiState)**
-   - **Ryzyko:** W niektórych starych ViewModelach stany są oparte wprost na zmiennych val (flagi boolean `isLoading` itp.), miast centralnego `sealed class UiState`.
-   - **Decyzja:** Odejście od przestarzałej i podatnej na błędy formy, nowe i aktualizowane moduły (np. w Faza 1 - Zgłoszenia, Ogłoszenia) przejdą refaktoring pod silne stany domenowe równolegle, nie jako bloker.
-
-5. **Tokenowanie JWT**
-   - **Ryzyko:** Brak odnawiania tokenów, albo problem po re-autentykacji.
-   - **Decyzja:** Authenticator z Retrofit jest odnotowany w inwentarzu jako poprawnie skonfigurowany. Będziemy jednak musieli zweryfikować czy w przypadku błędu z odświeżenia aplikacja wykonuje logout. Jest to rzecz optymalizacyjna, do korekty w Etapie 4.
+**STATUS: Backlog i roadmapa gotowe (2026-06-05).**

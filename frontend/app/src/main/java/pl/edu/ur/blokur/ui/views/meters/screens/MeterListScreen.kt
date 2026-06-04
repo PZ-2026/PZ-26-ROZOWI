@@ -13,6 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,7 +50,8 @@ fun MeterListScreen(
     val state by viewModel.state.collectAsState()
     val showDialog by viewModel.showCreateDialog.collectAsState()
     val formState by viewModel.formState.collectAsState()
-    val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var meterToDeactivate by remember { mutableStateOf<MeterResponseDto?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -65,6 +69,43 @@ fun MeterListScreen(
             onMediumTypeChanged = viewModel::onMediumTypeChanged,
             onInstallationDateChanged = viewModel::onInstallationDateChanged,
             onConfirm = viewModel::submitCreate
+        )
+    }
+
+    meterToDeactivate?.let { meter ->
+        AlertDialog(
+            onDismissRequest = { meterToDeactivate = null },
+            icon = {
+                Icon(
+                    Icons.Rounded.PowerSettingsNew,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text("Dezaktywuj licznik") },
+            text = {
+                Text(
+                    "Czy na pewno chcesz dezaktywować licznik SN: ${meter.serialNumber}?\n\n" +
+                        "Urządzenie zostanie oznaczone jako nieaktywne.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deactivateMeter(meter.id)
+                        meterToDeactivate = null
+                    }
+                ) {
+                    Text("Dezaktywuj", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { meterToDeactivate = null }) {
+                    Text("Anuluj")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
         )
     }
 
@@ -117,9 +158,17 @@ fun MeterListScreen(
                         contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp)
                     ) {
                         items(s.meters, key = { it.id }) { meter ->
-                            MeterCard(meter = meter, onClick = {
-                                onNavigateToDetail(meter.id, meter.serialNumber, meter.mediumTypeLabel)
-                            })
+                            MeterCard(
+                                meter = meter,
+                                onClick = {
+                                    onNavigateToDetail(meter.id, meter.serialNumber, meter.mediumTypeLabel)
+                                },
+                                onDeactivate = if (meter.active) {
+                                    { meterToDeactivate = meter }
+                                } else {
+                                    null
+                                }
+                            )
                         }
                     }
                 }
@@ -131,13 +180,14 @@ fun MeterListScreen(
 @Composable
 private fun MeterCard(
     meter: MeterResponseDto,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDeactivate: (() -> Unit)? = null
 ) {
     val isActive = meter.active
     val statusColor = if (isActive) SuccessGreen else MaterialTheme.colorScheme.error
     val statusText = if (isActive) "Aktywny" else "Nieaktywny"
+    var menuExpanded by remember { mutableStateOf(false) }
 
-    // Wybór ikony w zależności od medium
     val icon = when (meter.mediumType) {
         "ZIMNA_WODA", "CIEPLA_WODA" -> Icons.Rounded.WaterDrop
         "GAZ" -> Icons.Rounded.LocalFireDepartment
@@ -187,12 +237,18 @@ private fun MeterCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-            
-            Text("Medium: ${meter.mediumTypeLabel}", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Data montażu: ${meter.installationDate}", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            
+
+            Text(
+                "Medium: ${meter.mediumTypeLabel}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "Data montażu: ${meter.installationDate}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             Spacer(Modifier.height(4.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -204,12 +260,50 @@ private fun MeterCard(
                         .background(statusColor.copy(alpha = 0.12f))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
-                    Text(statusText, style = MaterialTheme.typography.labelSmall,
-                        color = statusColor, fontWeight = FontWeight.Bold)
+                    Text(
+                        statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
-        
+
+        if (onDeactivate != null) {
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.MoreVert,
+                        contentDescription = "Opcje licznika",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Dezaktywuj", color = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            menuExpanded = false
+                            onDeactivate()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.PowerSettingsNew,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
         Icon(
             Icons.Rounded.ChevronRight,
             contentDescription = "Szczegóły",

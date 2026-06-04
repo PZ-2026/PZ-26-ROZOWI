@@ -1,5 +1,7 @@
 package pl.edu.ur.blokur.ui.views.tickets.utils
 
+import pl.edu.ur.blokur.dtos.BuildingTreeNodeDto
+import pl.edu.ur.blokur.dtos.CategoryDto
 import pl.edu.ur.blokur.dtos.ConservatorDto
 import pl.edu.ur.blokur.dtos.TicketDetailDto
 import pl.edu.ur.blokur.dtos.TicketSummaryDto
@@ -11,19 +13,43 @@ sealed interface TicketsListState {
         val tickets: List<TicketSummaryDto>,
         val currentUserRole: String = "MIESZKANIEC",
         val filterState: TicketFilterState = TicketFilterState(),
-        val isFetchingNextPage: Boolean = false,
-        val hasReachedEnd: Boolean = false
+        val filterOptions: TicketFilterOptions = TicketFilterOptions()
     ) : TicketsListState
 }
 
 data class TicketFilterState(
     val searchQuery: String = "",
-    val selectedStatus: String = ""  // pusty = wszystkie
+    val selectedStatus: String = "",
+    val categoryId: String = "",
+    val buildingId: String = "",
+    val staircaseId: String = "",
+    val assignedTo: String = "",
+    val dateFrom: String = "",
+    val dateTo: String = ""
+) {
+    fun hasActiveFilters(): Boolean =
+        searchQuery.isNotBlank() ||
+            selectedStatus.isNotBlank() ||
+            categoryId.isNotBlank() ||
+            buildingId.isNotBlank() ||
+            staircaseId.isNotBlank() ||
+            assignedTo.isNotBlank() ||
+            dateFrom.isNotBlank() ||
+            dateTo.isNotBlank()
+}
+
+/** Słowniki do panelu filtrów (ładowane z API dla ZARZĄDCA). */
+data class TicketFilterOptions(
+    val categories: List<CategoryDto> = emptyList(),
+    val buildings: List<BuildingTreeNodeDto> = emptyList(),
+    val conservators: List<ConservatorDto> = emptyList(),
+    val isLoading: Boolean = false
 )
 
 sealed interface TicketsScreenEvent {
     data class NavigateToDetails(val ticketId: String) : TicketsScreenEvent
     data object NavigateToCreate : TicketsScreenEvent
+    data class ShowSnackbar(val message: String) : TicketsScreenEvent
 }
 
 sealed interface TicketDetailsListState {
@@ -36,6 +62,10 @@ sealed interface TicketDetailsListState {
         val comments: List<pl.edu.ur.blokur.dtos.TicketCommentDto> = emptyList(),
         val images: List<pl.edu.ur.blokur.dtos.TicketImageDto> = emptyList(),
         val isLoadingComments: Boolean = false,
+        val isLoadingImages: Boolean = false,
+        val isSendingComment: Boolean = false,
+        val commentResetKey: Int = 0,
+        val isUploadingImage: Boolean = false,
         val isDownloadingProtocol: Boolean = false
     ) : TicketDetailsListState
 }

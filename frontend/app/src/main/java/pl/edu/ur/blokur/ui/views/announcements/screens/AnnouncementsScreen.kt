@@ -24,6 +24,7 @@ import pl.edu.ur.blokur.ui.views.announcements.viewmodels.AnnouncementsViewModel
 fun AnnouncementsScreen(
     viewModel: AnnouncementsViewModel,
     onNavigateToCreate: () -> Unit = {},
+    onNavigateToEdit: (pl.edu.ur.blokur.dtos.AnnouncementDto) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
@@ -57,6 +58,7 @@ fun AnnouncementsScreen(
             state = state,
             isManager = isManager,
             onDownloadAttachment = viewModel::downloadAttachment,
+            onEditAnnouncement = onNavigateToEdit,
             onDeleteAnnouncement = viewModel::deleteAnnouncement,
             modifier = Modifier
                 .fillMaxSize()

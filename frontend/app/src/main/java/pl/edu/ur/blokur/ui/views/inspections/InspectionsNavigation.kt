@@ -1,5 +1,10 @@
 package pl.edu.ur.blokur.ui.views.inspections
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -17,8 +22,13 @@ sealed interface InspectionRoutes : AppRoute {
 fun NavGraphBuilder.inspectionsGraph(navController: NavController) {
     composable<InspectionRoutes.List> {
         val viewModel: InspectionsListViewModel = hiltViewModel()
+        var isManager by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            isManager = viewModel.isManager()
+        }
         InspectionsListScreen(
             viewModel = viewModel,
+            isManager = isManager,
             onNavigateBack = { navController.popBackStack() }
         )
     }

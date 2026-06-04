@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +31,7 @@ fun SampleAnnouncementsContent(
     state: AnnouncementsState,
     isManager: Boolean = false,
     onDownloadAttachment: (id: String, title: String) -> Unit = { _, _ -> },
+    onEditAnnouncement: (pl.edu.ur.blokur.dtos.AnnouncementDto) -> Unit = {},
     onDeleteAnnouncement: (id: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -68,6 +70,15 @@ fun SampleAnnouncementsContent(
                                 modifier = Modifier.weight(1f)
                             )
                             if (isManager) {
+                                androidx.compose.material3.IconButton(
+                                    onClick = { onEditAnnouncement(announcement) }
+                                ) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = Icons.Rounded.Edit,
+                                        contentDescription = "Edytuj ogłoszenie",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                                 androidx.compose.material3.IconButton(
                                     onClick = { onDeleteAnnouncement(announcement.id) }
                                 ) {

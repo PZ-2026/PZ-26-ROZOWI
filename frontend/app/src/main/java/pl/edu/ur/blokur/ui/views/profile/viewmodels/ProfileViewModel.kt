@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,13 +12,15 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.services.AuthService
+import pl.edu.ur.blokur.services.TokenStorage
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileEvent
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val tokenStorage: TokenStorage
 ) : ViewModel() {
 
     /** Zwraca true jeśli zalogowany użytkownik ma rolę ZARZADCA. */
@@ -29,6 +30,9 @@ class ProfileViewModel @Inject constructor(
     private val _state = MutableStateFlow<ProfileState>(ProfileState.Loading)
     val state: StateFlow<ProfileState> = _state.asStateFlow()
 
+    private val _events = Channel<ProfileEvent>()
+    val events: Flow<ProfileEvent> = _events.receiveAsFlow()
+
     init {
         loadUserProfile()
     }
@@ -37,42 +41,29 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _state.value = ProfileState.Loading
-                // Backend nie posiada endpointu do pobierania swojego profilu, wyświetlamy puste dane
+                val role = authService.getCurrentUserRole()
+                val email = tokenStorage.getUserEmail().orEmpty()
                 _state.value = ProfileState.Data(
-                    name = "Użytkownik",
-                    email = "Zalogowany",
+                    role = role?.toDisplayLabel() ?: "Nieznana rola",
+                    email = email.ifBlank { "Brak zapisanego adresu e-mail" },
+                    name = "",
                     phone = ""
                 )
             } catch (e: Exception) {
                 _events.send(ProfileEvent.ShowSnackbar(e.message ?: "Błąd ładowania profilu"))
-                // Można dodać stan Error, lub zostawić na pustym z fallbackiem
-                _state.value = ProfileState.Data(name = "Błąd", email = "", phone = "")
+                _state.value = ProfileState.Data(
+                    role = "Błąd",
+                    email = "",
+                    name = "",
+                    phone = ""
+                )
             }
         }
     }
 
-    private val _events = Channel<ProfileEvent>()
-    val events: Flow<ProfileEvent> = _events.receiveAsFlow()
-
-    fun onNameChanged(name: String) {
-        val current = _state.value
-        if (current is ProfileState.Data) {
-            _state.value = current.copy(name = name)
-        }
-    }
-
-    fun requestSave() {
-        viewModelScope.launch { _events.send(ProfileEvent.ShowSaveDialog) }
-    }
-
-    fun confirmSave() {
-        viewModelScope.launch {
-            delay(300)
-            _events.send(ProfileEvent.ShowSnackbar("Zapisano zmiany"))
-        }
-    }
-
-    fun sendTestNotification() {
-        viewModelScope.launch { _events.send(ProfileEvent.ShowSnackbar("To jest przykładowy snackbar")) }
+    private fun UserRole.toDisplayLabel(): String = when (this) {
+        UserRole.MIESZKANIEC -> "Mieszkaniec"
+        UserRole.KONSERWATOR -> "Konserwator"
+        UserRole.ZARZADCA -> "Zarządca"
     }
 }

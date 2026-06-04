@@ -136,7 +136,11 @@ fun InspectionsListScreen(
                     ) {
                         EmptyState(
                             title = "Brak przeglądów",
-                            description = "Brak zaplanowanych przeglądów. Kliknij przycisk poniżej, aby utworzyć nowy."
+                            description = if (isManager) {
+                                "Brak zaplanowanych przeglądów. Kliknij przycisk poniżej, aby utworzyć nowy."
+                            } else {
+                                "Brak zaplanowanych przeglądów w Twoim budynku."
+                            }
                         )
                     }
                 } else {

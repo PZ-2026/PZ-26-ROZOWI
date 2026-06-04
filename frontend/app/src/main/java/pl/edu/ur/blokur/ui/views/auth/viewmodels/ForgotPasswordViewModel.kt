@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.dtos.AuthException
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.ui.views.auth.utils.ForgotPasswordEvent
 import pl.edu.ur.blokur.ui.views.auth.utils.ForgotPasswordFormFields
@@ -61,7 +62,10 @@ class ForgotPasswordViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     _state.value = ForgotPasswordState.Error(
-                        e.message ?: "Wystąpił błąd. Spróbuj ponownie."
+                        when (e) {
+                            is AuthException.RateLimited -> e.message ?: "Zbyt wiele prób."
+                            else -> e.message ?: "Wystąpił błąd. Spróbuj ponownie."
+                        }
                     )
                 }
         }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.dtos.AuthException
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.ui.views.auth.utils.AcceptInvitationEvent
 import pl.edu.ur.blokur.ui.views.auth.utils.AcceptInvitationFormFields
@@ -74,9 +75,14 @@ class AcceptInvitationViewModel @Inject constructor(
                     _state.value = AcceptInvitationState.Success(message)
                 }
                 .onFailure { e ->
-                    _state.value = AcceptInvitationState.Error(
-                        e.message ?: "Wystąpił błąd. Spróbuj ponownie."
-                    )
+                    _state.value = when (e) {
+                        is AuthException.TokenExpired -> AcceptInvitationState.TokenExpired(
+                            e.message ?: "Link zaproszenia wygasł. Poproś zarządcę o nowe zaproszenie."
+                        )
+                        else -> AcceptInvitationState.Error(
+                            e.message ?: "Wystąpił błąd. Spróbuj ponownie."
+                        )
+                    }
                 }
         }
     }

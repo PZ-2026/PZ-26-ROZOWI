@@ -53,6 +53,7 @@ fun AcceptInvitationForm(
     val focusManager = LocalFocusManager.current
     val isLoading = state is AcceptInvitationState.Loading
     val isSuccess = state is AcceptInvitationState.Success
+    val isTokenExpired = state is AcceptInvitationState.TokenExpired
 
     Column(
         modifier = Modifier
@@ -107,7 +108,23 @@ fun AcceptInvitationForm(
             }
         }
 
-        if (!isSuccess) {
+        if (isTokenExpired) {
+            Text(
+                text = (state as AcceptInvitationState.TokenExpired).message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryButton(
+                text = "Wróć do logowania",
+                onClick = onNavigateToLogin,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (!isSuccess && !isTokenExpired) {
             OutlinedTextField(
                 value = formFields.newPassword,
                 onValueChange = { onFormChanged(formFields.copy(newPassword = it)) },

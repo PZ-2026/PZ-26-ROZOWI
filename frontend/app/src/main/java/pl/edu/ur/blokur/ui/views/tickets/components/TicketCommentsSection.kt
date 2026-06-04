@@ -32,10 +32,15 @@ fun TicketCommentsSection(
     comments: List<TicketCommentDto>,
     currentRole: String,
     isLoading: Boolean,
+    isSending: Boolean = false,
+    commentResetKey: Int = 0,
     onAddComment: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var commentText by remember { mutableStateOf("") }
+    LaunchedEffect(commentResetKey) {
+        if (commentResetKey > 0) commentText = ""
+    }
     var isInternal by remember { mutableStateOf(false) }
     val canToggleInternal = currentRole == "ZARZADCA" || currentRole == "KONSERWATOR"
 
@@ -82,23 +87,29 @@ fun TicketCommentsSection(
                 shape = RoundedCornerShape(12.dp),
                 maxLines = 4,
                 trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            if (commentText.isNotBlank()) {
-                                val type = if (isInternal) "WEWNETRZNY" else "PUBLICZNY"
-                                onAddComment(commentText.trim(), type)
-                                commentText = ""
-                            }
-                        },
-                        enabled = commentText.isNotBlank()
-                    ) {
-                        Icon(
-                            Icons.Rounded.Send,
-                            contentDescription = "Wyślij",
-                            tint = if (commentText.isNotBlank())
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                    if (isSending) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
                         )
+                    } else {
+                        IconButton(
+                            onClick = {
+                                if (commentText.isNotBlank()) {
+                                    val type = if (isInternal) "WEWNETRZNY" else "PUBLICZNY"
+                                    onAddComment(commentText.trim(), type)
+                                }
+                            },
+                            enabled = commentText.isNotBlank() && !isSending
+                        ) {
+                            Icon(
+                                Icons.Rounded.Send,
+                                contentDescription = "Wyślij",
+                                tint = if (commentText.isNotBlank())
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             )

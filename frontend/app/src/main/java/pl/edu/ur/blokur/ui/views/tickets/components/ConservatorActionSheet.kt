@@ -1,9 +1,5 @@
 package pl.edu.ur.blokur.ui.views.tickets.components
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -57,13 +53,6 @@ fun ConservatorActionSheet(
 
     var comment by remember { mutableStateOf("") }
     var pauseTicket by remember { mutableStateOf(false) }
-    var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 3)
-    ) { uris ->
-        selectedImages = (selectedImages + uris.take(3 - selectedImages.size))
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -107,7 +96,7 @@ fun ConservatorActionSheet(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "Opisz wykonane naprawy i opcjonalnie dodaj zdjęcia dokumentujące.",
+                        "Opisz wykonane naprawy. Zdjęcia dodasz przyciskiem „Dodaj zdjęcie po pracach” w sekcji zdjęć.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -117,13 +106,6 @@ fun ConservatorActionSheet(
                         modifier = Modifier.fillMaxWidth().height(120.dp),
                         placeholder = { Text("Np. Wymieniono uszkodzony zawór. Przetestowano — brak przecieków.") },
                         shape = RoundedCornerShape(12.dp)
-                    )
-                    PhotoUploaderRow(
-                        images = selectedImages,
-                        onAddClick = {
-                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        },
-                        onRemove = { uri -> selectedImages = selectedImages - uri }
                     )
                     Spacer(Modifier.height(4.dp))
                     Button(
@@ -169,13 +151,6 @@ fun ConservatorActionSheet(
                         placeholder = { Text("Dodaj treść komentarza...") },
                         shape = RoundedCornerShape(12.dp)
                     )
-                    PhotoUploaderRow(
-                        images = selectedImages,
-                        onAddClick = {
-                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        },
-                        onRemove = { uri -> selectedImages = selectedImages - uri }
-                    )
                     Spacer(Modifier.height(4.dp))
                     Button(
                         onClick = { onSubmit(comment, pauseTicket) },
@@ -210,52 +185,6 @@ fun ConservatorActionSheet(
                 }
             }
             Spacer(Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-private fun PhotoUploaderRow(
-    images: List<Uri>,
-    onAddClick: () -> Unit,
-    onRemove: (Uri) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Załączniki (opcjonalnie)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (images.size < 3) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .clickable(onClick = onAddClick),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = "Dodaj zdjęcie", tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-            images.forEach { uri ->
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f), modifier = Modifier.size(32.dp))
-                    IconButton(
-                        onClick = { onRemove(uri) },
-                        modifier = Modifier.align(Alignment.TopEnd).size(20.dp).padding(2.dp)
-                            .background(MaterialTheme.colorScheme.surface.copy(0.7f), RoundedCornerShape(10.dp))
-                    ) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Usuń", modifier = Modifier.size(12.dp))
-                    }
-                }
-            }
         }
     }
 }

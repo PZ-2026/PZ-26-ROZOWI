@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.dtos.AuthException
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.ui.views.auth.utils.ResetPasswordEvent
 import pl.edu.ur.blokur.ui.views.auth.utils.ResetPasswordFormFields
@@ -74,14 +75,26 @@ class ResetPasswordViewModel @Inject constructor(
                     _state.value = ResetPasswordState.Success(message)
                 }
                 .onFailure { e ->
-                    _state.value = ResetPasswordState.Error(
-                        e.message ?: "Wystąpił błąd. Spróbuj ponownie."
-                    )
+                    _state.value = when (e) {
+                        is AuthException.TokenExpired -> ResetPasswordState.TokenExpired(
+                            e.message ?: "Token resetowania hasła wygasł."
+                        )
+                        is AuthException.RateLimited -> ResetPasswordState.Error(
+                            e.message ?: "Zbyt wiele prób."
+                        )
+                        else -> ResetPasswordState.Error(
+                            e.message ?: "Wystąpił błąd. Spróbuj ponownie."
+                        )
+                    }
                 }
         }
     }
 
     fun navigateToLogin() {
         viewModelScope.launch { _events.send(ResetPasswordEvent.NavigateToLogin) }
+    }
+
+    fun navigateToForgotPassword() {
+        viewModelScope.launch { _events.send(ResetPasswordEvent.NavigateToForgotPassword) }
     }
 }

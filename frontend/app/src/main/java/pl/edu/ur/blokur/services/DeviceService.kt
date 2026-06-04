@@ -62,7 +62,11 @@ class DeviceService @Inject constructor(
                 Log.d(TAG, "FCM token wyrejestrowany pomyślnie")
                 true
             } else {
-                Log.w(TAG, "Wyrejestrowanie FCM nieudane: HTTP ${response.code()}")
+                if (response.code() == 404) {
+                    Log.w(TAG, "Wyrejestrowanie FCM: token nie znaleziony (404)")
+                } else {
+                    Log.w(TAG, "Wyrejestrowanie FCM nieudane: HTTP ${response.code()}")
+                }
                 false
             }
         } catch (e: Exception) {

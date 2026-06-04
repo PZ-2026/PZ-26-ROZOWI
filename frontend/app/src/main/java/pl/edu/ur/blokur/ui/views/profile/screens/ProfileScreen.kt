@@ -34,7 +34,6 @@ fun ProfileScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showDialog by remember { mutableStateOf(false) }
     var isManager by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -45,8 +44,6 @@ fun ProfileScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is ProfileEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
-                is ProfileEvent.ShowSaveDialog -> showDialog = true
-                is ProfileEvent.SaveSuccess -> Unit
             }
         }
     }
@@ -57,15 +54,6 @@ fun ProfileScreen(
     ) { innerPadding ->
         ProfileContent(
             state = state,
-            showSaveDialog = showDialog,
-            onNameChanged = viewModel::onNameChanged,
-            onRequestSave = viewModel::requestSave,
-            onConfirmSave = {
-                showDialog = false
-                viewModel.confirmSave()
-            },
-            onDismissDialog = { showDialog = false },
-            onSendNotification = viewModel::sendTestNotification,
             isManager = isManager,
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,

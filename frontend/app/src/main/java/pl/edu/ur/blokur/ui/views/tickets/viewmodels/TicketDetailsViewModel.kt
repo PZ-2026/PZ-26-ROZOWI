@@ -2,6 +2,7 @@ package pl.edu.ur.blokur.ui.views.tickets.viewmodels
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -18,10 +19,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pl.edu.ur.blokur.dtos.TicketCommentRequestDto
+import pl.edu.ur.blokur.dtos.TicketStatus
+import pl.edu.ur.blokur.services.ApiException
+import pl.edu.ur.blokur.services.ApiResponseHandler
 import pl.edu.ur.blokur.services.PdfApiService
-import pl.edu.ur.blokur.services.TicketService
 import pl.edu.ur.blokur.services.TicketCommentApiService
 import pl.edu.ur.blokur.services.TicketImageApiService
+import pl.edu.ur.blokur.services.TicketImageService
+import pl.edu.ur.blokur.services.TicketService
 import pl.edu.ur.blokur.services.WorkAcceptanceProtocolRequestDto
 import pl.edu.ur.blokur.ui.views.tickets.TicketRoutes
 import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
@@ -34,6 +40,7 @@ import javax.inject.Inject
 class TicketDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val ticketService: TicketService,
+    private val ticketImageService: TicketImageService,
     private val commentApi: TicketCommentApiService,
     private val imageApi: TicketImageApiService,
     private val pdfApi: PdfApiService,
@@ -66,7 +73,6 @@ class TicketDetailsViewModel @Inject constructor(
                     availableConservators = conservators,
                     currentUserRole = role
                 )
-                // Ładuj komentarze i zdjęcia równolegle po załadowaniu ticketu
                 loadComments(ticket.id)
                 loadImages(ticket.id)
             }.onFailure { e ->
@@ -82,8 +88,17 @@ class TicketDetailsViewModel @Inject constructor(
             runCatching { commentApi.getComments(ticketId) }
                 .onSuccess { response ->
                     val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
+                    if (!response.isSuccessful) {
+                        _state.value = s.copy(isLoadingComments = false)
+                        _events.send(
+                            TicketDetailsScreenEvent.ShowError(
+                                ApiResponseHandler.mapHttpError(response, "Nie udało się załadować komentarzy")
+                            )
+                        )
+                        return@onSuccess
+                    }
                     _state.value = s.copy(
-                        comments = if (response.isSuccessful) response.body() ?: emptyList() else emptyList(),
+                        comments = response.body() ?: emptyList(),
                         isLoadingComments = false
                     )
                 }
@@ -96,15 +111,29 @@ class TicketDetailsViewModel @Inject constructor(
     }
 
     private fun loadImages(ticketId: String) {
+        val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            _state.value = current.copy(isLoadingImages = true)
             runCatching { imageApi.getImagesForTicket(ticketId) }
                 .onSuccess { response ->
                     val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
+                    if (!response.isSuccessful) {
+                        _state.value = s.copy(isLoadingImages = false)
+                        _events.send(
+                            TicketDetailsScreenEvent.ShowError(
+                                ApiResponseHandler.mapHttpError(response, "Nie udało się załadować zdjęć")
+                            )
+                        )
+                        return@onSuccess
+                    }
                     _state.value = s.copy(
-                        images = if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+                        images = response.body() ?: emptyList(),
+                        isLoadingImages = false
                     )
                 }
                 .onFailure { e ->
+                    val s = _state.value as? TicketDetailsListState.Success ?: return@onFailure
+                    _state.value = s.copy(isLoadingImages = false)
                     _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd ładowania obrazów"))
                 }
         }
@@ -113,30 +142,90 @@ class TicketDetailsViewModel @Inject constructor(
     fun addComment(content: String, commentType: String) {
         val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            _state.value = current.copy(isSendingComment = true)
             runCatching {
                 commentApi.addComment(
                     current.ticket.id,
-                    pl.edu.ur.blokur.dtos.TicketCommentRequestDto(content = content, commentType = commentType)
+                    TicketCommentRequestDto(content = content, commentType = commentType)
                 )
-            }.onSuccess {
+            }.onSuccess { response ->
+                val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
+                _state.value = s.copy(isSendingComment = false)
+                if (!response.isSuccessful) {
+                    _events.send(
+                        TicketDetailsScreenEvent.ShowError(
+                            ApiResponseHandler.mapHttpError(response, "Nie udało się dodać komentarza")
+                        )
+                    )
+                    return@onSuccess
+                }
                 loadComments(current.ticket.id)
+                val updated = _state.value as? TicketDetailsListState.Success
+                if (updated != null) {
+                    _state.value = updated.copy(commentResetKey = updated.commentResetKey + 1)
+                }
             }.onFailure { e ->
+                val s = _state.value as? TicketDetailsListState.Success ?: return@onFailure
+                _state.value = s.copy(isSendingComment = false)
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd dodawania komentarza"))
             }
         }
     }
 
-    fun deleteImage(imageId: String) {
+    fun uploadAfterImage(uri: Uri) {
         val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
-            runCatching { imageApi.deleteImage(imageId) }
-                .onSuccess {
-                    loadImages(current.ticket.id)
-                    _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zdjęcie zostało usunięte pomyślnie"))
+            _state.value = current.copy(isUploadingImage = true)
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val resolver = context.contentResolver
+                    val mime = resolver.getType(uri) ?: "image/jpeg"
+                    val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: error("Nie można odczytać pliku")
+                    val ext = if (mime.contains("png")) "png" else "jpg"
+                    val filename = "photo_${System.currentTimeMillis()}.$ext"
+                    ticketImageService.uploadImage(
+                        ticketId = current.ticket.id,
+                        imageType = "AFTER",
+                        imageBytes = bytes,
+                        filename = filename,
+                        mimeType = mime
+                    )
                 }
-                .onFailure { e ->
-                    _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd usuwania obrazu"))
+            }.onSuccess {
+                loadImages(current.ticket.id)
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zdjęcie zostało dodane"))
+            }.onFailure { e ->
+                val msg = when (e) {
+                    is ApiException -> e.message
+                    else -> e.message ?: "Błąd wgrywania zdjęcia"
                 }
+                _events.send(TicketDetailsScreenEvent.ShowError(msg))
+            }
+            val s = _state.value as? TicketDetailsListState.Success
+            if (s != null) _state.value = s.copy(isUploadingImage = false)
+        }
+    }
+
+    fun onResumeTicket() {
+        val current = _state.value as? TicketDetailsListState.Success ?: return
+        viewModelScope.launch {
+            runCatching {
+                ticketService.changeStatus(
+                    ticketId = current.ticket.id,
+                    status = TicketStatus.W_REALIZACJI.name,
+                    comment = "Wznowienie realizacji przez zarządcę"
+                )
+            }.onSuccess {
+                loadTicket()
+                _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zgłoszenie zostało wznowione"))
+            }.onFailure { e ->
+                val msg = when (e) {
+                    is ApiException -> e.message
+                    else -> e.message ?: "Błąd wznawiania zgłoszenia"
+                }
+                _events.send(TicketDetailsScreenEvent.ShowError(msg))
+            }
         }
     }
 
@@ -166,10 +255,7 @@ class TicketDetailsViewModel @Inject constructor(
         val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
             runCatching {
-                ticketService.rejectTicket(
-                    ticketId = currentState.ticket.id,
-                    reason = reason
-                )
+                ticketService.rejectTicket(ticketId = currentState.ticket.id, reason = reason)
             }.onSuccess {
                 loadTicket()
                 _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zgłoszenie odrzucone"))

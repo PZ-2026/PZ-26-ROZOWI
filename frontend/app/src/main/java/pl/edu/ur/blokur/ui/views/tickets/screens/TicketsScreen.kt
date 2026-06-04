@@ -2,6 +2,7 @@ package pl.edu.ur.blokur.ui.views.tickets.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,14 +11,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.components.EmptyState
@@ -25,7 +28,6 @@ import pl.edu.ur.blokur.ui.components.FloatingActionButton
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.ui.Alignment
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketFilterPanel
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketListItem
 import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
@@ -42,21 +44,23 @@ fun TicketsScreen(
     onNavigateToUsers: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val showFab = (state as? TicketsListState.Success)?.currentUserRole
-        .let { it != "KONSERWATOR" }
+    val showFab = (state as? TicketsListState.Success)?.currentUserRole == "MIESZKANIEC"
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is TicketsScreenEvent.NavigateToDetails -> onNavigateToDetails(event.ticketId)
                 is TicketsScreenEvent.NavigateToCreate -> onNavigateToCreate()
+                is TicketsScreenEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
             }
         }
     }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (showFab) {
                 FloatingActionButton(
@@ -82,25 +86,38 @@ fun TicketsScreen(
                 ) {
                     item { Spacer(Modifier.height(4.dp)) }
 
-                    // ── Panel wyszukiwania i filtrów ──
                     item {
                         TicketFilterPanel(
                             filterState = s.filterState,
+                            filterOptions = s.filterOptions,
+                            currentUserRole = s.currentUserRole,
                             totalCount = s.tickets.size,
                             filteredCount = s.tickets.size,
                             onFilterChanged = viewModel::onFilterChanged,
-                            onRefresh = { viewModel.loadTickets(reset = true) },
+                            onRefresh = { viewModel.loadTickets() },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
 
-                    // ── Lista zgłoszeń ──
                     if (s.tickets.isEmpty()) {
                         item {
-                            EmptyState(title = "Brak wyników", description = "Nie znaleziono zgłoszeń dla podanych kryteriów.")
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(280.dp)
+                            ) {
+                                val hasFilters = s.filterState.hasActiveFilters()
+                                EmptyState(
+                                    title = if (hasFilters) "Brak wyników" else "Brak zgłoszeń",
+                                    description = if (hasFilters)
+                                        "Nie znaleziono zgłoszeń dla wybranych kryteriów. Spróbuj zmienić filtry."
+                                    else
+                                        "Gdy pojawią się nowe zgłoszenia, zobaczysz je tutaj."
+                                )
+                            }
                         }
                     } else {
-                        itemsIndexed(s.tickets) { index, ticket ->
+                        items(s.tickets, key = { it.id }) { ticket ->
                             val presentation = ticket.status.toPresentation()
                             val assignedTo = ticket.assignedToName
                             val dateOrAssignee = if (assignedTo != null)
@@ -116,26 +133,6 @@ fun TicketsScreen(
                                 statusColorHex = presentation.color.value.toLong(),
                                 onClick = { viewModel.onTicketClicked(ticket.id) }
                             )
-
-                            // Pagination check
-                            if (index == s.tickets.lastIndex && !s.isFetchingNextPage && !s.hasReachedEnd) {
-                                LaunchedEffect(ticket.id) {
-                                    viewModel.loadNextPage()
-                                }
-                            }
-                        }
-                    }
-
-                    if (s.isFetchingNextPage) {
-                        item {
-                            androidx.compose.foundation.layout.Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
                         }
                     }
 
@@ -145,4 +142,3 @@ fun TicketsScreen(
         }
     }
 }
-

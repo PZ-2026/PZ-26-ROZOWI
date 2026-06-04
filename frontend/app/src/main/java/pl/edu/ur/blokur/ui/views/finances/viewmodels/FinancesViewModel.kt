@@ -21,6 +21,8 @@ import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.FinancialLedgerService
 import pl.edu.ur.blokur.services.PropertyService
+import pl.edu.ur.blokur.services.UserApartmentException
+import pl.edu.ur.blokur.services.UserApartmentService
 import pl.edu.ur.blokur.services.UserDocumentService
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesEvent
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesState
@@ -34,6 +36,7 @@ class FinancesViewModel @Inject constructor(
     private val propertyService: PropertyService,
     private val authService: AuthService,
     private val userDocumentService: UserDocumentService,
+    private val userApartmentService: UserApartmentService,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -47,31 +50,41 @@ class FinancesViewModel @Inject constructor(
         loadData()
     }
 
-    private fun loadData() {
+    fun loadData() {
         viewModelScope.launch {
             _state.value = FinancesState.Loading
             runCatching {
-                val isManager = authService.getCurrentUserRole() == UserRole.ZARZADCA
-                val apartmentId = if (isManager) {
+                val role = authService.getCurrentUserRole()
+                val apartmentId = when (role) {
+                    UserRole.ZARZADCA -> {
                         val tree = propertyService.getBuildingTree()
                         tree.firstOrNull()?.staircases?.firstOrNull()?.apartments?.firstOrNull()?.id
-                    } else null
+                    }
+                    UserRole.MIESZKANIEC -> userApartmentService.resolveForResident().apartmentId
+                    else -> null
+                }
 
-                val transactionsData = if (apartmentId != null) {
-                    ledgerService.getTransactions(apartmentId)
-                } else null
+                if (role == UserRole.MIESZKANIEC && apartmentId == null) {
+                    error("Brak przypisanego lokalu.")
+                }
 
+                val transactionsData = apartmentId?.let { ledgerService.getTransactions(it) }
                 val documents = userDocumentService.getDocuments()
 
-                Pair(transactionsData, documents)
+                transactionsData to documents
             }.onSuccess { (transactionsData, documents) ->
                 _state.value = FinancesState.Data(
                     currentBalance = transactionsData?.currentBalance ?: BigDecimal.ZERO,
-                    transactions = transactionsData?.transactions?.sortedByDescending { it.transactionDate } ?: emptyList(),
+                    transactions = transactionsData?.transactions?.sortedByDescending { it.transactionDate }
+                        ?: emptyList(),
                     documents = documents
                 )
             }.onFailure { e ->
-                _state.value = FinancesState.Error(e.message ?: "Błąd ładowania finansów")
+                val message = when (e) {
+                    is UserApartmentException -> e.message
+                    else -> e.message ?: "Błąd ładowania finansów"
+                }
+                _state.value = FinancesState.Error(message ?: "Błąd ładowania finansów")
             }
         }
     }
@@ -95,10 +108,6 @@ class FinancesViewModel @Inject constructor(
         viewModelScope.launch { _events.send(FinancesEvent.NavigateToBalances) }
     }
 
-    /**
-     * Pobiera plik PDF z backendu używając prawdziwego UUID dokumentu,
-     * zapisuje w cache/pdf/ i otwiera przez FileProvider → Intent ACTION_VIEW.
-     */
     fun downloadDocument(document: UserDocumentDto) {
         val documentId = document.id
         if (documentId.isBlank()) {

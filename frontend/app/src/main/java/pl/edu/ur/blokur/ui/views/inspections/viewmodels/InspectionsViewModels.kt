@@ -15,6 +15,8 @@ import pl.edu.ur.blokur.dtos.InspectionRequestDto
 import pl.edu.ur.blokur.dtos.InspectionResponseDto
 import pl.edu.ur.blokur.dtos.PropertyResponseDto
 import pl.edu.ur.blokur.dtos.ScopeType
+import pl.edu.ur.blokur.dtos.UserRole
+import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.InspectionService
 import pl.edu.ur.blokur.services.PropertyService
 import javax.inject.Inject
@@ -45,8 +47,12 @@ data class CreateInspectionFormState(
 @HiltViewModel
 class InspectionsListViewModel @Inject constructor(
     private val inspectionService: InspectionService,
-    private val propertyService: PropertyService
+    private val propertyService: PropertyService,
+    private val authService: AuthService
 ) : ViewModel() {
+
+    suspend fun isManager(): Boolean =
+        authService.getCurrentUserRole() == UserRole.ZARZADCA
 
     private val _state = MutableStateFlow<InspectionsListState>(InspectionsListState.Loading)
     val state: StateFlow<InspectionsListState> = _state.asStateFlow()

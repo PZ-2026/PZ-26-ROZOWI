@@ -86,7 +86,7 @@ fun AppNavHost(
                 profileGraph(
                     navController = bottomNavController,
                     onNavigateToNotificationSettings = {
-                        bottomNavController.navigate(SettingsRoutes.Notifications)
+                        bottomNavController.navigate(NotificationRoutes.Settings)
                     },
                     onNavigateToCommunityLogo = {
                         bottomNavController.navigate(SettingsRoutes.CommunityLogo)
@@ -108,7 +108,7 @@ fun AppNavHost(
                 resolutionsGraph(bottomNavController)
                 inspectionsGraph(bottomNavController)
                 metersGraph(bottomNavController)
-                notificationsGraph()
+                notificationsGraph(bottomNavController)
                 settingsGraph(bottomNavController)
                 documentsGraph(bottomNavController)
             }

@@ -1,13 +1,16 @@
 package pl.edu.ur.blokur.ui.views.finances.contents
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -55,7 +58,23 @@ private fun TransactionsListContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        items(transactions) { transaction -> TransactionItem(transaction = transaction) }
+        if (transactions.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyState(
+                        title = "Brak transakcji",
+                        description = "Nie znaleziono wpłat ani naliczeń dla tego lokalu w ostatnich 24 miesiącach."
+                    )
+                }
+            }
+        } else {
+            items(transactions) { transaction -> TransactionItem(transaction = transaction) }
+        }
         item { Spacer(modifier = Modifier.height(24.dp)) }
     }
 }

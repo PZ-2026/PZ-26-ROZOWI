@@ -1,325 +1,491 @@
-# Plan analizy frontendu BlokUR — FAZA 0
+# BlokUR Frontend — Plan analizy (Faza 0)
 
-> Wygenerowano: 2026-06-04  
-> Łączna liczba plików .kt: **175**  
-> Technologia: Jetpack Compose + Hilt DI + Retrofit2 + Navigation Compose  
-> Nawigacja: Type-safe Navigation Compose (sealed interface + @Serializable routes)
+**Data:** 2026-06-05  
+**Źródło:** rekurencyjny przegląd `frontend/` (Android, Kotlin, Jetpack Compose)  
+**Pakiet główny:** `pl.edu.ur.blokur`  
+**Moduł aplikacji:** `frontend/app/`
 
 ---
 
-## Globalna architektura
+## Struktura katalogów `frontend/`
 
 ```
-pl.edu.ur.blokur/
-├── dtos/               ← modele danych (request/response DTOs) — 13 plików
-├── services/           ← Retrofit API interfaces + "Repository-like" Services — 26 plików
-├── ui/
-│   ├── components/     ← współdzielone komponenty UI (TopBar, Buttons, etc.) — 9 plików
-│   ├── navigation/     ← AppRoute (marker interface)
-│   ├── theme/          ← Color, Type, Shape, Theme — 5 plików
-│   └── views/          ← moduły funkcjonalne pogrupowane tematycznie
-│       ├── auth/
-│       ├── main/
-│       ├── announcements/
-│       ├── categories/
-│       ├── documents/
-│       ├── finances/
-│       ├── inspections/
-│       ├── meters/
-│       ├── notifications/
-│       ├── profile/
-│       ├── properties/
-│       ├── resolutions/
-│       ├── settings/
-│       ├── tickets/
-│       └── users/
+frontend/
+├── app/src/main/java/pl/edu/ur/blokur/
+│   ├── MainActivity.kt              # jedyna Activity
+│   ├── AppNavHost.kt                # globalny NavHost
+│   ├── dtos/                        # 14 plików modeli API
+│   ├── services/                    # Retrofit ApiService + warstwa Service + DI
+│   └── ui/
+│       ├── components/              # współdzielone komponenty UI
+│       ├── navigation/              # AppRoute (interfejs tras)
+│       ├── theme/                   # Material theme
+│       └── views/                   # feature modules (screens, viewmodels, navigation)
+└── app/src/main/res/                # zasoby Android
 ```
 
-### Role użytkowników:
-- **MIESZKANIEC** — dostęp do: Zgłoszeń, Finansów, Uchwał, Ogłoszeń, Profilu
-- **ZARZADCA** — dostęp do: Zgłoszeń, Lokali (+ Liczniki), Uchwał, Użytkowników, Profilu  
-  (+ przez Profil: Kategorie, Przeglądy, Ustawienia powiadomień, Logo wspólnoty, Dystrybucja dokumentów)
-- **KONSERWATOR** — dostęp do: Zgłoszeń, Profilu
+**Stack UI:** Jetpack Compose (brak Fragmentów), Navigation Compose z `@Serializable` routes, Hilt DI, Retrofit + OkHttp, DataStore (tokeny).
+
+**Brak:** klas `Repository` / `DataSource` — rolę repozytorium pełnią klasy `*Service.kt` opakowujące `*ApiService`.
 
 ---
 
-## Plan modułów do analizy
+## Inwentaryzacja klas (Faza 0)
+
+### Activity
+
+| Klasa | Opis |
+|-------|------|
+| `MainActivity` | `ComponentActivity`, `setContent { AppNavHost() }` |
+
+Brak innych Activity / Fragmentów.
 
 ---
 
-### Moduł 1: Uwierzytelnienie (Auth)
-**Rola:** wspólny (wszyscy użytkownicy)  
+### Ekrany (`*Screen.kt`) — 30 plików
+
+| Plik | Uwagi |
+|------|--------|
+| `auth/screens/LoginScreen.kt` | |
+| `auth/screens/ForgotPasswordScreen.kt` | |
+| `auth/screens/ResetPasswordScreen.kt` | |
+| `auth/screens/AcceptInvitationScreen.kt` | |
+| `main/screens/ResidentMainScreen.kt` | powłoka z bottom nav (wszystkie role) |
+| `profile/screens/ProfileScreen.kt` | |
+| `tickets/screens/TicketsScreen.kt` | |
+| `tickets/screens/TicketDetailsScreen.kt` | |
+| `tickets/screens/CreateTicketScreen.kt` | |
+| `announcements/screens/AnnouncementsScreen.kt` | |
+| `announcements/screens/CreateAnnouncementScreen.kt` | |
+| `finances/screens/FinancesScreen.kt` | |
+| `finances/screens/TransactionsScreen.kt` | |
+| `finances/screens/DocumentsScreen.kt` | |
+| `finances/screens/FinancialLedgerScreen.kt` | |
+| `finances/screens/ApartmentBalancesScreen.kt` | |
+| `finances/screens/CsvImportScreen.kt` | |
+| `resolutions/screens/ResolutionsListScreen.kt` | |
+| `resolutions/screens/ResolutionDetailScreen.kt` | |
+| `properties/screens/PropertyTreeScreen.kt` | |
+| `users/screens/UsersScreen.kt` | |
+| `users/screens/EditUserScreen.kt` | |
+| `categories/screens/CategoriesScreen.kt` | |
+| `inspections/screens/InspectionsListScreen.kt` | |
+| `meters/screens/MeterListScreen.kt` | |
+| `meters/screens/MeterDetailScreen.kt` | |
+| `documents/screens/DocumentDistributionScreen.kt` | |
+| `settings/screens/NotificationSettingsScreen.kt` | |
+| `settings/screens/CommunityLogoScreen.kt` | |
+| `notifications/screens/NotificationsScreen.kt` | |
+
+### Dialogi / arkusze (UI modalne — nie pełne trasy NavHost)
+
+| Plik | Typ |
+|------|-----|
+| `users/screens/CreateUserDialog.kt` | Dialog |
+| `users/screens/EditUserScreen.kt` | ekran (trasa w UsersNavigation) |
+| `categories/screens/CategoryFormDialog.kt` | Dialog |
+| `resolutions/screens/CreateResolutionDialog.kt` | Dialog |
+| `inspections/screens/CreateInspectionDialog.kt` | Dialog |
+| `meters/screens/CreateMeterDialog.kt` | Dialog |
+| `meters/screens/CreateMeterReadingDialog.kt` | Dialog |
+| `finances/screens/AddTransactionDialog.kt` | Dialog |
+| `tickets/components/AssignConservatorSheet.kt` | Bottom sheet |
+| `tickets/components/ManagerRejectSheet.kt` | Bottom sheet |
+| `tickets/components/ConservatorActionSheet.kt` | Bottom sheet |
+| `components/AlertDialog.kt` | współdzielony dialog |
+
+### ViewModels (`@HiltViewModel`) — 29 klas
+
+| Klasa | Plik |
+|-------|------|
+| `AuthViewModel` | `auth/viewmodels/AuthViewModel.kt` |
+| `ForgotPasswordViewModel` | `auth/viewmodels/ForgotPasswordViewModel.kt` |
+| `ResetPasswordViewModel` | `auth/viewmodels/ResetPasswordViewModel.kt` |
+| `AcceptInvitationViewModel` | `auth/viewmodels/AcceptInvitationViewModel.kt` |
+| `ResidentMainViewModel` | `main/viewmodels/ResidentMainViewModel.kt` |
+| `ProfileViewModel` | `profile/viewmodels/ProfileViewModel.kt` |
+| `TicketsViewModel` | `tickets/viewmodels/TicketsViewModel.kt` |
+| `TicketDetailsViewModel` | `tickets/viewmodels/TicketDetailsViewModel.kt` |
+| `CreateTicketViewModel` | `tickets/viewmodels/CreateTicketViewModel.kt` |
+| `AnnouncementsViewModel` | `announcements/viewmodels/AnnouncementsViewModel.kt` |
+| `CreateAnnouncementViewModel` | `announcements/viewmodels/CreateAnnouncementViewModel.kt` |
+| `FinancesViewModel` | `finances/viewmodels/FinancesViewModel.kt` |
+| `FinancialLedgerViewModel` | `finances/viewmodels/FinancialLedgerViewModel.kt` |
+| `ApartmentBalancesViewModel` | `finances/viewmodels/ApartmentBalancesViewModel.kt` |
+| `CsvImportViewModel` | `finances/viewmodels/CsvImportViewModel.kt` |
+| `ResolutionsListViewModel` | `resolutions/viewmodels/ResolutionViewModels.kt` |
+| `ResolutionDetailViewModel` | `resolutions/viewmodels/ResolutionViewModels.kt` |
+| `PropertyTreeViewModel` | `properties/viewmodels/PropertyTreeViewModel.kt` |
+| `UsersViewModel` | `users/viewmodels/UsersViewModel.kt` |
+| `EditUserViewModel` | `users/viewmodels/EditUserViewModel.kt` |
+| `CategoriesViewModel` | `categories/viewmodels/CategoriesViewModel.kt` |
+| `InspectionsListViewModel` | `inspections/viewmodels/InspectionsViewModels.kt` |
+| `MeterListViewModel` | `meters/viewmodels/MeterViewModels.kt` |
+| `MeterDetailViewModel` | `meters/viewmodels/MeterViewModels.kt` |
+| `DocDistributionViewModel` | `documents/viewmodels/DocDistributionViewModel.kt` |
+| `NotificationSettingsViewModel` | `settings/viewmodels/NotificationSettingsViewModel.kt` |
+| `CommunityLogoViewModel` | `settings/viewmodels/CommunityLogoViewModel.kt` |
+| `NotificationsViewModel` | `notifications/viewmodels/NotificationsViewModel.kt` |
+
+---
+
+### Warstwa sieciowa — Retrofit `*ApiService` (16 interfejsów)
+
+| Interfejs | Główne ścieżki API |
+|-----------|-------------------|
+| `AuthApiService` | `/api/auth/*` (login, refresh, forgot, reset, accept-invitation) |
+| `TicketApiService` | `/api/tickets`, `/api/categories`, `/api/users` |
+| `TicketCommentApiService` | `/api/tickets/{id}/comments` |
+| `TicketImageApiService` | `/api/tickets/{id}/images`, `/api/images/{id}` |
+| `CategoryApiService` | `/api/admin/categories` |
+| `AdminUserApiService` | `/api/admin/users` |
+| `PropertyApiService` | `/api/properties`, `/api/buildings`, `/api/staircases` |
+| `FinancialApiService` | `/api/apartments/{id}/transactions`, `/api/admin/apartments/balances`, `/api/finance/import` |
+| `UserDocumentApiService` | `/api/documents` |
+| `DocumentApiService` | `/api/admin/documents/*`, `/api/properties/{id}/logo`, `/api/pdf/*` |
+| `AnnouncementApiService` | `/api/announcements` |
+| `ResolutionApiService` | `/api/resolutions` |
+| `InspectionApiService` | `/api/inspections` |
+| `MeterApiService` | `/api/apartments/{id}/meters`, `/api/meter-readings` |
+| `NotificationApiService` | `/api/admin/notifications/settings` |
+| `DeviceApiService` | `/api/devices` |
+
+**JWT:** klient `"main"` — `AuthInterceptor` + `TokenAuthenticator` (`NetworkModule`). Klient `"auth"` / `"bare"` — bez JWT (logowanie, refresh).
+
+---
+
+### Warstwa danych — `*Service` (repozytoria aplikacyjne, 20 klas)
+
+| Klasa | ApiService / źródło |
+|-------|---------------------|
+| `AuthService` | `AuthApiService`, `TokenStorage` |
+| `TokenStorage` | DataStore (access, refresh, role) |
+| `TicketService` | `TicketApiService` |
+| `TicketCommentService` | `TicketCommentApiService` |
+| `TicketImageService` | `TicketImageApiService` |
+| `CategoryService` | `CategoryApiService`, `TicketApiService` (GET categories) |
+| `AdminUserService` | `AdminUserApiService` |
+| `PropertyService` | `PropertyApiService` |
+| `FinancialLedgerService` | `FinancialApiService` |
+| `ApartmentBalanceService` | `FinancialApiService` |
+| `FinancesService` | **[HARDKODOWANE]** — mock, bez Retrofit |
+| `UserDocumentService` | `UserDocumentApiService` |
+| `AnnouncementService` | `AnnouncementApiService` |
+| `ResolutionService` | `ResolutionApiService` |
+| `InspectionService` | `InspectionApiService` |
+| `MeterService` | `MeterApiService` |
+| `NotificationService` | `NotificationApiService` |
+| `DeviceService` | `DeviceApiService`, `FcmTokenProvider` |
+
+**DI / infrastruktura:** `NetworkModule`, `FcmModule`, `AuthInterceptor`, `TokenAuthenticator`, `FcmTokenProvider`, `NoOpFcmTokenProvider`
+
+**Bezpośrednie użycie ApiService w ViewModel:** `DocDistributionViewModel` → `DocumentApiService`; `CommunityLogoViewModel` → `DocumentApiService`
+
+---
+
+### Nawigacja (15 plików `*Navigation.kt` + `AppNavHost`)
+
+| Plik | Trasy (sealed routes) |
+|------|----------------------|
+| `AppNavHost.kt` | root: `AuthRoutes` → `MainRoutes.Main` + nested graphs |
+| `auth/AuthNavigation.kt` | Login, ForgotPassword, ResetPassword, AcceptInvitation |
+| `main/MainNavigation.kt` | Main + bottom NavHost |
+| `profile/ProfileNavigation.kt` | Profile Main |
+| `tickets/TicketsNavigation.kt` | List, Details, Create |
+| `announcements/AnnouncementsNavigation.kt` | Main, Create |
+| `finances/FinancesNavigation.kt` | Main, Transactions, Documents, Ledger, Balances, CsvImport |
+| `resolutions/ResolutionsNavigation.kt` | List, Detail |
+| `properties/PropertyNavigation.kt` | Tree |
+| `users/UsersNavigation.kt` | List, Edit |
+| `categories/CategoriesNavigation.kt` | List |
+| `inspections/InspectionsNavigation.kt` | List |
+| `meters/MetersNavigation.kt` | List(apartmentId), Detail |
+| `documents/DocumentsNavigation.kt` | Distribution |
+| `settings/SettingsNavigation.kt` | Notifications, CommunityLogo |
+| `notifications/NotificationsNavigation.kt` | Settings (NotificationsScreen) |
+
+**Role a bottom navigation** (`main/utils/Data.kt`):
+
+| Rola | Zakładki dolne |
+|------|----------------|
+| MIESZKANIEC | Zgłoszenia, Finanse, Uchwały, Ogłoszenia, Profil |
+| ZARZĄDCA | Zgłoszenia, Lokale, Uchwały, Użytkownicy, Profil |
+| KONSERWATOR | Zgłoszenia, Profil |
+
+Dodatkowe ekrany ZARZĄDCY (spoza bottom nav): Kategorie, Przeglądy, Powiadomienia, Dystrybucja dokumentów, Logo — dostęp z **Profilu** (`ProfileScreen` → `AppNavHost` callbacks).
+
+---
+
+### Modele danych (`dtos/`) — 14 plików
+
+`AdminUserDtos.kt`, `AnnouncementDtos.kt`, `AuthDtos.kt`, `CategoryDtos.kt`, `DeviceDtos.kt`, `FinancesDtos.kt`, `InspectionDtos.kt`, `MeterDtos.kt`, `NotificationDtos.kt`, `PropertyDtos.kt`, `ResolutionDtos.kt`, `TicketDtos.kt`, `TicketMediaDtos.kt`, `UserDtos.kt`
+
+**Uwaga:** `UserProfileDto` dokumentuje `GET /api/users/me` — endpoint **nie istnieje** w backendzie; `ProfileViewModel` używa placeholderów.
+
+---
+
+## Plan modułów funkcjonalnych (Faza 1)
+
+---
+
+### Moduł 1: Infrastruktura aplikacji i sieć
+
+**Rola:** wspólny
+
 **Pliki:**
-- `ui/views/auth/AuthNavigation.kt` — routes: Login, ForgotPassword, ResetPassword(token)
-- `ui/views/auth/screens/LoginScreen.kt`
-- `ui/views/auth/screens/ForgotPasswordScreen.kt`
-- `ui/views/auth/screens/ResetPasswordScreen.kt`
-- `ui/views/auth/contents/LoginForm.kt`
-- `ui/views/auth/contents/ForgotPasswordForm.kt`
-- `ui/views/auth/contents/ResetPasswordForm.kt`
-- `ui/views/auth/utils/AuthStates.kt`
-- `ui/views/auth/viewmodels/AuthViewModel.kt`
-- `ui/views/auth/viewmodels/ForgotPasswordViewModel.kt`
-- `ui/views/auth/viewmodels/ResetPasswordViewModel.kt`
-- `services/AuthApiService.kt`
-- `services/AuthService.kt`
-- `services/AuthInterceptor.kt`
-- `services/TokenAuthenticator.kt`
-- `services/TokenStorage.kt`
-- `dtos/AuthDtos.kt` (LoginRequestDto, AuthResponseDto, RefreshTokenRequestDto, TokenPairResponseDto, ForgotPasswordRequestDto, ResetPasswordRequestDto, MessageResponseDto, AcceptInvitationRequestDto, AcceptInvitationResponseDto)
+- `MainActivity.kt`, `AppNavHost.kt`
+- `services/NetworkModule.kt`, `AuthInterceptor.kt`, `TokenAuthenticator.kt`, `TokenStorage.kt`
+- `services/FcmModule.kt`, `FcmTokenProvider.kt`
+- `ui/navigation/AppRoute.kt` (jeśli istnieje), `ui/theme/*`, `ui/components/*`
 
 ---
 
-### Moduł 2: Nawigacja główna (Main Shell)
-**Rola:** wspólny (shell renderuje per rola)  
+### Moduł 2: Autentykacja i onboarding
+
+**Rola:** wspólny (przed zalogowaniem)
+
 **Pliki:**
-- `ui/views/main/screens/ResidentMainScreen.kt`
-- `ui/views/main/contents/BottomNavBar.kt`
-- `ui/views/main/utils/Data.kt` (NavBarOption, bottomNavItems, zarzadcaNavItems, konserwatorNavItems)
-- `ui/views/main/utils/ResidentMainStates.kt` (ResidentMainState, ResidentMainEvent)
-- `ui/views/main/viewmodels/ResidentMainViewModel.kt`
-- `services/DeviceApiService.kt`
-- `services/DeviceService.kt`
-- `services/FcmModule.kt`
-- `services/FcmTokenProvider.kt`
-- `services/NetworkModule.kt`
-- `dtos/DeviceDtos.kt` (DeviceRegistrationRequestDto)
+- Ekrany: `LoginScreen`, `ForgotPasswordScreen`, `ResetPasswordScreen`, `AcceptInvitationScreen`
+- Composable: `AcceptInvitationForm`
+- ViewModels: `AuthViewModel`, `ForgotPasswordViewModel`, `ResetPasswordViewModel`, `AcceptInvitationViewModel`
+- `AuthNavigation.kt`, `auth/utils/AuthStates.kt`
+- `AuthApiService.kt`, `AuthService.kt`
+- `dtos/AuthDtos.kt`
 
 ---
 
-### Moduł 3: Zgłoszenia (Tickets)
-**Rola:** MIESZKANIEC (tworzenie) / ZARZADCA (zarządzanie) / KONSERWATOR (realizacja)  
+### Moduł 3: Powłoka główna i nawigacja roli
+
+**Rola:** wspólny (po zalogowaniu)
+
 **Pliki:**
-- `ui/views/tickets/TicketsNavigation.kt` — routes: List, Details(ticketId), Create
-- `ui/views/tickets/screens/TicketsScreen.kt`
-- `ui/views/tickets/screens/TicketDetailsScreen.kt`
-- `ui/views/tickets/screens/CreateTicketScreen.kt`
-- `ui/views/tickets/contents/TicketListContent.kt`
-- `ui/views/tickets/contents/TicketDetailsContent.kt`
-- `ui/views/tickets/contents/CreateTicketFormContent.kt`
-- `ui/views/tickets/components/AssignConservatorSheet.kt`
-- `ui/views/tickets/components/ConservatorActionSheet.kt`
-- `ui/views/tickets/components/ManagerRejectSheet.kt`
-- `ui/views/tickets/components/TicketCommentsSection.kt`
-- `ui/views/tickets/components/TicketFilterPanel.kt`
-- `ui/views/tickets/components/TicketImagesSection.kt`
-- `ui/views/tickets/components/TicketListItem.kt`
-- `ui/views/tickets/utils/TicketsStates.kt`
-- `ui/views/tickets/utils/TicketUiMappers.kt`
-- `ui/views/tickets/viewmodels/TicketsViewModel.kt`
-- `ui/views/tickets/viewmodels/TicketDetailsViewModel.kt`
-- `ui/views/tickets/viewmodels/CreateTicketViewModel.kt`
-- `services/TicketApiService.kt`
-- `services/TicketService.kt`
-- `services/TicketCommentApiService.kt`
-- `services/TicketImageApiService.kt`
-- `services/TicketMediaServices.kt`
-- `dtos/TicketDtos.kt` (TicketStatus, CategoryDto, CreateTicketRequest, ConservatorDto, TicketAssignRequest, TicketSummaryDto, TicketDetailDto, AppUserDto, TicketRejectRequest, TicketSuspendRequest, TicketCompletionRequest, TicketStatusChangeRequest)
-- `dtos/TicketMediaDtos.kt` (TicketCommentDto, TicketCommentRequestDto, TicketImageDto)
+- `ResidentMainScreen.kt`, `ResidentMainViewModel.kt`, `MainNavigation.kt`
+- `main/contents/BottomNavBar.kt`, `main/utils/Data.kt` (`navItemsForRole`, `NavBarOption`)
+- Fragment `AppNavHost` (sekcja `mainGraph`)
 
 ---
 
-### Moduł 4: Finanse (Finances)
-**Rola:** MIESZKANIEC (podgląd własnych) / ZARZADCA (pełny dostęp + import CSV + salda)  
+### Moduł 4: Profil użytkownika
+
+**Rola:** wspólny (menu różne per rola)
+
 **Pliki:**
-- `ui/views/finances/FinancesNavigation.kt` — routes: Main, Transactions, Documents, Ledger(apartmentId?), Balances, CsvImport
-- `ui/views/finances/screens/FinancesScreen.kt`
-- `ui/views/finances/screens/TransactionsScreen.kt`
-- `ui/views/finances/screens/DocumentsScreen.kt`
-- `ui/views/finances/screens/FinancialLedgerScreen.kt`
-- `ui/views/finances/screens/ApartmentBalancesScreen.kt`
-- `ui/views/finances/screens/CsvImportScreen.kt`
-- `ui/views/finances/screens/AddTransactionDialog.kt`
-- `ui/views/finances/contents/FinancesOverviewContent.kt`
-- `ui/views/finances/contents/TransactionsContent.kt`
-- `ui/views/finances/contents/DocumentsContent.kt`
-- `ui/views/finances/components/BalanceCard.kt`
-- `ui/views/finances/components/DocumentItem.kt`
-- `ui/views/finances/components/TransactionItem.kt`
-- `ui/views/finances/utils/FinancesStates.kt`
-- `ui/views/finances/viewmodels/FinancesViewModel.kt`
-- `ui/views/finances/viewmodels/FinancialLedgerViewModel.kt`
-- `ui/views/finances/viewmodels/ApartmentBalancesViewModel.kt`
-- `ui/views/finances/viewmodels/CsvImportViewModel.kt`
-- `services/FinancialApiService.kt`
-- `services/FinancesService.kt`
-- `services/FinancialLedgerService.kt`
-- `services/ApartmentBalanceService.kt`
-- `dtos/FinancesDtos.kt`
+- `ProfileScreen.kt`, `ProfileContent.kt`, `ProfileViewModel.kt`, `ProfileNavigation.kt`
+- `profile/utils/ProfileStates.kt`
+- `dtos/UserDtos.kt` (kontekst)
 
 ---
 
-### Moduł 5: Ogłoszenia (Announcements)
-**Rola:** MIESZKANIEC (odczyt) / ZARZADCA (tworzenie)  
+### Moduł 5: Zgłoszenia serwisowe (tickets)
+
+**Rola:** MIESZKANIEC + ZARZĄDCA + KONSERWATOR
+
 **Pliki:**
-- `ui/views/announcements/AnnouncementsNavigation.kt`
-- `ui/views/announcements/screens/AnnouncementsScreen.kt`
-- `ui/views/announcements/contents/SampleAnnoucementsContent.kt`
-- `ui/views/announcements/utils/AnnouncementsStates.kt`
-- `ui/views/announcements/viewmodels/AnnouncementsViewModel.kt`
-- `services/AnnouncementApiService.kt`
-- `services/AnnouncementService.kt`
-- `dtos/AnnouncementDtos.kt` (AnnouncementTargetType, AnnouncementDto, AnnouncementRequestDto)
+- Ekrany: `TicketsScreen`, `TicketDetailsScreen`, `CreateTicketScreen`
+- ViewModels: `TicketsViewModel`, `TicketDetailsViewModel`, `CreateTicketViewModel`
+- `TicketsNavigation.kt`, `tickets/utils/*`, `tickets/contents/*`, `tickets/components/*`
+- Serwisy: `TicketService.kt`, `TicketCommentService`, `TicketImageService` (`TicketMediaServices.kt`)
+- API: `TicketApiService.kt`, `TicketCommentApiService.kt`, `TicketImageApiService.kt`
+- `dtos/TicketDtos.kt`, `dtos/TicketMediaDtos.kt`
 
 ---
 
-### Moduł 6: Uchwały (Resolutions)
-**Rola:** MIESZKANIEC (głosowanie) / ZARZADCA (tworzenie + wyniki)  
+### Moduł 6: Ogłoszenia
+
+**Rola:** MIESZKANIEC (odczyt) + ZARZĄDCA (CRUD)
+
 **Pliki:**
-- `ui/views/resolutions/ResolutionsNavigation.kt` — routes: List, Detail(resolutionId)
-- `ui/views/resolutions/screens/ResolutionsListScreen.kt`
-- `ui/views/resolutions/screens/ResolutionDetailScreen.kt`
-- `ui/views/resolutions/screens/CreateResolutionDialog.kt`
-- `ui/views/resolutions/viewmodels/ResolutionViewModels.kt` (ResolutionsListViewModel, ResolutionDetailViewModel)
-- `services/ResolutionApiService.kt`
-- `services/ResolutionService.kt`
-- `dtos/ResolutionDtos.kt` (ResolutionDto, ResolutionDetailDto, ResolutionOptionDto, ResolutionOptionResultDto, CreateResolutionRequest, CastVoteRequest)
+- Ekrany: `AnnouncementsScreen`, `CreateAnnouncementScreen`
+- Composable: `SampleAnnouncementsContent`, `CreateAnnouncementContent`
+- ViewModels: `AnnouncementsViewModel`, `CreateAnnouncementViewModel`
+- `AnnouncementsNavigation.kt`
+- `AnnouncementService.kt`, `AnnouncementApiService.kt`, `dtos/AnnouncementDtos.kt`
 
 ---
 
-### Moduł 7: Lokale i Liczniki (Properties + Meters)
-**Rola:** ZARZADCA (lokale — drzewo nieruchomości) / MIESZKANIEC (liczniki własnego lokalu)  
+### Moduł 7: Finanse i dokumenty mieszkańca
+
+**Rola:** MIESZKANIEC (głównie) + ZARZĄDCA (rozszerzenia)
+
+**Podmoduł 7a — przegląd finansów (mock + API):**
+- `FinancesScreen`, `TransactionsScreen`, `DocumentsScreen`, `FinancesViewModel`
+- `FinancesService.kt` **[HARDKODOWANE]**
+- `FinancesNavigation.kt` (część tras)
+
+**Podmoduł 7b — kartoteka i salda (API):**
+- `FinancialLedgerScreen`, `FinancialLedgerViewModel`, `FinancialLedgerService`
+- `ApartmentBalancesScreen`, `ApartmentBalancesViewModel`, `ApartmentBalanceService`
+- `CsvImportScreen`, `CsvImportViewModel`
+- `AddTransactionDialog`
+- `FinancialApiService.kt`, `dtos/FinancesDtos.kt`
+
+**Podmoduł 7c — dokumenty użytkownika:**
+- `DocumentsScreen`, `DocumentsContent`, `DocumentItem`
+- `UserDocumentService.kt`, `UserDocumentApiService.kt`
+
+---
+
+### Moduł 8: Uchwały i głosowania
+
+**Rola:** MIESZKANIEC + ZARZĄDCA
+
 **Pliki:**
-- `ui/views/properties/PropertyNavigation.kt` — routes: Tree
-- `ui/views/properties/screens/PropertyTreeScreen.kt`
-- `ui/views/properties/contents/PropertyTreeView.kt`
-- `ui/views/properties/contents/PropertyDetailPanel.kt`
-- `ui/views/properties/utils/PropertyTreeStates.kt`
-- `ui/views/properties/viewmodels/PropertyTreeViewModel.kt`
-- `ui/views/meters/MetersNavigation.kt` — routes: List(apartmentId), Detail(apartmentId, meterId, serialNumber, mediumType)
-- `ui/views/meters/screens/MeterListScreen.kt`
-- `ui/views/meters/screens/MeterDetailScreen.kt`
-- `ui/views/meters/screens/CreateMeterDialog.kt`
-- `ui/views/meters/screens/CreateMeterReadingDialog.kt`
-- `ui/views/meters/viewmodels/MeterViewModels.kt` (MeterListViewModel, MeterDetailViewModel)
-- `services/PropertyApiService.kt`
-- `services/PropertyService.kt`
-- `services/MeterApiService.kt`
-- `services/MeterService.kt`
-- `dtos/PropertyDtos.kt`
-- `dtos/MeterDtos.kt`
+- `ResolutionsListScreen`, `ResolutionDetailScreen`, `CreateResolutionDialog`
+- `ResolutionsListViewModel`, `ResolutionDetailViewModel`
+- `ResolutionsNavigation.kt`
+- `ResolutionService.kt`, `ResolutionApiService.kt`, `dtos/ResolutionDtos.kt`
 
 ---
 
-### Moduł 8: Użytkownicy (Users)
-**Rola:** ZARZADCA  
+### Moduł 9: Nieruchomości — drzewo budynków
+
+**Rola:** ZARZĄDCA
+
 **Pliki:**
-- `ui/views/users/UsersNavigation.kt` — routes: List
-- `ui/views/users/screens/UsersScreen.kt`
-- `ui/views/users/screens/CreateUserDialog.kt`
-- `ui/views/users/viewmodels/UsersViewModel.kt`
-- `services/AdminUserService.kt`
-- `dtos/AdminUserDtos.kt` (AdminUserDto, CreateAdminUserRequest, UpdateAdminUserRequest)
+- `PropertyTreeScreen`, `PropertyTreeView`, `PropertyTreeViewModel`
+- `PropertyNavigation.kt`, `PropertyTreeStates.kt`
+- `PropertyService.kt`, `PropertyApiService.kt`, `dtos/PropertyDtos.kt`
+- Nawigacja do liczników: `MetersNavigation.kt` (wejście z drzewa)
 
 ---
 
-### Moduł 9: Kategorie (Categories)
-**Rola:** ZARZADCA  
+### Moduł 10: Liczniki i odczyty
+
+**Rola:** ZARZĄDCA (CRUD) + KONSERWATOR/MIESZKANIEC (odczyt — wg backendu)
+
 **Pliki:**
-- `ui/views/categories/CategoriesNavigation.kt` — routes: List
-- `ui/views/categories/screens/CategoriesScreen.kt`
-- `ui/views/categories/screens/CategoryFormDialog.kt`
-- `ui/views/categories/viewmodels/CategoriesViewModel.kt`
-- `services/CategoryApiService.kt`
-- `services/CategoryService.kt`
-- `dtos/CategoryDtos.kt` (AdminCategoryDto, CategoryCreateRequest, SlaRequest)
+- `MeterListScreen`, `MeterDetailScreen`
+- `CreateMeterDialog`, `CreateMeterReadingDialog`
+- `MeterListViewModel`, `MeterDetailViewModel`
+- `MetersNavigation.kt`
+- `MeterService.kt`, `MeterApiService.kt`, `dtos/MeterDtos.kt`
 
 ---
 
-### Moduł 10: Przeglądy Techniczne (Inspections)
-**Rola:** ZARZADCA (tworzenie/zarządzanie) / KONSERWATOR (realizacja)  
+### Moduł 11: Użytkownicy (administracja)
+
+**Rola:** ZARZĄDCA
+
 **Pliki:**
-- `ui/views/inspections/screens/InspectionsListScreen.kt`
-- `ui/views/inspections/screens/CreateInspectionDialog.kt`
-- `ui/views/inspections/viewmodels/InspectionsViewModels.kt`
-- `services/InspectionApiService.kt`
-- `services/InspectionService.kt`
-- `dtos/InspectionDtos.kt`
+- `UsersScreen`, `EditUserScreen`, `CreateUserDialog`
+- `UsersViewModel`, `EditUserViewModel`
+- `UsersNavigation.kt`
+- `AdminUserService.kt`, `AdminUserApiService.kt`, `dtos/AdminUserDtos.kt`
 
 ---
 
-### Moduł 11: Powiadomienia (Notifications)
-**Rola:** wspólny (wszyscy po zalogowaniu)  
+### Moduł 12: Kategorie zgłoszeń (SLA)
+
+**Rola:** ZARZĄDCA
+
 **Pliki:**
-- `ui/views/notifications/NotificationsNavigation.kt`
-- `ui/views/notifications/screens/NotificationsScreen.kt`
-- `ui/views/notifications/viewmodels/NotificationsViewModel.kt`
-- `services/NotificationApiService.kt`
-- `services/NotificationService.kt`
-- `dtos/NotificationDtos.kt`
+- `CategoriesScreen`, `CategoryFormDialog`
+- `CategoriesViewModel`
+- `CategoriesNavigation.kt`
+- `CategoryService.kt`, `CategoryApiService.kt`, `dtos/CategoryDtos.kt`
+- Odczyt aktywnych kategorii: `TicketApiService.getCategories()` (używane przy tworzeniu zgłoszenia)
 
 ---
 
-### Moduł 12: Profil użytkownika (Profile)
-**Rola:** wspólny (każda rola ma profil, ZARZADCA ma dodatkowe opcje)  
+### Moduł 13: Przeglądy techniczne
+
+**Rola:** ZARZĄDCA (CRUD) + pozostałe role (odczyt filtrowany)
+
 **Pliki:**
-- `ui/views/profile/ProfileNavigation.kt` — routes: Main
-- `ui/views/profile/screens/ProfileScreen.kt`
-- `ui/views/profile/contents/ProfileContent.kt`
-- `ui/views/profile/utils/ProfileStates.kt`
-- `ui/views/profile/viewmodels/ProfileViewModel.kt`
+- `InspectionsListScreen`, `CreateInspectionDialog`
+- `InspectionsListViewModel`
+- `InspectionsNavigation.kt`
+- `InspectionService.kt`, `InspectionApiService.kt`, `dtos/InspectionDtos.kt`
 
 ---
 
-### Moduł 13: Ustawienia (Settings)
-**Rola:** ZARZADCA  
+### Moduł 14: Dystrybucja dokumentów i PDF (admin)
+
+**Rola:** ZARZĄDCA
+
 **Pliki:**
-- `ui/views/settings/SettingsNavigation.kt` — routes: Notifications, CommunityLogo
-- `ui/views/settings/screens/NotificationSettingsScreen.kt`
-- `ui/views/settings/screens/CommunityLogoScreen.kt`
-- `ui/views/settings/viewmodels/NotificationSettingsViewModel.kt`
-- `ui/views/settings/viewmodels/CommunityLogoViewModel.kt`
+- `DocumentDistributionScreen`, `DocDistributionViewModel`
+- `DocumentsNavigation.kt`
+- `DocumentApiService.kt` (rate-change, annual-settlement, pdf, logo)
+- Powiązane: `CommunityLogoScreen`, `CommunityLogoViewModel` → `SettingsNavigation`
 
 ---
 
-### Moduł 14: Dokumenty / Dystrybucja (Documents)
-**Rola:** ZARZADCA (dystrybucja) / MIESZKANIEC (podgląd własnych dokumentów — przez Finanse)  
+### Moduł 15: Ustawienia powiadomień PUSH
+
+**Rola:** ZARZĄDCA
+
 **Pliki:**
-- `ui/views/documents/DocumentsNavigation.kt`
-- `ui/views/documents/screens/DocumentDistributionScreen.kt`
-- `ui/views/documents/viewmodels/DocDistributionViewModel.kt`
-- `services/DocumentApiService.kt`
-- `services/UserDocumentApiService.kt`
-- `services/UserDocumentService.kt`
-- `dtos/DeviceDtos.kt` (UserDocumentDto — reużyty w FinancesDtos)
+- `NotificationSettingsScreen`, `NotificationSettingsViewModel`
+- `NotificationsScreen`, `NotificationsViewModel`
+- `SettingsNavigation.kt`, `NotificationsNavigation.kt`
+- `NotificationService.kt`, `NotificationApiService.kt`, `dtos/NotificationDtos.kt`
 
 ---
 
-### Moduł 15: Infrastruktura sieciowa (Network Infrastructure)
-**Rola:** wspólny (warstwa techniczna)  
+### Moduł 16: Urządzenia FCM (push token)
+
+**Rola:** wspólny (po zalogowaniu)
+
 **Pliki:**
-- `services/NetworkModule.kt`
-- `services/AuthInterceptor.kt`
-- `services/TokenAuthenticator.kt`
-- `services/TokenStorage.kt`
-- `services/FcmModule.kt`
-- `services/FcmTokenProvider.kt`
+- `DeviceService.kt`, `DeviceApiService.kt`, `dtos/DeviceDtos.kt`
+- Integracja: `AuthService` / logowanie, `FcmModule`
 
 ---
 
-## Podsumowanie wstępne
+## Kolejność analizy w Fazie 1
 
-| Moduł | Ekrany (główne) | Rola |
-|-------|----------------|------|
-| 1. Auth | LoginScreen, ForgotPasswordScreen, ResetPasswordScreen | wspólny |
-| 2. Main Shell | ResidentMainScreen | wspólny |
-| 3. Tickets | TicketsScreen, TicketDetailsScreen, CreateTicketScreen | wspólny |
-| 4. Finances | FinancesScreen, TransactionsScreen, DocumentsScreen, FinancialLedgerScreen, ApartmentBalancesScreen, CsvImportScreen | MIESZKANIEC / ZARZADCA |
-| 5. Announcements | AnnouncementsScreen | MIESZKANIEC / ZARZADCA |
-| 6. Resolutions | ResolutionsListScreen, ResolutionDetailScreen | MIESZKANIEC / ZARZADCA |
-| 7. Properties + Meters | PropertyTreeScreen, MeterListScreen, MeterDetailScreen | ZARZADCA / MIESZKANIEC |
-| 8. Users | UsersScreen | ZARZADCA |
-| 9. Categories | CategoriesScreen | ZARZADCA |
-| 10. Inspections | InspectionsListScreen | ZARZADCA / KONSERWATOR |
-| 11. Notifications | NotificationsScreen | wspólny |
-| 12. Profile | ProfileScreen | wspólny |
-| 13. Settings | NotificationSettingsScreen, CommunityLogoScreen | ZARZADCA |
-| 14. Documents | DocumentDistributionScreen | ZARZADCA |
-| 15. Infrastructure | — | techniczny |
+| Krok | Moduł | Rola |
+|------|-------|------|
+| 1 | Infrastruktura i sieć | wspólny |
+| 2 | Autentykacja | wspólny |
+| 3 | Powłoka główna | wspólny |
+| 4 | Profil | wspólny |
+| 5 | Zgłoszenia | M+Z+K |
+| 6 | Ogłoszenia | M+Z |
+| 7 | Finanse i dokumenty | M+Z |
+| 8 | Uchwały | M+Z |
+| 9 | Nieruchomości | Z |
+| 10 | Liczniki | Z+K+M |
+| 11 | Użytkownicy | Z |
+| 12 | Kategorie | Z |
+| 13 | Przeglądy | Z+wszyscy |
+| 14 | Dystrybucja dokumentów / PDF | Z |
+| 15 | Powiadomienia PUSH | Z |
+| 16 | Urządzenia FCM | wspólny |
 
-**Łącznie ekranów (wstępnie):** ~25 ekranów głównych + dialogi  
-**Łącznie API services (interfejsy Retrofit):** 15 interfejsów + 12 klas serwisowych
+**Plik wynikowy Fazy 1:** `audit/02_frontend_inventory.md`
+
+**Faza 2:** weryfikacja pokrycia ekranów + zestawienie wywołań API.
 
 ---
 
-*Status: oczekuje na akceptację przed przejściem do Fazy 1*
+## Statystyki wstępne (Faza 0)
+
+| Kategoria | Liczba |
+|-----------|--------|
+| Activity | 1 |
+| Ekrany `*Screen.kt` | 30 |
+| Dialogi / bottom sheets | 11 |
+| ViewModels `@HiltViewModel` | 29 |
+| Retrofit ApiService | 16 |
+| Service (warstwa danych) | 18 (+ TokenStorage) |
+| Pliki nawigacji | 16 (w tym AppNavHost) |
+| Pliki DTO | 14 |
+| Szacowane wywołania API (unikalne ścieżki w ApiService) | ~55 |
+
+---
+
+## Uwagi wstępne do Fazy 1 (fakty z kodu)
+
+| Obszar | Stan |
+|--------|------|
+| `FinancesService` | komentarz + mock — **[HARDKODOWANE]** |
+| `ProfileViewModel` | placeholder — brak API profilu |
+| `NotificationSettingsViewModel` | `TODO WIP` — zapis do backendu |
+| `UserProfileDto` | dokumentuje nieistniejący endpoint `/api/users/me` |
+| `GET /api/categories` | w `TicketApiService` (nie `CategoryApiService`) |
+
+---
+
+**STATUS: Faza 0 zakończona — oczekiwanie na akceptację planu przed Fazą 1.**

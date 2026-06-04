@@ -23,12 +23,14 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,7 +71,8 @@ fun TicketDetailsContent(
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     onAddComment: (String, String) -> Unit = { _, _ -> },
-    onDeleteImage: (String) -> Unit = {},
+    onAddAfterPhoto: () -> Unit = {},
+    onResumeTicket: () -> Unit = {},
     onDownloadProtocol: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -83,12 +86,17 @@ fun TicketDetailsContent(
             comments = state.comments,
             images = state.images,
             isLoadingComments = state.isLoadingComments,
+            isLoadingImages = state.isLoadingImages,
+            isSendingComment = state.isSendingComment,
+            commentResetKey = state.commentResetKey,
+            isUploadingImage = state.isUploadingImage,
             isDownloadingProtocol = state.isDownloadingProtocol,
             onAssignConservator = onAssignConservator,
             onRejectTicket = onRejectTicket,
             onConservatorAction = onConservatorAction,
             onAddComment = onAddComment,
-            onDeleteImage = onDeleteImage,
+            onAddAfterPhoto = onAddAfterPhoto,
+            onResumeTicket = onResumeTicket,
             onDownloadProtocol = onDownloadProtocol,
             modifier = modifier
         )
@@ -103,12 +111,17 @@ private fun TicketDetailsSuccessContent(
     comments: List<TicketCommentDto>,
     images: List<TicketImageDto>,
     isLoadingComments: Boolean,
+    isLoadingImages: Boolean,
+    isSendingComment: Boolean,
+    commentResetKey: Int,
+    isUploadingImage: Boolean,
     isDownloadingProtocol: Boolean,
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
     onAddComment: (String, String) -> Unit,
-    onDeleteImage: (String) -> Unit,
+    onAddAfterPhoto: () -> Unit,
+    onResumeTicket: () -> Unit,
     onDownloadProtocol: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -116,7 +129,14 @@ private fun TicketDetailsSuccessContent(
 
     var showAssignSheet by remember { mutableStateOf(false) }
     var showRejectSheet by remember { mutableStateOf(false) }
+    var showResumeDialog by remember { mutableStateOf(false) }
     var conservatorActionType by remember { mutableStateOf<ConservatorActionType?>(null) }
+
+    val canUploadAfter = currentUserRole == "KONSERWATOR" && ticket.status in listOf(
+        TicketStatus.W_REALIZACJI,
+        TicketStatus.WSTRZYMANO,
+        TicketStatus.ZAKONCZONE_DO_WERYFIKACJI
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -207,20 +227,21 @@ private fun TicketDetailsSuccessContent(
                 }
             }
 
-            // Sekcja zdjęć
-            if (images.isNotEmpty()) {
-                TicketImagesSection(
-                    images = images,
-                    onDeleteImage = onDeleteImage,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            TicketImagesSection(
+                images = images,
+                isLoading = isLoadingImages,
+                isUploading = isUploadingImage,
+                showUploadAfter = canUploadAfter,
+                onAddAfterPhoto = onAddAfterPhoto,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Sekcja komentarzy
             TicketCommentsSection(
                 comments = comments,
                 currentRole = currentUserRole,
                 isLoading = isLoadingComments,
+                isSending = isSendingComment,
+                commentResetKey = commentResetKey,
                 onAddComment = onAddComment,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -258,7 +279,7 @@ private fun TicketDetailsSuccessContent(
                                 icon = Icons.Rounded.PlayArrow,
                                 contentDescription = "Wznów zgłoszenie",
                                 containerColor = MaterialTheme.colorScheme.primary,
-                                onClick = { showAssignSheet = true }
+                                onClick = { showResumeDialog = true }
                             )
                         }
                         TicketStatus.ZAKONCZONE_DO_WERYFIKACJI -> {
@@ -321,6 +342,27 @@ private fun TicketDetailsSuccessContent(
                 else -> Unit
             }
         }
+    }
+
+    if (showResumeDialog) {
+        AlertDialog(
+            onDismissRequest = { showResumeDialog = false },
+            title = { Text("Wznów zgłoszenie") },
+            text = { Text("Czy na pewno chcesz wznowić realizację tego zgłoszenia? Konserwator pozostaje bez zmian.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResumeDialog = false
+                    onResumeTicket()
+                }) {
+                    Text("Wznów")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResumeDialog = false }) {
+                    Text("Anuluj")
+                }
+            }
+        )
     }
 
     if (showAssignSheet) {

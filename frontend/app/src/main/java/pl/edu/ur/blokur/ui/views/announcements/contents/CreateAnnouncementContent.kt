@@ -41,6 +41,8 @@ import pl.edu.ur.blokur.ui.views.announcements.viewmodels.CreateAnnouncementStat
 fun CreateAnnouncementContent(
     state: CreateAnnouncementState,
     snackbarHostState: SnackbarHostState,
+    screenTitle: String = "Dodaj ogłoszenie",
+    submitLabel: String = "Opublikuj ogłoszenie",
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onPickAttachment: () -> Unit,
@@ -54,7 +56,7 @@ fun CreateAnnouncementContent(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Dodaj ogłoszenie") },
+                title = { Text(screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wróć")
@@ -140,7 +142,7 @@ fun CreateAnnouncementContent(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Opublikuj ogłoszenie")
+                    Text(submitLabel)
                 }
             }
 

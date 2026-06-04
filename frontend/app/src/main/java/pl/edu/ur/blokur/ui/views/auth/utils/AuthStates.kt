@@ -72,11 +72,14 @@ sealed interface ResetPasswordState {
     data object Loading : ResetPasswordState
     data class Success(val message: String) : ResetPasswordState
     data class Error(val message: String) : ResetPasswordState
+    /** Token z linku mailowego wygasł — użytkownik może poprosić o nowy link. */
+    data class TokenExpired(val message: String) : ResetPasswordState
 }
 
 /** Zdarzenia ekranu „Resetuj hasło". */
 sealed interface ResetPasswordEvent {
     data object NavigateToLogin : ResetPasswordEvent
+    data object NavigateToForgotPassword : ResetPasswordEvent
     data class ShowSnackbar(val message: String) : ResetPasswordEvent
 }
 
@@ -95,6 +98,8 @@ sealed interface AcceptInvitationState {
     data object Loading : AcceptInvitationState
     data class Success(val message: String) : AcceptInvitationState
     data class Error(val message: String) : AcceptInvitationState
+    /** Link zaproszenia wygasł. */
+    data class TokenExpired(val message: String) : AcceptInvitationState
 }
 
 /** Zdarzenia ekranu „Akceptuj zaproszenie”. */
