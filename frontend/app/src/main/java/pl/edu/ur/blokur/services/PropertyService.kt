@@ -61,6 +61,14 @@ class PropertyService @Inject constructor(
         return handleResponse(api.updateBuilding(id, request), "Błąd edycji budynku")
     }
 
+    suspend fun deleteBuilding(id: String) {
+        val response = api.deleteBuilding(id)
+        if (response.code() == 409) {
+            throw Exception("Nie można usunąć budynku, ponieważ ma powiązane elementy (np. klatki lub lokale).")
+        }
+        handleResponse(response, "Błąd usuwania budynku")
+    }
+
     // ─── Staircase CRUD ──────────────────────────────────────────────
 
     suspend fun createStaircase(buildingId: String, request: StaircaseRequestDto): StaircaseResponseDto {
@@ -71,6 +79,14 @@ class PropertyService @Inject constructor(
         return handleResponse(api.updateStaircase(buildingId, staircaseId, request), "Błąd edycji klatki")
     }
 
+    suspend fun deleteStaircase(buildingId: String, staircaseId: String) {
+        val response = api.deleteStaircase(buildingId, staircaseId)
+        if (response.code() == 409) {
+            throw Exception("Nie można usunąć klatki, ponieważ ma powiązane lokale.")
+        }
+        handleResponse(response, "Błąd usuwania klatki")
+    }
+
     // ─── Apartment CRUD ──────────────────────────────────────────────
 
     suspend fun createApartment(staircaseId: String, request: ApartmentRequestDto): ApartmentResponseDto {
@@ -79,5 +95,13 @@ class PropertyService @Inject constructor(
 
     suspend fun updateApartment(staircaseId: String, apartmentId: String, request: ApartmentRequestDto): ApartmentResponseDto {
         return handleResponse(api.updateApartment(staircaseId, apartmentId, request), "Błąd edycji lokalu")
+    }
+
+    suspend fun deleteApartment(staircaseId: String, apartmentId: String) {
+        val response = api.deleteApartment(staircaseId, apartmentId)
+        if (response.code() == 409) {
+            throw Exception("Nie można usunąć lokalu, jest on powiązany z istniejącymi umowami lub zgłoszeniami.")
+        }
+        handleResponse(response, "Błąd usuwania lokalu")
     }
 }

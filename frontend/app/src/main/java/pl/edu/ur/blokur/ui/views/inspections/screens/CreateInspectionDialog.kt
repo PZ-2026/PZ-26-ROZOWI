@@ -105,7 +105,7 @@ fun CreateInspectionDialog(
                 Text("Zasięg przeglądu", style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(ScopeType.BUDYNEK, ScopeType.KLATKA).forEach { type ->
+                    listOf(ScopeType.NIERUCHOMOSC, ScopeType.BUDYNEK, ScopeType.KLATKA).forEach { type ->
                         FilterChip(
                             selected = formState.scopeType == type,
                             onClick = { onScopeTypeChanged(type) },

@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.views.properties.contents.PropertyDetailPanel
 import pl.edu.ur.blokur.ui.views.properties.contents.PropertyTreeView
+import pl.edu.ur.blokur.ui.views.properties.contents.PropertyTreeView
 import pl.edu.ur.blokur.ui.views.properties.utils.*
 import pl.edu.ur.blokur.ui.views.properties.viewmodels.PropertyTreeViewModel
 
@@ -37,6 +38,8 @@ fun PropertyTreeScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    var deleteTarget by remember { mutableStateOf<DeleteTarget?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -84,7 +87,8 @@ fun PropertyTreeScreen(
                     onSelectBuilding = viewModel::selectBuilding,
                     onSelectStaircase = viewModel::selectStaircase,
                     onSelectApartment = viewModel::selectApartment,
-                    onAdd = { target, parentId -> viewModel.startAdd(target, parentId) }
+                    onAdd = { target, parentId -> viewModel.startAdd(target, parentId) },
+                    onDelete = { deleteTarget = it }
                 )
             }
         }
@@ -123,6 +127,39 @@ fun PropertyTreeScreen(
                     onNavigateToMeters = onNavigateToMeters
                 )
             }
+        }
+
+        if (deleteTarget != null) {
+            val target = deleteTarget!!
+            val title = when (target) {
+                is DeleteTarget.Building -> "Usuń budynek"
+                is DeleteTarget.Staircase -> "Usuń klatkę"
+                is DeleteTarget.Apartment -> "Usuń lokal"
+            }
+            val text = when (target) {
+                is DeleteTarget.Building -> "Czy na pewno chcesz usunąć budynek ${target.name}?"
+                is DeleteTarget.Staircase -> "Czy na pewno chcesz usunąć klatkę ${target.label}?"
+                is DeleteTarget.Apartment -> "Czy na pewno chcesz usunąć lokal ${target.number}?"
+            }
+
+            AlertDialog(
+                onDismissRequest = { deleteTarget = null },
+                title = { Text(title) },
+                text = { Text(text) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.deleteNode(target)
+                        deleteTarget = null
+                    }) {
+                        Text("Usuń", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteTarget = null }) {
+                        Text("Anuluj")
+                    }
+                }
+            )
         }
     }
 }

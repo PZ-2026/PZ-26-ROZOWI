@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import pl.edu.ur.blokur.dtos.BuildingTreeNodeDto
 import pl.edu.ur.blokur.dtos.InspectionRequestDto
 import pl.edu.ur.blokur.dtos.InspectionResponseDto
+import pl.edu.ur.blokur.dtos.PropertyResponseDto
 import pl.edu.ur.blokur.dtos.ScopeType
 import pl.edu.ur.blokur.services.InspectionService
 import pl.edu.ur.blokur.services.PropertyService
@@ -97,15 +99,29 @@ class InspectionsListViewModel @Inject constructor(
 
     private fun loadScopesForForm(type: ScopeType) {
         viewModelScope.launch {
-            runCatching { propertyService.getBuildingTree() }
-                .onSuccess { tree ->
+            runCatching {
+                if (type == ScopeType.NIERUCHOMOSC) {
+                    propertyService.getProperties()
+                } else {
+                    propertyService.getBuildingTree()
+                }
+            }
+                .onSuccess { data ->
                     val scopes = mutableListOf<Pair<String, String>>()
                     when (type) {
-                        ScopeType.NIERUCHOMOSC -> { /* TODO: pobranie ID nieruchomości jeśli jest jednoznaczne */ }
+                        ScopeType.NIERUCHOMOSC -> {
+                            @Suppress("UNCHECKED_CAST")
+                            val properties = data as List<PropertyResponseDto>
+                            properties.forEach { p -> scopes.add(p.id to "Wspólnota ${p.name}") }
+                        }
                         ScopeType.BUDYNEK -> {
+                            @Suppress("UNCHECKED_CAST")
+                            val tree = data as List<BuildingTreeNodeDto>
                             tree.forEach { b -> scopes.add(b.id to "Budynek ${b.address}") }
                         }
                         ScopeType.KLATKA -> {
+                            @Suppress("UNCHECKED_CAST")
+                            val tree = data as List<BuildingTreeNodeDto>
                             tree.forEach { b ->
                                 b.staircases.forEach { s ->
                                     scopes.add(s.id to "Klatka ${s.label} (Budynek ${b.address})")

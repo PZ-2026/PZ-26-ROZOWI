@@ -290,6 +290,23 @@ class PropertyTreeViewModel @Inject constructor(
         }
     }
 
+    fun deleteNode(target: DeleteTarget) {
+        viewModelScope.launch {
+            runCatching {
+                when (target) {
+                    is DeleteTarget.Building -> propertyService.deleteBuilding(target.id)
+                    is DeleteTarget.Staircase -> propertyService.deleteStaircase(target.buildingId, target.staircaseId)
+                    is DeleteTarget.Apartment -> propertyService.deleteApartment(target.staircaseId, target.apartmentId)
+                }
+            }.onSuccess {
+                _events.send(PropertyTreeEvent.ShowSnackbar("Usunięto pomyślnie"))
+                loadTree()
+            }.onFailure { e ->
+                _events.send(PropertyTreeEvent.ShowSnackbar(e.message ?: "Błąd usuwania elementu"))
+            }
+        }
+    }
+
     private fun String.toBigDecimalOrNull(): BigDecimal? =
         takeIf { it.isNotBlank() }?.toBigDecimalOrNull()
 }

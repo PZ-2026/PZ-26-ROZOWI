@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Apartment
 import androidx.compose.material.icons.outlined.Business
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MeetingRoom
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.*
@@ -27,6 +28,7 @@ import pl.edu.ur.blokur.dtos.PropertyResponseDto
 import pl.edu.ur.blokur.dtos.StaircaseNodeDto
 import pl.edu.ur.blokur.dtos.ApartmentNodeDto
 import pl.edu.ur.blokur.ui.views.properties.utils.AddTarget
+import pl.edu.ur.blokur.ui.views.properties.utils.DeleteTarget
 
 @Composable
 fun PropertyTreeView(
@@ -43,6 +45,7 @@ fun PropertyTreeView(
     onSelectStaircase: (StaircaseNodeDto, String) -> Unit,
     onSelectApartment: (ApartmentNodeDto, String) -> Unit,
     onAdd: (AddTarget, String?) -> Unit,
+    onDelete: (DeleteTarget) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Group buildings by property
@@ -90,7 +93,8 @@ fun PropertyTreeView(
                     tint = MaterialTheme.colorScheme.primary,
                     onClick = { onSelectProperty(property) },
                     onToggle = { onToggleProperty(property.name) },
-                    onAdd = { onAdd(AddTarget.BUILDING, property.id) }
+                    onAdd = { onAdd(AddTarget.BUILDING, property.id) },
+                    onDelete = null
                 )
             }
 
@@ -109,7 +113,8 @@ fun PropertyTreeView(
                             tint = MaterialTheme.colorScheme.secondary,
                             onClick = { onSelectBuilding(building) },
                             onToggle = { onToggleBuilding(building.id) },
-                            onAdd = { onAdd(AddTarget.STAIRCASE, building.id) }
+                            onAdd = { onAdd(AddTarget.STAIRCASE, building.id) },
+                            onDelete = { onDelete(DeleteTarget.Building(building.id, building.name)) }
                         )
                     }
 
@@ -128,7 +133,8 @@ fun PropertyTreeView(
                                     tint = MaterialTheme.colorScheme.tertiary,
                                     onClick = { onSelectStaircase(staircase, building.id) },
                                     onToggle = { onToggleStaircase(staircase.id) },
-                                    onAdd = { onAdd(AddTarget.APARTMENT, staircase.id) }
+                                    onAdd = { onAdd(AddTarget.APARTMENT, staircase.id) },
+                                    onDelete = { onDelete(DeleteTarget.Staircase(building.id, staircase.id, staircase.label)) }
                                 )
                             }
 
@@ -153,7 +159,8 @@ fun PropertyTreeView(
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         onClick = { onSelectApartment(apartment, staircase.id) },
                                         onToggle = {},
-                                        onAdd = null
+                                        onAdd = null,
+                                        onDelete = { onDelete(DeleteTarget.Apartment(staircase.id, apartment.id, apartment.number)) }
                                     )
                                 }
                             }
@@ -189,7 +196,8 @@ fun PropertyTreeView(
                         tint = MaterialTheme.colorScheme.secondary,
                         onClick = { onSelectBuilding(building) },
                         onToggle = { onToggleBuilding(building.id) },
-                        onAdd = null
+                        onAdd = null,
+                        onDelete = { onDelete(DeleteTarget.Building(building.id, building.name)) }
                     )
                 }
                 if (isBuildingExpanded) {
@@ -206,7 +214,8 @@ fun PropertyTreeView(
                                 tint = MaterialTheme.colorScheme.tertiary,
                                 onClick = { onSelectStaircase(staircase, building.id) },
                                 onToggle = { onToggleStaircase(staircase.id) },
-                                onAdd = null
+                                onAdd = null,
+                                onDelete = { onDelete(DeleteTarget.Staircase(building.id, staircase.id, staircase.label)) }
                             )
                         }
                         if (isStaircaseExpanded) {
@@ -218,7 +227,8 @@ fun PropertyTreeView(
                                     isExpanded = false, hasChildren = false, depth = 2,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     onClick = { onSelectApartment(apartment, staircase.id) },
-                                    onToggle = {}, onAdd = null
+                                    onToggle = {}, onAdd = null,
+                                    onDelete = { onDelete(DeleteTarget.Apartment(staircase.id, apartment.id, apartment.number)) }
                                 )
                             }
                         }
@@ -240,7 +250,8 @@ private fun TreeNodeRow(
     tint: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit,
     onToggle: () -> Unit,
-    onAdd: (() -> Unit)?
+    onAdd: (() -> Unit)?,
+    onDelete: (() -> Unit)?
 ) {
     Row(
         modifier = Modifier
@@ -303,6 +314,20 @@ private fun TreeNodeRow(
                     Icons.Outlined.Add,
                     contentDescription = "Dodaj",
                     tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        if (onDelete != null) {
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Delete,
+                    contentDescription = "Usuń",
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(18.dp)
                 )
             }

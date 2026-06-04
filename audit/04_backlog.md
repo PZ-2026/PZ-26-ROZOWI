@@ -222,8 +222,8 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Popup dialog "Czy na pewno chcesz usunąć" dla każdego itemu z drzewa.
 
 **Kryteria akceptacji:**
- - [ ] Implementacja wizualnej akcji usunięcia każdego z węzłów hierarchii.
- - [ ] Komunikat ostrzegawczy z potwierdzeniem operacji "Usuń".
+ - [x] Implementacja wizualnej akcji usunięcia każdego z węzłów hierarchii.
+ - [x] Komunikat ostrzegawczy z potwierdzeniem operacji "Usuń".
 
 **ID:** FRONT-014
 **Tytuł:** Przeglądy w zasięgu Nieruchomości
@@ -238,7 +238,7 @@ Poniższy backlog został zbudowany na podstawie wyników audytu Gap Analysis (c
 * **Nawigacja:** Po zamknięciu poprawne wyjście z modalu.
 
 **Kryteria akceptacji:**
- - [ ] Zmiana logiki tworzenia inspekcji pod zasięg Property na wstrzyknięcie poprawnego PropertyID ze stanu lub drzewa.
+ - [x] Zmiana logiki tworzenia inspekcji pod zasięg Property na wstrzyknięcie poprawnego PropertyID ze stanu lub drzewa.
 
 ### Grupa 6: Użytkownicy i Liczniki
 
