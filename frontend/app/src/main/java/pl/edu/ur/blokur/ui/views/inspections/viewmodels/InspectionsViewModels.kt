@@ -41,7 +41,37 @@ data class CreateInspectionFormState(
     val isSubmitting: Boolean = false
 ) {
     val isValid: Boolean
-        get() = title.isNotBlank() && scheduledAt.isNotBlank() && scopeId.isNotBlank()
+        get() = getValidationError() == null
+
+    fun getValidationError(): String? {
+        if (title.isBlank()) return "Tytuł przeglądu nie może być pusty"
+        if (scheduledAt.isBlank()) return "Planowana data nie może być pusta"
+        if (!scheduledAt.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$"))) {
+            return "Niepoprawny format daty"
+        }
+        try {
+            val formatted = if (scheduledAt.length == 16) "$scheduledAt:00" else scheduledAt
+            val ldt = java.time.LocalDateTime.parse(formatted)
+            if (ldt.isBefore(java.time.LocalDateTime.now())) {
+                return "Planowana data musi być w przyszłości"
+            }
+        } catch (_: Exception) {
+            return "Błąd parsowania daty"
+        }
+        if (scopeId.isBlank()) return "Musisz wybrać obiekt (zasięg) przeglądu"
+        return null
+    }
+
+    private fun validateDate(dateStr: String): Boolean {
+        if (!dateStr.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$"))) return false
+        return try {
+            val formatted = if (dateStr.length == 16) "$dateStr:00" else dateStr
+            val ldt = java.time.LocalDateTime.parse(formatted)
+            ldt.isAfter(java.time.LocalDateTime.now())
+        } catch (_: Exception) {
+            false
+        }
+    }
 }
 
 @HiltViewModel
@@ -87,11 +117,14 @@ class InspectionsListViewModel @Inject constructor(
     }
 
     fun openCreateDialog() {
-        viewModelScope.launch {
-            _formState.value = CreateInspectionFormState()
-            loadScopesForForm(ScopeType.BUDYNEK)
-            _showCreateDialog.value = true
+        _formState.value = CreateInspectionFormState()
+        loadScopes(ScopeType.BUDYNEK) { scopes, firstId ->
+            _formState.value = _formState.value.copy(
+                availableScopes = scopes,
+                scopeId = firstId
+            )
         }
+        _showCreateDialog.value = true
     }
 
     fun closeCreateDialog() { _showCreateDialog.value = false }
@@ -101,12 +134,7 @@ class InspectionsListViewModel @Inject constructor(
     fun onScheduledAtChanged(v: String) { _formState.value = _formState.value.copy(scheduledAt = v) }
     fun onScopeIdChanged(v: String) { _formState.value = _formState.value.copy(scopeId = v) }
     
-    fun onScopeTypeChanged(type: ScopeType) {
-        _formState.value = _formState.value.copy(scopeType = type, scopeId = "")
-        loadScopesForForm(type)
-    }
-
-    private fun loadScopesForForm(type: ScopeType) {
+    private fun loadScopes(type: ScopeType, onLoaded: (List<Pair<String, String>>, String) -> Unit) {
         viewModelScope.launch {
             runCatching {
                 if (type == ScopeType.NIERUCHOMOSC) {
@@ -139,23 +167,37 @@ class InspectionsListViewModel @Inject constructor(
                         }
                     }
                     val firstId = scopes.firstOrNull()?.first ?: ""
-                    _formState.value = _formState.value.copy(
-                        availableScopes = scopes,
-                        scopeId = firstId
-                    )
+                    onLoaded(scopes, firstId)
                 }
+        }
+    }
+
+    fun onScopeTypeChanged(type: ScopeType) {
+        _formState.value = _formState.value.copy(scopeType = type, scopeId = "")
+        loadScopes(type) { scopes, firstId ->
+            _formState.value = _formState.value.copy(
+                availableScopes = scopes,
+                scopeId = firstId
+            )
         }
     }
 
     fun submitCreate() {
         val form = _formState.value
-        if (!form.isValid) return
+        val validationError = form.getValidationError()
+        if (validationError != null) {
+            viewModelScope.launch {
+                _events.send(InspectionEvent.ShowSnackbar(validationError))
+            }
+            return
+        }
         viewModelScope.launch {
             _formState.value = form.copy(isSubmitting = true)
+            val formattedDate = if (form.scheduledAt.length == 16) "${form.scheduledAt}:00" else form.scheduledAt
             val request = InspectionRequestDto(
                 title = form.title.trim(),
                 description = form.description.trim().takeIf { it.isNotBlank() },
-                scheduledAt = form.scheduledAt.trim(),
+                scheduledAt = formattedDate.trim(),
                 scopeType = form.scopeType.name,
                 scopeId = form.scopeId.trim()
             )
@@ -182,18 +224,19 @@ class InspectionsListViewModel @Inject constructor(
 
     fun openEditDialog(inspection: InspectionResponseDto) {
         _editingInspection.value = inspection
+        val parsedScopeType = try { ScopeType.valueOf(inspection.scopeType) } catch (_: Exception) { ScopeType.BUDYNEK }
         _editFormState.value = CreateInspectionFormState(
             title = inspection.title,
             description = inspection.description ?: "",
             scheduledAt = inspection.scheduledAt,
-            scopeType = ScopeType.BUDYNEK
+            scopeType = parsedScopeType,
+            scopeId = inspection.scopeId
         )
-        viewModelScope.launch {
-            runCatching { propertyService.getBuildingTree() }
-                .onSuccess { tree ->
-                    val scopes = tree.map { b -> b.id to "Budynek ${b.address}" }
-                    _editFormState.value = _editFormState.value.copy(availableScopes = scopes)
-                }
+        loadScopes(parsedScopeType) { scopes, _ ->
+            _editFormState.value = _editFormState.value.copy(
+                availableScopes = scopes,
+                scopeId = inspection.scopeId
+            )
         }
     }
 
@@ -202,6 +245,15 @@ class InspectionsListViewModel @Inject constructor(
     fun onEditTitleChanged(v: String) { _editFormState.value = _editFormState.value.copy(title = v) }
     fun onEditDescriptionChanged(v: String) { _editFormState.value = _editFormState.value.copy(description = v) }
     fun onEditScheduledAtChanged(v: String) { _editFormState.value = _editFormState.value.copy(scheduledAt = v) }
+    fun onEditScopeTypeChanged(type: ScopeType) {
+        _editFormState.value = _editFormState.value.copy(scopeType = type, scopeId = "")
+        loadScopes(type) { scopes, firstId ->
+            _editFormState.value = _editFormState.value.copy(
+                availableScopes = scopes,
+                scopeId = firstId
+            )
+        }
+    }
     fun onEditScopeIdChanged(v: String) { _editFormState.value = _editFormState.value.copy(scopeId = v) }
 
     fun submitUpdate() {
@@ -210,10 +262,11 @@ class InspectionsListViewModel @Inject constructor(
         if (!form.isValid) return
         viewModelScope.launch {
             _editFormState.value = form.copy(isSubmitting = true)
+            val formattedDate = if (form.scheduledAt.length == 16) "${form.scheduledAt}:00" else form.scheduledAt
             val request = InspectionRequestDto(
                 title = form.title.trim(),
                 description = form.description.trim().takeIf { it.isNotBlank() },
-                scheduledAt = form.scheduledAt.trim(),
+                scheduledAt = formattedDate.trim(),
                 scopeType = inspection.scopeType,
                 scopeId = inspection.scopeId
             )

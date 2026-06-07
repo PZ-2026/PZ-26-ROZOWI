@@ -32,6 +32,7 @@ fun PropertyTreeScreen(
     val buildingForm by viewModel.buildingForm.collectAsState()
     val staircaseForm by viewModel.staircaseForm.collectAsState()
     val apartmentForm by viewModel.apartmentForm.collectAsState()
+    val availableManagers by viewModel.availableManagers.collectAsState()
 
     val expandedProperties by viewModel.expandedProperties.collectAsState()
     val expandedBuildings by viewModel.expandedBuildings.collectAsState()
@@ -118,6 +119,7 @@ fun PropertyTreeScreen(
                     buildingForm = buildingForm,
                     staircaseForm = staircaseForm,
                     apartmentForm = apartmentForm,
+                    availableManagers = availableManagers,
                     onPropertyFormChange = viewModel::updatePropertyForm,
                     onBuildingFormChange = viewModel::updateBuildingForm,
                     onStaircaseFormChange = viewModel::updateStaircaseForm,

@@ -34,6 +34,7 @@ fun TicketCommentsSection(
     isLoading: Boolean,
     isSending: Boolean = false,
     commentResetKey: Int = 0,
+    isClosed: Boolean = false,
     onAddComment: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -41,8 +42,8 @@ fun TicketCommentsSection(
     LaunchedEffect(commentResetKey) {
         if (commentResetKey > 0) commentText = ""
     }
-    var isInternal by remember { mutableStateOf(false) }
-    val canToggleInternal = currentRole == "ZARZADCA" || currentRole == "KONSERWATOR"
+    var isInternal by remember(currentRole) { mutableStateOf(currentRole == "KONSERWATOR") }
+    val canToggleInternal = currentRole == "ZARZADCA"
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
@@ -71,75 +72,100 @@ fun TicketCommentsSection(
         }
 
         // Formularz dodania komentarza
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedTextField(
-                value = commentText,
-                onValueChange = { commentText = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Napisz komentarz...") },
-                shape = RoundedCornerShape(12.dp),
-                maxLines = 4,
-                trailingIcon = {
-                    if (isSending) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        IconButton(
-                            onClick = {
-                                if (commentText.isNotBlank()) {
-                                    val type = if (isInternal) "WEWNETRZNY" else "PUBLICZNY"
-                                    onAddComment(commentText.trim(), type)
-                                }
-                            },
-                            enabled = commentText.isNotBlank() && !isSending
-                        ) {
-                            Icon(
-                                Icons.Rounded.Send,
-                                contentDescription = "Wyślij",
-                                tint = if (commentText.isNotBlank())
-                                    MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
+        if (isClosed) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = "To zgłoszenie jest zamknięte. Dodawanie komentarzy jest zablokowane.",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = commentText,
+                    onValueChange = { commentText = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Napisz komentarz...") },
+                    shape = RoundedCornerShape(12.dp),
+                    maxLines = 4,
+                    trailingIcon = {
+                        if (isSending) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
                             )
+                        } else {
+                            IconButton(
+                                onClick = {
+                                    if (commentText.isNotBlank()) {
+                                        val type = if (isInternal) "WEWNETRZNY" else "PUBLICZNY"
+                                        onAddComment(commentText.trim(), type)
+                                    }
+                                },
+                                enabled = commentText.isNotBlank() && !isSending
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Send,
+                                    contentDescription = "Wyślij",
+                                    tint = if (commentText.isNotBlank())
+                                        MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
-                }
-            )
-            if (canToggleInternal) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                )
+                if (canToggleInternal) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            Icons.Rounded.Lock,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "Komentarz wewnętrzny",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Lock,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Komentarz wewnętrzny",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = isInternal,
+                            onCheckedChange = { isInternal = it },
+                            modifier = Modifier.height(24.dp)
                         )
                     }
-                    Switch(
-                        checked = isInternal,
-                        onCheckedChange = { isInternal = it },
-                        modifier = Modifier.height(24.dp)
-                    )
                 }
             }
         }

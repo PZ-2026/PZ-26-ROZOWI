@@ -73,10 +73,59 @@ data class CreateResolutionFormState(
     val isSubmitting: Boolean = false
 ) {
     val isValid: Boolean
-        get() = title.isNotBlank() && description.isNotBlank() &&
-                endDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")) &&
-                options.size >= 2 &&
-                options.all { it.isNotBlank() } && targetBuildingId.isNotBlank()
+        get() = getValidationError() == null
+
+    val endDateError: String?
+        get() {
+            if (endDate.isBlank()) return null
+            if (!endDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$"))) {
+                return "Niepoprawny format daty"
+            }
+            return try {
+                val formatted = if (endDate.length == 16) "$endDate:00" else endDate
+                val ldt = java.time.LocalDateTime.parse(formatted)
+                if (ldt.isBefore(java.time.LocalDateTime.now())) {
+                    "Data zakończenia musi być w przyszłości"
+                } else {
+                    null
+                }
+            } catch (_: Exception) {
+                "Błąd parsowania daty"
+            }
+        }
+
+    fun getValidationError(): String? {
+        if (title.isBlank()) return "Tytuł uchwały nie może być pusty"
+        if (description.isBlank()) return "Opis uchwały nie może być pusty"
+        if (endDate.isBlank()) return "Data zakończenia nie może być pusta"
+        if (!endDate.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$"))) {
+            return "Niepoprawny format daty"
+        }
+        try {
+            val formatted = if (endDate.length == 16) "$endDate:00" else endDate
+            val ldt = java.time.LocalDateTime.parse(formatted)
+            if (ldt.isBefore(java.time.LocalDateTime.now())) {
+                return "Data zakończenia musi być w przyszłości"
+            }
+        } catch (_: Exception) {
+            return "Błąd parsowania daty"
+        }
+        if (options.size < 2) return "Musisz podać co najmniej 2 opcje głosowania"
+        if (options.any { it.isBlank() }) return "Opcje głosowania nie mogą być puste"
+        if (targetBuildingId.isBlank()) return "Musisz wybrać budynek"
+        return null
+    }
+
+    private fun validateDate(dateStr: String): Boolean {
+        if (!dateStr.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$"))) return false
+        return try {
+            val formatted = if (dateStr.length == 16) "$dateStr:00" else dateStr
+            val ldt = java.time.LocalDateTime.parse(formatted)
+            ldt.isAfter(java.time.LocalDateTime.now())
+        } catch (_: Exception) {
+            false
+        }
+    }
 }
 
 // ── ResolutionsListViewModel ──────────────────────────────────────────────────
@@ -165,13 +214,20 @@ class ResolutionsListViewModel @Inject constructor(
 
     fun submitCreate() {
         val form = _formState.value
-        if (!form.isValid) return
+        val validationError = form.getValidationError()
+        if (validationError != null) {
+            viewModelScope.launch {
+                _events.send(ResolutionEvent.ShowSnackbar(validationError))
+            }
+            return
+        }
         viewModelScope.launch {
             _formState.value = form.copy(isSubmitting = true)
+            val formattedDate = if (form.endDate.length == 16) "${form.endDate}:00" else form.endDate
             val request = CreateResolutionRequest(
                 title = form.title.trim(),
                 description = form.description.trim(),
-                endDate = form.endDate.trim(),
+                endDate = formattedDate.trim(),
                 options = form.options.map { it.trim() }.filter { it.isNotBlank() },
                 targetBuildingId = form.targetBuildingId
             )
@@ -220,7 +276,7 @@ class ResolutionDetailViewModel @Inject constructor(
                         detail = detail,
                         selectedOptionId = null,
                         isVoting = false,
-                        hasVoted = false, // backend doesn't support userVoted
+                        hasVoted = !isManager && detail.results != null,
                         isManager = isManager,
                         isDownloadingReport = false
                     )
@@ -294,7 +350,7 @@ class ResolutionDetailViewModel @Inject constructor(
 
     private fun savePdfAndOpen(bytes: ByteArray, filename: String) {
         try {
-            val dir = File(context.cacheDir, "pdfs").also { it.mkdirs() }
+            val dir = File(context.cacheDir, "pdf").also { it.mkdirs() }
             val file = File(dir, filename)
             file.writeBytes(bytes)
             val uri: Uri = FileProvider.getUriForFile(

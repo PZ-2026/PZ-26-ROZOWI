@@ -136,10 +136,10 @@ private fun TicketDetailsSuccessContent(
 ) {
     val presentation = ticket.status.toPresentation()
 
-    var showAssignSheet by remember { mutableStateOf(false) }
-    var showRejectSheet by remember { mutableStateOf(false) }
-    var showResumeDialog by remember { mutableStateOf(false) }
-    var conservatorActionType by remember { mutableStateOf<ConservatorActionType?>(null) }
+    var showAssignSheet by remember(ticket.status) { mutableStateOf(false) }
+    var showRejectSheet by remember(ticket.status) { mutableStateOf(false) }
+    var showResumeDialog by remember(ticket.status) { mutableStateOf(false) }
+    var conservatorActionType by remember(ticket.status) { mutableStateOf<ConservatorActionType?>(null) }
 
     val canUploadAfter = currentUserRole == "KONSERWATOR" && ticket.status in listOf(
         TicketStatus.W_REALIZACJI,
@@ -251,6 +251,7 @@ private fun TicketDetailsSuccessContent(
                 isLoading = isLoadingComments,
                 isSending = isSendingComment,
                 commentResetKey = commentResetKey,
+                isClosed = ticket.status == TicketStatus.ZAMKNIETE || ticket.status == TicketStatus.ODRZUCONE,
                 onAddComment = onAddComment,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -313,15 +314,15 @@ private fun TicketDetailsSuccessContent(
                 }
                 "KONSERWATOR" -> {
                     when (ticket.status) {
-                        TicketStatus.ZAPLANOWANO -> {
+                        TicketStatus.ZAPLANOWANO, TicketStatus.WSTRZYMANO -> {
                             TicketFab(
                                 icon = Icons.Rounded.PlayArrow,
-                                contentDescription = "Rozpocznij realizację",
+                                contentDescription = if (ticket.status == TicketStatus.WSTRZYMANO) "Wznów realizację" else "Rozpocznij realizację",
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 onClick = { conservatorActionType = ConservatorActionType.START }
                             )
                         }
-                        TicketStatus.W_REALIZACJI, TicketStatus.WSTRZYMANO -> {
+                        TicketStatus.W_REALIZACJI -> {
                             TicketFab(
                                 icon = Icons.Rounded.Pause,
                                 contentDescription = "Wstrzymaj / Komentarz",

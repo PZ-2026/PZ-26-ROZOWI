@@ -65,6 +65,7 @@ fun EditUserScreen(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (state is EditUserUiState.Success) {
+                val isUserActive = (state as EditUserUiState.Success).user.active
                 Surface(
                     shadowElevation = 8.dp,
                     color = MaterialTheme.colorScheme.surface,
@@ -74,29 +75,39 @@ fun EditUserScreen(
                         modifier = Modifier.padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        OutlinedButton(
-                            onClick = onNavigateBack,
-                            modifier = Modifier.weight(1f).height(50.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) { Text("Anuluj") }
+                        if (isUserActive) {
+                            OutlinedButton(
+                                onClick = onNavigateBack,
+                                modifier = Modifier.weight(1f).height(50.dp),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("Anuluj") }
 
-                        Button(
-                            onClick = viewModel::submitChanges,
-                            modifier = Modifier.weight(1f).height(50.dp),
-                            enabled = formState.isValid && !isSubmitting,
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            if (isSubmitting) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
-                            } else {
-                                Icon(Icons.Rounded.Save, null, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Zapisz", fontWeight = FontWeight.Bold)
+                            Button(
+                                onClick = viewModel::submitChanges,
+                                modifier = Modifier.weight(1f).height(50.dp),
+                                enabled = formState.isValid && !isSubmitting,
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                if (isSubmitting) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                                } else {
+                                    Icon(Icons.Rounded.Save, null, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Zapisz", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        } else {
+                            Button(
+                                onClick = onNavigateBack,
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Powrót", fontWeight = FontWeight.Bold)
                             }
                         }
-                        }
-                        }
-                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
@@ -108,6 +119,7 @@ fun EditUserScreen(
                     onRetry = viewModel::reload
                 )
                 is EditUserUiState.Success -> {
+                    val isUserActive = s.user.active
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -115,6 +127,22 @@ fun EditUserScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        if (!isUserActive) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "To konto jest nieaktywne. Edycja danych jest zablokowana.",
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(16.dp),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
                         // ── Dane podstawowe ──────────────────────────────────
                         Text("Dane podstawowe", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
 
@@ -134,6 +162,7 @@ fun EditUserScreen(
                                 onValueChange = viewModel::onFirstNameChanged,
                                 label = { Text("Imię") },
                                 modifier = Modifier.weight(1f),
+                                enabled = isUserActive,
                                 shape = RoundedCornerShape(12.dp)
                             )
                             OutlinedTextField(
@@ -141,6 +170,7 @@ fun EditUserScreen(
                                 onValueChange = viewModel::onLastNameChanged,
                                 label = { Text("Nazwisko") },
                                 modifier = Modifier.weight(1f),
+                                enabled = isUserActive,
                                 shape = RoundedCornerShape(12.dp)
                             )
                         }
@@ -150,6 +180,7 @@ fun EditUserScreen(
                             onValueChange = viewModel::onPhoneChanged,
                             label = { Text("Telefon (opcjonalny)") },
                             modifier = Modifier.fillMaxWidth(),
+                            enabled = isUserActive,
                             shape = RoundedCornerShape(12.dp)
                         )
 
@@ -164,6 +195,7 @@ fun EditUserScreen(
                                     selected = formState.role == key,
                                     onClick = { viewModel.onRoleChanged(key) },
                                     label = { Text(label) },
+                                    enabled = isUserActive,
                                     shape = RoundedCornerShape(8.dp)
                                 )
                             }
@@ -182,19 +214,20 @@ fun EditUserScreen(
                                 // Nieruchomość/Budynek
                                 var expandedBuilding by remember { mutableStateOf(false) }
                                 ExposedDropdownMenuBox(
-                                    expanded = expandedBuilding,
-                                    onExpandedChange = { expandedBuilding = it }
+                                    expanded = expandedBuilding && isUserActive,
+                                    onExpandedChange = { if (isUserActive) expandedBuilding = it }
                                 ) {
                                     OutlinedTextField(
                                         value = formState.selectedBuilding?.name ?: "Wybierz budynek",
                                         onValueChange = {},
                                         readOnly = true,
+                                        enabled = isUserActive,
                                         modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBuilding) },
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBuilding && isUserActive) },
                                         shape = RoundedCornerShape(12.dp)
                                     )
                                     ExposedDropdownMenu(
-                                        expanded = expandedBuilding,
+                                        expanded = expandedBuilding && isUserActive,
                                         onDismissRequest = { expandedBuilding = false }
                                     ) {
                                         formState.buildings.forEach { b ->
@@ -213,19 +246,20 @@ fun EditUserScreen(
                                 if (formState.selectedBuilding != null) {
                                     var expandedStaircase by remember { mutableStateOf(false) }
                                     ExposedDropdownMenuBox(
-                                        expanded = expandedStaircase,
-                                        onExpandedChange = { expandedStaircase = it }
+                                        expanded = expandedStaircase && isUserActive,
+                                        onExpandedChange = { if (isUserActive) expandedStaircase = it }
                                     ) {
                                         OutlinedTextField(
                                             value = formState.selectedStaircase?.label ?: "Wybierz klatkę",
                                             onValueChange = {},
                                             readOnly = true,
+                                            enabled = isUserActive,
                                             modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStaircase) },
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStaircase && isUserActive) },
                                             shape = RoundedCornerShape(12.dp)
                                         )
                                         ExposedDropdownMenu(
-                                            expanded = expandedStaircase,
+                                            expanded = expandedStaircase && isUserActive,
                                             onDismissRequest = { expandedStaircase = false }
                                         ) {
                                             formState.selectedBuilding?.staircases?.forEach { s ->
@@ -245,19 +279,20 @@ fun EditUserScreen(
                                 if (formState.selectedStaircase != null) {
                                     var expandedApartment by remember { mutableStateOf(false) }
                                     ExposedDropdownMenuBox(
-                                        expanded = expandedApartment,
-                                        onExpandedChange = { expandedApartment = it }
+                                        expanded = expandedApartment && isUserActive,
+                                        onExpandedChange = { if (isUserActive) expandedApartment = it }
                                     ) {
                                         OutlinedTextField(
                                             value = formState.selectedApartment?.number ?: "Wybierz numer",
                                             onValueChange = {},
                                             readOnly = true,
+                                            enabled = isUserActive,
                                             modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedApartment) },
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedApartment && isUserActive) },
                                             shape = RoundedCornerShape(12.dp)
                                         )
                                         ExposedDropdownMenu(
-                                            expanded = expandedApartment,
+                                            expanded = expandedApartment && isUserActive,
                                             onDismissRequest = { expandedApartment = false }
                                         ) {
                                             formState.selectedStaircase?.apartments?.forEach { a ->

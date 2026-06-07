@@ -48,13 +48,16 @@ class PropertyService @Inject constructor(
 
     suspend fun deleteBuilding(id: String) {
         val response = api.deleteBuilding(id)
-        if (response.code() == 409) {
+        if (!response.isSuccessful) {
+            val errMsg = response.errorBody()?.string()?.let { ApiResponseHandler.parseJsonMessage(it) }
+            if (errMsg != null) {
+                throw ApiException(errMsg, response.code())
+            }
             throw ApiException(
-                "Nie można usunąć budynku, ponieważ ma powiązane elementy (np. klatki lub lokale).",
-                409
+                "Nie można usunąć budynku. Upewnij się, że nie posiada on powiązanych klatek schodowych, lokali, zgłoszeń usterki lub uchwał.",
+                response.code()
             )
         }
-        ApiResponseHandler.requireSuccess(response, "Błąd usuwania budynku")
     }
 
     suspend fun createStaircase(buildingId: String, request: StaircaseRequestDto): StaircaseResponseDto {
@@ -70,10 +73,16 @@ class PropertyService @Inject constructor(
 
     suspend fun deleteStaircase(buildingId: String, staircaseId: String) {
         val response = api.deleteStaircase(buildingId, staircaseId)
-        if (response.code() == 409) {
-            throw ApiException("Nie można usunąć klatki, ponieważ ma powiązane lokale.", 409)
+        if (!response.isSuccessful) {
+            val errMsg = response.errorBody()?.string()?.let { ApiResponseHandler.parseJsonMessage(it) }
+            if (errMsg != null) {
+                throw ApiException(errMsg, response.code())
+            }
+            throw ApiException(
+                "Nie można usunąć klatki schodowej. Upewnij się, że nie posiada ona przypisanych lokali ani powiązanych zgłoszeń usterki lub ogłoszeń.",
+                response.code()
+            )
         }
-        ApiResponseHandler.requireSuccess(response, "Błąd usuwania klatki")
     }
 
     suspend fun createApartment(staircaseId: String, request: ApartmentRequestDto): ApartmentResponseDto {
@@ -89,12 +98,15 @@ class PropertyService @Inject constructor(
 
     suspend fun deleteApartment(staircaseId: String, apartmentId: String) {
         val response = api.deleteApartment(staircaseId, apartmentId)
-        if (response.code() == 409) {
+        if (!response.isSuccessful) {
+            val errMsg = response.errorBody()?.string()?.let { ApiResponseHandler.parseJsonMessage(it) }
+            if (errMsg != null) {
+                throw ApiException(errMsg, response.code())
+            }
             throw ApiException(
-                "Nie można usunąć lokalu, jest on powiązany z istniejącymi umowami lub zgłoszeniami.",
-                409
+                "Nie można usunąć lokalu. Upewnij się, że do lokalu nie są przypisani mieszkańcy, liczniki, transakcje finansowe, dokumenty ani zgłoszenia usterki.",
+                response.code()
             )
         }
-        ApiResponseHandler.requireSuccess(response, "Błąd usuwania lokalu")
     }
 }

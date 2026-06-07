@@ -111,7 +111,7 @@ VALUES
  'Będę jutro około 10:00. Proszę o zapewnienie dostępu do kuchni.', 'PUBLICZNY'),
 ((SELECT id FROM tickets WHERE ticket_number = 'ZGL/2026/001'), 
  (SELECT id FROM users WHERE email = 'admin1@blokur.pl'), 
- 'Użytkownik zgłaszał, że pies może być agresywny. Uważać.', 'INTERNAL');
+ 'Użytkownik zgłaszał, że pies może być agresywny. Uważać.', 'WEWNETRZNY');
 
 -- ==========================================
 -- 8. OGŁOSZENIA (ANNOUNCEMENTS)

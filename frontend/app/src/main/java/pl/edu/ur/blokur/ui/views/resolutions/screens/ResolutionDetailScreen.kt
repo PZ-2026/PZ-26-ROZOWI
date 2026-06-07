@@ -132,8 +132,8 @@ private fun ResolutionDetailContent(
     isDownloadingReport: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val showResults = hasVoted || !detail.isActive
-    val showVoting = detail.isActive
+    val showResults = isManager || hasVoted || !detail.isActive
+    val showVoting = !isManager && !hasVoted && detail.isActive
 
     LazyColumn(
         modifier = modifier

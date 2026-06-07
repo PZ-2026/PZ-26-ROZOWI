@@ -119,7 +119,7 @@ fun InspectionsListScreen(
             onTitleChanged = viewModel::onEditTitleChanged,
             onDescriptionChanged = viewModel::onEditDescriptionChanged,
             onScheduledAtChanged = viewModel::onEditScheduledAtChanged,
-            onScopeTypeChanged = {},
+            onScopeTypeChanged = viewModel::onEditScopeTypeChanged,
             onScopeIdChanged = viewModel::onEditScopeIdChanged,
             onConfirm = viewModel::submitUpdate,
             confirmLabel = "Zaktualizuj"

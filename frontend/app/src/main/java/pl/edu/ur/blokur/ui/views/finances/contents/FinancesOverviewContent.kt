@@ -55,33 +55,35 @@ fun FinancesOverviewContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            BalanceCard(currentBalance = state.currentBalance, transactions = state.transactions)
-            if (state.transactions.isEmpty()) {
-                EmptyState(
-                    title = "Brak transakcji",
-                    description = "Nie znaleziono wpłat ani naliczeń dla tego lokalu."
+            if (!isManager) {
+                BalanceCard(currentBalance = state.currentBalance, transactions = state.transactions)
+                if (state.transactions.isEmpty()) {
+                    EmptyState(
+                        title = "Brak transakcji",
+                        description = "Nie znaleziono wpłat ani naliczeń dla tego lokalu."
+                    )
+                }
+                SectionHeader(title = "Przejdź do")
+                FinancesNavItem(
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    title = "Kartoteka finansowa",
+                    subtitle = "Historia wpłat i saldo Twojego lokalu w czasie rzeczywistym",
+                    onClick = onNavigateToLedger
                 )
-            }
-            SectionHeader(title = "Przejdź do")
-            FinancesNavItem(
-                icon = Icons.Rounded.AccountBalanceWallet,
-                title = "Kartoteka finansowa",
-                subtitle = "Historia wpłat i saldo Twojego lokalu w czasie rzeczywistym",
-                onClick = onNavigateToLedger
-            )
-            FinancesNavItem(
-                icon = Icons.Rounded.History,
-                title = "Historia transakcji",
-                subtitle = "Wpłaty, naliczenia i korekty z ostatnich 24 miesięcy",
-                onClick = onNavigateToTransactions
-            )
-            FinancesNavItem(
-                icon = Icons.Rounded.Description,
-                title = "Dokumenty",
-                subtitle = "Rozliczenia, faktury i zawiadomienia zarządcy",
-                onClick = onNavigateToDocuments
-            )
-            if (isManager) {
+                FinancesNavItem(
+                    icon = Icons.Rounded.History,
+                    title = "Historia transakcji",
+                    subtitle = "Wpłaty, naliczenia i korekty z ostatnich 24 miesięcy",
+                    onClick = onNavigateToTransactions
+                )
+                FinancesNavItem(
+                    icon = Icons.Rounded.Description,
+                    title = "Dokumenty",
+                    subtitle = "Rozliczenia, faktury i zawiadomienia zarządcy",
+                    onClick = onNavigateToDocuments
+                )
+            } else {
+                SectionHeader(title = "Zarządzanie finansami")
                 FinancesNavItem(
                     icon = Icons.Rounded.AccountBalance,
                     title = "Monitorowanie zaległości",

@@ -59,7 +59,7 @@ data class NewUserFormState(
 ) {
     val isValid: Boolean
         get() = firstName.isNotBlank() && lastName.isNotBlank() &&
-                email.contains("@") &&
+                email.matches(Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) &&
                 (role != "MIESZKANIEC" || selectedApartment != null)
 }
 
@@ -233,7 +233,7 @@ class UsersViewModel @Inject constructor(
                 lastName = form.lastName.trim(),
                 email = form.email.trim(),
                 role = form.role,
-                apartmentId = form.selectedApartment?.id ?: ""
+                apartmentId = form.selectedApartment?.id
             )
             runCatching { adminUserService.createUser(request) }
                 .onSuccess { newUser ->

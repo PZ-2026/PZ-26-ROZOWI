@@ -374,7 +374,7 @@ private fun SlaEditDialog(
     onConfirm: (Int) -> Unit
 ) {
     var slaText by remember { mutableStateOf(currentSla?.toString() ?: "") }
-    val isValid = slaText.toIntOrNull()?.let { it >= 1 } == true
+    val isValid = slaText.toIntOrNull()?.let { it in 1..8760 } == true
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -407,7 +407,12 @@ private fun SlaEditDialog(
                     },
                     supportingText = {
                         if (slaText.isNotEmpty() && !isValid) {
-                            Text("Minimum 1 godzina", color = MaterialTheme.colorScheme.error)
+                            val msg = if (slaText.toIntOrNull()?.let { it < 1 } != false) {
+                                "Minimum 1 godzina"
+                            } else {
+                                "Maksymalnie 8760 godzin (365 dni)"
+                            }
+                            Text(msg, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 )

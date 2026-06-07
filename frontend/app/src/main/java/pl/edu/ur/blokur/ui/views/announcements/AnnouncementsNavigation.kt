@@ -35,6 +35,7 @@ fun NavGraphBuilder.announcementsGraph(navController: NavController) {
         val viewModel: AnnouncementsViewModel = hiltViewModel()
         AnnouncementsScreen(
             viewModel = viewModel,
+            onNavigateBack = { navController.popBackStack() },
             onNavigateToCreate = { navController.navigate(AnnouncementsRoutes.Create) },
             onNavigateToEdit = { announcement ->
                 navController.navigate(

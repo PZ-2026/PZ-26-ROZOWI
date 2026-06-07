@@ -40,7 +40,7 @@ data class CreateAdminUserRequest(
     @SerializedName("lastName") val lastName: String,
     @SerializedName("email") val email: String,
     @SerializedName("role") val role: String,
-    @SerializedName("apartmentId") val apartmentId: String
+    @SerializedName("apartmentId") val apartmentId: String? = null
 )
 
 /** Request do PATCH /api/admin/users/{id} */

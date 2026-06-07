@@ -63,31 +63,35 @@ class TicketDetailsViewModel @Inject constructor(
         loadTicket()
     }
 
+    private suspend fun loadTicketInternal() {
+        runCatching {
+            val ticket = ticketService.getTicketById(route.ticketId)
+                ?: error("Nie znaleziono zgłoszenia #${route.ticketId}")
+            val conservators = ticketService.getAvailableConservators()
+            ticket to conservators
+        }.onSuccess { (ticket, conservators) ->
+            val role = ticketService.getCurrentUserRole()
+            _state.value = TicketDetailsListState.Success(
+                ticket = ticket,
+                availableConservators = conservators,
+                currentUserRole = role
+            )
+            loadComments(ticket.id)
+            loadImages(ticket.id)
+        }.onFailure { e ->
+            _state.value = TicketDetailsListState.Error(e.message ?: "Błąd ładowania zgłoszenia")
+        }
+    }
+
     private fun loadTicket() {
         viewModelScope.launch {
-            runCatching {
-                val ticket = ticketService.getTicketById(route.ticketId)
-                    ?: error("Nie znaleziono zgłoszenia #${route.ticketId}")
-                val conservators = ticketService.getAvailableConservators()
-                ticket to conservators
-            }.onSuccess { (ticket, conservators) ->
-                val role = ticketService.getCurrentUserRole()
-                _state.value = TicketDetailsListState.Success(
-                    ticket = ticket,
-                    availableConservators = conservators,
-                    currentUserRole = role
-                )
-                loadComments(ticket.id)
-                loadImages(ticket.id)
-            }.onFailure { e ->
-                _state.value = TicketDetailsListState.Error(e.message ?: "Błąd ładowania zgłoszenia")
-            }
+            loadTicketInternal()
         }
     }
 
     private fun loadComments(ticketId: String) {
-        val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            val current = _state.value as? TicketDetailsListState.Success ?: return@launch
             _state.value = current.copy(isLoadingComments = true)
             runCatching { ApiResponseHandler.requireSuccess(commentApi.getComments(ticketId), "Nie udało się załadować komentarzy") }
                 .onSuccess { comments ->
@@ -106,8 +110,8 @@ class TicketDetailsViewModel @Inject constructor(
     }
 
     private fun loadImages(ticketId: String) {
-        val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            val current = _state.value as? TicketDetailsListState.Success ?: return@launch
             _state.value = current.copy(isLoadingImages = true)
             runCatching { ApiResponseHandler.requireSuccess(imageApi.getImagesForTicket(ticketId), "Nie udało się załadować zdjęć") }
                 .onSuccess { images ->
@@ -278,21 +282,43 @@ class TicketDetailsViewModel @Inject constructor(
             _state.value = currentState.copy(isActionInProgress = true)
             runCatching {
                 when (type) {
-                    ConservatorActionType.START -> ticketService.startWork(currentState.ticket.id)
+                    ConservatorActionType.START -> {
+                        if (currentState.ticket.status == TicketStatus.WSTRZYMANO) {
+                            ticketService.changeStatus(
+                                ticketId = currentState.ticket.id,
+                                status = TicketStatus.W_REALIZACJI.name,
+                                comment = "Wznowienie realizacji przez konserwatora"
+                            )
+                        } else {
+                            ticketService.startWork(currentState.ticket.id)
+                        }
+                    }
                     ConservatorActionType.FINISH -> ticketService.completeWork(
                         ticketId = currentState.ticket.id,
                         workDescription = comment.ifBlank { "Prace zakończone." }
                     )
-                    ConservatorActionType.PAUSE_OR_COMMENT -> ticketService.suspendWork(
-                        ticketId = currentState.ticket.id,
-                        reason = comment.ifBlank { "Prace wstrzymane." }
-                    )
+                    ConservatorActionType.PAUSE_OR_COMMENT -> {
+                        if (pause) {
+                            ticketService.suspendWork(
+                                ticketId = currentState.ticket.id,
+                                reason = comment.ifBlank { "Prace wstrzymane." }
+                            )
+                        } else {
+                            ApiResponseHandler.requireSuccess(
+                                commentApi.addComment(
+                                    currentState.ticket.id,
+                                    TicketCommentRequestDto(content = comment, commentType = "WEWNETRZNY")
+                                ),
+                                "Nie udało się dodać komentarza"
+                            )
+                        }
+                    }
                     ConservatorActionType.CLOSE_VERIFICATION -> ticketService.closeTicket(
                         ticketId = currentState.ticket.id
                     )
                 }
             }.onSuccess {
-                loadTicket()
+                loadTicketInternal()
                 _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zaktualizowano status zgłoszenia"))
             }.onFailure { e ->
                 val s = _state.value as? TicketDetailsListState.Success
@@ -317,7 +343,8 @@ class TicketDetailsViewModel @Inject constructor(
                 val responseBody = ApiResponseHandler.requireSuccess(pdfApi.getWorkAcceptanceProtocol(request), "Błąd generowania protokołu")
                 withContext(Dispatchers.IO) {
                     val dir = File(context.cacheDir, "protocols").also { it.mkdirs() }
-                    val file = File(dir, "protokol_${ticket.ticketNumber}.pdf")
+                    val sanitizedNumber = ticket.ticketNumber.replace("/", "_")
+                    val file = File(dir, "protokol_${sanitizedNumber}.pdf")
                     file.writeBytes(responseBody.bytes())
                     file
                 }

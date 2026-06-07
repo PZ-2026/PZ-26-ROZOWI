@@ -17,14 +17,21 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.ui.platform.LocalContext
 import pl.edu.ur.blokur.ui.views.resolutions.viewmodels.CreateResolutionFormState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateResolutionDialog(
     formState: CreateResolutionFormState,
@@ -38,6 +45,69 @@ fun CreateResolutionDialog(
     onRemoveOption: (Int) -> Unit,
     onConfirm: () -> Unit
 ) {
+    val context = LocalContext.current
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var tempDateMillis by remember { mutableStateOf<Long?>(null) }
+
+    val datePickerState = rememberDatePickerState()
+    val timePickerState = rememberTimePickerState(initialHour = 23, initialMinute = 59, is24Hour = true)
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    tempDateMillis = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                    showTimePicker = true
+                }) { Text("Dalej") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Anuluj") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    tempDateMillis?.let { millis ->
+                        val cal = java.util.Calendar.getInstance().apply {
+                            timeInMillis = millis
+                            set(java.util.Calendar.HOUR_OF_DAY, timePickerState.hour)
+                            set(java.util.Calendar.MINUTE, timePickerState.minute)
+                            set(java.util.Calendar.SECOND, 0)
+                        }
+                        val formatted = String.format(
+                            java.util.Locale.US,
+                            "%04d-%02d-%02dT%02d:%02d:00",
+                            cal.get(java.util.Calendar.YEAR),
+                            cal.get(java.util.Calendar.MONTH) + 1,
+                            cal.get(java.util.Calendar.DAY_OF_MONTH),
+                            cal.get(java.util.Calendar.HOUR_OF_DAY),
+                            cal.get(java.util.Calendar.MINUTE)
+                        )
+                        onEndDateChanged(formatted)
+                    }
+                    showTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Anuluj") }
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    TimePicker(state = timePickerState)
+                }
+            }
+        )
+    }
+
     AlertDialog(
         onDismissRequest = { if (!formState.isSubmitting) onDismiss() },
         shape = RoundedCornerShape(24.dp),
@@ -89,16 +159,30 @@ fun CreateResolutionDialog(
                 )
 
                 // Data zakończenia
+                val isDateError = formState.endDateError != null
                 OutlinedTextField(
                     value = formState.endDate,
                     onValueChange = onEndDateChanged,
                     label = { Text("Data zakończenia") },
-                    placeholder = { Text("np. 2026-05-15T23:59:59") },
+                    placeholder = { Text("Wybierz datę zakończenia...") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !formState.isSubmitting,
+                    readOnly = true,
+                    isError = isDateError,
                     shape = RoundedCornerShape(12.dp),
-                    supportingText = { Text("Format: RRRR-MM-DDTGG:MM:SS") }
+                    supportingText = {
+                        if (isDateError) {
+                            Text(formState.endDateError ?: "", color = MaterialTheme.colorScheme.error)
+                        } else {
+                            Text("Format: RRRR-MM-DDTGG:MM:SS")
+                        }
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }, enabled = !formState.isSubmitting) {
+                            Icon(Icons.Rounded.DateRange, "Wybierz datę")
+                        }
+                    }
                 )
 
                 // Budynek (jeśli jest więcej niż jeden – dropdown, inaczej pole)
@@ -196,7 +280,7 @@ fun CreateResolutionDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                enabled = formState.isValid && !formState.isSubmitting,
+                enabled = !formState.isSubmitting,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 AnimatedContent(formState.isSubmitting, label = "btn") { submitting ->

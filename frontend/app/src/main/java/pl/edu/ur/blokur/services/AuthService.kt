@@ -32,11 +32,18 @@ class AuthService @Inject constructor(
         val response = authApiService.login(LoginRequestDto(username = email, password = password))
 
         if (!response.isSuccessful) {
+            val serverMessage = parseMessage(response)
             throw when (response.code()) {
                 401 -> AuthException.InvalidCredentials
                 423 -> AuthException.AccountLocked
                 429 -> AuthException.RateLimited(parseRetryAfter(response))
-                else -> AuthException.ApiError(response.code())
+                else -> {
+                    if (!serverMessage.isNullOrBlank()) {
+                        Exception(serverMessage)
+                    } else {
+                        AuthException.ApiError(response.code())
+                    }
+                }
             }
         }
 

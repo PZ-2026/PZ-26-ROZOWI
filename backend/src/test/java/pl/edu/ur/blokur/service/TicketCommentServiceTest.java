@@ -23,6 +23,7 @@ import pl.edu.ur.blokur.exception.BusinessValidationException;
 import pl.edu.ur.blokur.models.Ticket;
 import pl.edu.ur.blokur.models.TicketComment;
 import pl.edu.ur.blokur.models.TicketCommentType;
+import pl.edu.ur.blokur.models.TicketStatus;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.repository.TicketCommentRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
@@ -210,6 +211,46 @@ class TicketCommentServiceTest {
                                             ticketId, request, mieszkaniec.getEmail()))
                     .isInstanceOf(BusinessValidationException.class)
                     .hasMessageContaining("tylko publiczne komentarze");
+        }
+
+        @Test
+        @DisplayName("Zablokuj dodanie komentarza gdy zgloszenie jest zamkniete")
+        void shouldThrowExceptionWhenAddingCommentToClosedTicket() {
+            ticket.setStatus(TicketStatus.ZAMKNIETE);
+            TicketCommentRequest request = new TicketCommentRequest();
+            request.setContent("Komentarz do zamknietego");
+            request.setCommentType(TicketCommentType.PUBLICZNY);
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(mieszkaniec.getEmail()))
+                    .thenReturn(Optional.of(mieszkaniec));
+
+            assertThatThrownBy(
+                            () ->
+                                    ticketCommentService.addComment(
+                                            ticketId, request, mieszkaniec.getEmail()))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Nie można dodawać komentarzy do zamkniętego lub odrzuconego zgłoszenia");
+        }
+
+        @Test
+        @DisplayName("Zablokuj dodanie komentarza gdy zgloszenie jest odrzucone")
+        void shouldThrowExceptionWhenAddingCommentToRejectedTicket() {
+            ticket.setStatus(TicketStatus.ODRZUCONE);
+            TicketCommentRequest request = new TicketCommentRequest();
+            request.setContent("Komentarz do odrzuconego");
+            request.setCommentType(TicketCommentType.PUBLICZNY);
+
+            when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+            when(userRepository.findByEmail(mieszkaniec.getEmail()))
+                    .thenReturn(Optional.of(mieszkaniec));
+
+            assertThatThrownBy(
+                            () ->
+                                    ticketCommentService.addComment(
+                                            ticketId, request, mieszkaniec.getEmail()))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Nie można dodawać komentarzy do zamkniętego lub odrzuconego zgłoszenia");
         }
     }
 

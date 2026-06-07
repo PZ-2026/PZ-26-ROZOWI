@@ -29,6 +29,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,6 +46,10 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +59,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -61,6 +70,9 @@ import pl.edu.ur.blokur.ui.views.documents.viewmodels.DocDistributionEvent
 import pl.edu.ur.blokur.ui.views.documents.viewmodels.DocDistributionTab
 import pl.edu.ur.blokur.ui.views.documents.viewmodels.DocDistributionViewModel
 import pl.edu.ur.blokur.ui.views.documents.viewmodels.RecipientScope
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * Ekran dystrybucji dokumentów zarządcy:
@@ -211,8 +223,11 @@ fun DocumentDistributionScreen(
     }
 }
 
+
+
 // ── Formularz: Zawiadomienie o zmianie stawek ─────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RateChangeFormCard(
     subject: String,
@@ -229,6 +244,38 @@ private fun RateChangeFormCard(
     onTargetIdChanged: (String) -> Unit,
     onSend: () -> Unit
 ) {
+    val context = LocalContext.current
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = datePickerState.selectedDateMillis
+                    if (millis != null) {
+                        val cal = java.util.Calendar.getInstance().apply { timeInMillis = millis }
+                        val formatted = String.format(
+                            java.util.Locale.US,
+                            "%04d-%02d-%02d",
+                            cal.get(java.util.Calendar.YEAR),
+                            cal.get(java.util.Calendar.MONTH) + 1,
+                            cal.get(java.util.Calendar.DAY_OF_MONTH)
+                        )
+                        onEffectiveDateChanged(formatted)
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Anuluj") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -266,15 +313,28 @@ private fun RateChangeFormCard(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            OutlinedTextField(
-                value = effectiveDate,
-                onValueChange = onEffectiveDateChanged,
-                label = { Text("Data wejścia w życie (YYYY-MM-DD)") },
-                singleLine = true,
-                placeholder = { Text("np. 2025-02-01") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = effectiveDate,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Data wejścia w życie (YYYY-MM-DD)") },
+                    singleLine = true,
+                    placeholder = { Text("np. 2025-02-01") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(Icons.Rounded.DateRange, "Wybierz datę")
+                        }
+                    }
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showDatePicker = true }
+                )
+            }
 
             OutlinedTextField(
                 value = body,
@@ -379,7 +439,7 @@ private fun AnnualSettlementFormCard(
             SendButton(
                 isSubmitting = isSubmitting,
                 isSent = isSent,
-                isEnabled = year.length == 4 && year.toIntOrNull() != null && !isSubmitting,
+                isEnabled = year.length == 4 && year.toIntOrNull() in 1990..2100 && !isSubmitting,
                 onClick = onSend
             )
         }

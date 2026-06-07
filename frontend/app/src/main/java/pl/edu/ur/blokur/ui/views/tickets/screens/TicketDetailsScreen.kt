@@ -73,7 +73,7 @@ fun TicketDetailsScreen(
             TopAppBar(
                 title = { Text("Szczegóły zgłoszenia", style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
-                    IconButton(onClick = viewModel::onNavigateBack) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Wróć")
                     }
                 },

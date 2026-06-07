@@ -286,6 +286,20 @@ class AdminUserServiceTest {
 
             verify(invitationService, never()).inviteUser(any());
         }
+
+        @Test
+        @DisplayName("Poprawne dane bez przypisanego lokalu — nie tworzy UserApartment")
+        void shouldSaveUserWithoutApartment() {
+            request.setApartmentId(null);
+            when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = adminUserService.createUser(request);
+
+            assertThat(result.getUserApartments()).isEmpty();
+            verify(apartmentRepository, never()).findById(any());
+            verify(invitationService).inviteUser(result);
+        }
     }
 
     // -------------------------------------------------------
@@ -374,6 +388,26 @@ class AdminUserServiceTest {
 
             assertThat(result.getUserApartments()).hasSize(1);
             assertThat(result.getUserApartments().get(0).getApartment()).isEqualTo(newApartment);
+        }
+
+        @Test
+        @DisplayName("Przypisanie do tego samego lokalu — nie modyfikuje przypisania")
+        void shouldNotModifyApartmentWhenAssignedToSameApartment() {
+            UserApartment existing = new UserApartment();
+            existing.setApartment(apartment);
+            existing.setUser(existingUser);
+            existingUser.getUserApartments().add(existing);
+
+            updateRequest.setApartmentId(apartmentId);
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = adminUserService.updateUser(userId, updateRequest);
+
+            assertThat(result.getUserApartments()).hasSize(1);
+            assertThat(result.getUserApartments().get(0)).isSameAs(existing);
         }
 
         @Test

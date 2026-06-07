@@ -8,13 +8,15 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.dtos.*
 import pl.edu.ur.blokur.services.PropertyService
+import pl.edu.ur.blokur.services.AdminUserApiService
 import pl.edu.ur.blokur.ui.views.properties.utils.*
 import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
 class PropertyTreeViewModel @Inject constructor(
-    private val propertyService: PropertyService
+    private val propertyService: PropertyService,
+    private val adminUserApiService: AdminUserApiService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<PropertyTreeState>(PropertyTreeState.Loading)
@@ -63,6 +65,36 @@ class PropertyTreeViewModel @Inject constructor(
 
     private val _expandedStaircases = MutableStateFlow<Set<String>>(emptySet())
     val expandedStaircases: StateFlow<Set<String>> = _expandedStaircases.asStateFlow()
+
+    private val _availableManagers = MutableStateFlow<List<String>>(emptyList())
+    val availableManagers: StateFlow<List<String>> = _availableManagers.asStateFlow()
+
+    fun loadAvailableManagers() {
+        viewModelScope.launch {
+            try {
+                val response = adminUserApiService.getAllUsers()
+                if (response.isSuccessful) {
+                    val users = response.body() ?: emptyList()
+                    val managers = users.filter { it.role == "ZARZADCA" && it.active }
+                    val currentState = _state.value
+                    if (currentState is PropertyTreeState.Success) {
+                        val currentPropertyId = (_selectedNode.value as? SelectedNode.Property)?.property?.id
+                        val unassignedManagers = managers.filter { m ->
+                            val alreadyAssigned = currentState.properties.any { p ->
+                                p.managerEmail.equals(m.email, ignoreCase = true) && p.id != currentPropertyId
+                            }
+                            !alreadyAssigned
+                        }.map { it.email }
+                        _availableManagers.value = unassignedManagers
+                    } else {
+                        _availableManagers.value = managers.map { it.email }
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }
+    }
 
     init {
         loadTree()
@@ -154,6 +186,9 @@ class PropertyTreeViewModel @Inject constructor(
     fun startEdit() {
         _formError.value = null
         _formMode.value = FormMode.EDIT
+        if (_selectedNode.value is SelectedNode.Property) {
+            loadAvailableManagers()
+        }
     }
 
     fun startAdd(target: AddTarget, parentContext: String? = null) {
@@ -161,7 +196,10 @@ class PropertyTreeViewModel @Inject constructor(
         _formMode.value = FormMode.ADD
         _addTarget.value = target
         when (target) {
-            AddTarget.PROPERTY -> _propertyForm.value = PropertyFormFields()
+            AddTarget.PROPERTY -> {
+                _propertyForm.value = PropertyFormFields()
+                loadAvailableManagers()
+            }
             AddTarget.BUILDING -> _buildingForm.value = BuildingFormFields(propertyId = parentContext)
             AddTarget.STAIRCASE -> _staircaseForm.value = StaircaseFormFields()
             AddTarget.APARTMENT -> _apartmentForm.value = ApartmentFormFields()
@@ -185,10 +223,136 @@ class PropertyTreeViewModel @Inject constructor(
 
     // ─── Save ────────────────────────────────────────────────────────
 
-    fun save() {
+    private fun validateForm(): String? {
         val mode = _formMode.value
+        val target = if (mode == FormMode.ADD) _addTarget.value else when (_selectedNode.value) {
+            is SelectedNode.Property -> AddTarget.PROPERTY
+            is SelectedNode.Building -> AddTarget.BUILDING
+            is SelectedNode.Staircase -> AddTarget.STAIRCASE
+            is SelectedNode.Apartment -> AddTarget.APARTMENT
+            else -> null
+        }
+
+        when (target) {
+            AddTarget.PROPERTY -> {
+                val f = _propertyForm.value
+                if (f.name.isBlank()) return "Nazwa wspólnoty nie może być pusta"
+                if (f.address.isBlank()) return "Adres wspólnoty nie może być pusty"
+                if (f.nip.isBlank()) return "NIP nie może być pusty"
+                if (!f.nip.matches(Regex("\\d{10}"))) return "NIP musi składać się z dokładnie 10 cyfr"
+                if (f.managerEmail.isNotBlank() && !f.managerEmail.matches(Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$"))) {
+                    return "Niepoprawny format adresu e-mail zarządcy"
+                }
+            }
+            AddTarget.BUILDING -> {
+                val f = _buildingForm.value
+                if (f.estateName.isBlank()) return "Nazwa osiedla nie może być pusta"
+                if (f.name.isBlank()) return "Nazwa budynku nie może być pusta"
+                if (f.address.isBlank()) return "Adres budynku nie może być pusty"
+                if (f.latitude.isNotBlank()) {
+                    val lat = f.latitude.toSafeBigDecimalOrNull()
+                    if (lat == null) return "Niepoprawny format szerokości geograficznej"
+                    if (lat < java.math.BigDecimal("-90") || lat > java.math.BigDecimal("90")) {
+                        return "Szerokość geograficzna musi być w przedziale od -90 do 90"
+                    }
+                }
+                if (f.longitude.isNotBlank()) {
+                    val lon = f.longitude.toSafeBigDecimalOrNull()
+                    if (lon == null) return "Niepoprawny format długości geograficznej"
+                    if (lon < java.math.BigDecimal("-180") || lon > java.math.BigDecimal("180")) {
+                        return "Długość geograficzna musi być w przedziale od -180 do 180"
+                    }
+                }
+            }
+            AddTarget.STAIRCASE -> {
+                val f = _staircaseForm.value
+                if (f.label.isBlank()) return "Etykieta klatki nie może być pusta"
+            }
+            AddTarget.APARTMENT -> {
+                val f = _apartmentForm.value
+                if (f.number.isBlank()) return "Numer lokalu nie może być pusty"
+                if (f.floor.isNotBlank() && f.floor.toIntOrNull() == null) return "Piętro musi być liczbą całkowitą"
+                if (f.areaM2.isNotBlank() && f.areaM2.toSafeBigDecimalOrNull() == null) return "Metraż musi być liczbą"
+            }
+            null -> {}
+        }
+        return null
+    }
+
+    private suspend fun validateManagerEmail(email: String): String? {
+        try {
+            val response = adminUserApiService.getAllUsers()
+            if (!response.isSuccessful) {
+                return "Błąd podczas weryfikacji adresu e-mail zarządcy."
+            }
+            val users = response.body() ?: emptyList()
+            val matchedUser = users.find { it.email.equals(email, ignoreCase = true) }
+            if (matchedUser == null) {
+                return "Użytkownik o podanym adresie e-mail nie istnieje."
+            }
+            if (matchedUser.role != "ZARZADCA") {
+                val roleName = when (matchedUser.role) {
+                    "KONSERWATOR" -> "konserwatorem"
+                    "MIESZKANIEC" -> "mieszkańcem"
+                    else -> matchedUser.role.lowercase()
+                }
+                return "Użytkownik o tym adresie e-mail jest $roleName. Zarządcą nieruchomości może być tylko użytkownik z rolą Zarządca."
+            }
+
+            // Check if this manager already has a property assigned
+            val currentState = _state.value
+            if (currentState is PropertyTreeState.Success) {
+                val currentPropertyId = (_selectedNode.value as? SelectedNode.Property)?.property?.id
+                val alreadyAssigned = currentState.properties.any {
+                    it.managerEmail.equals(email, ignoreCase = true) && it.id != currentPropertyId
+                }
+                if (alreadyAssigned) {
+                    return "Ten zarządca ma już przypisaną inną nieruchomość."
+                }
+            }
+        } catch (e: Exception) {
+            return "Błąd połączenia podczas weryfikacji zarządcy."
+        }
+        return null
+    }
+
+    fun save() {
+        val validationError = validateForm()
+        if (validationError != null) {
+            _formError.value = validationError
+            viewModelScope.launch {
+                _events.send(PropertyTreeEvent.ShowSnackbar(validationError))
+            }
+            return
+        }
+
+        val mode = _formMode.value
+        val target = if (mode == FormMode.ADD) _addTarget.value else when (_selectedNode.value) {
+            is SelectedNode.Property -> AddTarget.PROPERTY
+            is SelectedNode.Building -> AddTarget.BUILDING
+            is SelectedNode.Staircase -> AddTarget.STAIRCASE
+            is SelectedNode.Apartment -> AddTarget.APARTMENT
+            else -> null
+        }
+
         viewModelScope.launch {
             _isSaving.value = true
+            _formError.value = null
+
+            // Suspend validation for manager email if target is PROPERTY
+            if (target == AddTarget.PROPERTY) {
+                val email = _propertyForm.value.managerEmail.trim()
+                if (email.isNotBlank()) {
+                    val emailError = validateManagerEmail(email)
+                    if (emailError != null) {
+                        _formError.value = emailError
+                        _events.send(PropertyTreeEvent.ShowSnackbar(emailError))
+                        _isSaving.value = false
+                        return@launch
+                    }
+                }
+            }
+
             runCatching {
                 when {
                     mode == FormMode.ADD -> saveNew()
@@ -221,8 +385,8 @@ class PropertyTreeViewModel @Inject constructor(
                     BuildingRequestDto(
                         estateName = f.estateName.ifBlank { null },
                         name = f.name, address = f.address,
-                        latitude = f.latitude.toBigDecimalOrNull(),
-                        longitude = f.longitude.toBigDecimalOrNull(),
+                        latitude = f.latitude.toSafeBigDecimalOrNull(),
+                        longitude = f.longitude.toSafeBigDecimalOrNull(),
                         propertyId = f.propertyId
                     )
                 )
@@ -244,7 +408,7 @@ class PropertyTreeViewModel @Inject constructor(
                 val f = _apartmentForm.value
                 propertyService.createApartment(
                     staircaseId,
-                    ApartmentRequestDto(f.number, f.floor.toIntOrNull(), f.areaM2.toBigDecimalOrNull(), f.ownershipType)
+                    ApartmentRequestDto(f.number, f.floor.toIntOrNull(), f.areaM2.toSafeBigDecimalOrNull(), f.ownershipType)
                 )
             }
             null -> {}
@@ -267,8 +431,8 @@ class PropertyTreeViewModel @Inject constructor(
                     BuildingRequestDto(
                         estateName = f.estateName.ifBlank { null },
                         name = f.name, address = f.address,
-                        latitude = f.latitude.toBigDecimalOrNull(),
-                        longitude = f.longitude.toBigDecimalOrNull(),
+                        latitude = f.latitude.toSafeBigDecimalOrNull(),
+                        longitude = f.longitude.toSafeBigDecimalOrNull(),
                         propertyId = f.propertyId
                     )
                 )
@@ -283,7 +447,7 @@ class PropertyTreeViewModel @Inject constructor(
                 val f = _apartmentForm.value
                 propertyService.updateApartment(
                     node.staircaseId, node.apartment.id,
-                    ApartmentRequestDto(f.number, f.floor.toIntOrNull(), f.areaM2.toBigDecimalOrNull(), f.ownershipType)
+                    ApartmentRequestDto(f.number, f.floor.toIntOrNull(), f.areaM2.toSafeBigDecimalOrNull(), f.ownershipType)
                 )
             }
             SelectedNode.None -> {}
@@ -307,6 +471,9 @@ class PropertyTreeViewModel @Inject constructor(
         }
     }
 
-    private fun String.toBigDecimalOrNull(): BigDecimal? =
-        takeIf { it.isNotBlank() }?.toBigDecimalOrNull()
+    private fun String.toSafeBigDecimalOrNull(): BigDecimal? {
+        val clean = this.trim().replace(',', '.')
+        if (clean.isBlank()) return null
+        return clean.toBigDecimalOrNull()
+    }
 }

@@ -196,7 +196,7 @@ fun PropertyTreeView(
                         tint = MaterialTheme.colorScheme.secondary,
                         onClick = { onSelectBuilding(building) },
                         onToggle = { onToggleBuilding(building.id) },
-                        onAdd = null,
+                        onAdd = { onAdd(AddTarget.STAIRCASE, building.id) },
                         onDelete = { onDelete(DeleteTarget.Building(building.id, building.name)) }
                     )
                 }
@@ -214,7 +214,7 @@ fun PropertyTreeView(
                                 tint = MaterialTheme.colorScheme.tertiary,
                                 onClick = { onSelectStaircase(staircase, building.id) },
                                 onToggle = { onToggleStaircase(staircase.id) },
-                                onAdd = null,
+                                onAdd = { onAdd(AddTarget.APARTMENT, staircase.id) },
                                 onDelete = { onDelete(DeleteTarget.Staircase(building.id, staircase.id, staircase.label)) }
                             )
                         }

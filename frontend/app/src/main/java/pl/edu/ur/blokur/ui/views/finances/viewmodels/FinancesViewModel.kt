@@ -56,10 +56,6 @@ class FinancesViewModel @Inject constructor(
             runCatching {
                 val role = authService.getCurrentUserRole()
                 val apartmentId = when (role) {
-                    UserRole.ZARZADCA -> {
-                        val tree = propertyService.getBuildingTree()
-                        tree.firstOrNull()?.staircases?.firstOrNull()?.apartments?.firstOrNull()?.id
-                    }
                     UserRole.MIESZKANIEC -> userApartmentService.resolveForResident().apartmentId
                     else -> null
                 }
@@ -69,7 +65,7 @@ class FinancesViewModel @Inject constructor(
                 }
 
                 val transactionsData = apartmentId?.let { ledgerService.getTransactions(it) }
-                val documents = userDocumentService.getDocuments()
+                val documents = if (role == UserRole.MIESZKANIEC) userDocumentService.getDocuments() else emptyList()
 
                 transactionsData to documents
             }.onSuccess { (transactionsData, documents) ->
