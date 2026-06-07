@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.CreateUserRequest;
 import pl.edu.ur.blokur.dto.UpdateUserRequest;
 import pl.edu.ur.blokur.dto.UserResponse;
-import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
@@ -95,27 +94,26 @@ public class AdminUserService {
         user.setActive(true);
         user.setCreatedAt(LocalDateTime.now());
 
-        Apartment apartment = null;
         if (request.getApartmentId() != null) {
-            apartment =
+            var apartment =
                     apartmentRepository
                             .findById(request.getApartmentId())
                             .orElseThrow(
                                     () ->
                                             new IllegalArgumentException(
                                                     "Lokal o podanym ID nie istnieje."));
-        }
 
-        var savedUser = userRepository.save(user);
-
-        if (apartment != null) {
+            var savedUser = userRepository.save(user);
             UserApartment userApartment = new UserApartment();
             userApartment.setUser(savedUser);
             userApartment.setApartment(apartment);
             savedUser.getUserApartments().add(userApartment);
             savedUser = userRepository.save(savedUser);
+            invitationService.inviteUser(savedUser);
+            return savedUser;
         }
 
+        var savedUser = userRepository.save(user);
         invitationService.inviteUser(savedUser);
         return savedUser;
     }
