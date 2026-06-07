@@ -60,6 +60,9 @@ class MeterListViewModel @Inject constructor(
     private val _isManager = MutableStateFlow(false)
     val isManager: StateFlow<Boolean> = _isManager.asStateFlow()
 
+    private val _isProcessingAction = MutableStateFlow(false)
+    val isProcessingAction: StateFlow<Boolean> = _isProcessingAction.asStateFlow()
+
     private val _events = Channel<MeterEvent>()
     val events: Flow<MeterEvent> = _events.receiveAsFlow()
 
@@ -124,14 +127,18 @@ class MeterListViewModel @Inject constructor(
     }
 
     fun deactivateMeter(meterId: String) {
+        if (_isProcessingAction.value) return
         viewModelScope.launch {
+            _isProcessingAction.value = true
             runCatching { meterService.deactivateMeter(meterId) }
                 .onSuccess {
                     _events.send(MeterEvent.ShowSnackbar("Licznik został dezaktywowany"))
+                    _isProcessingAction.value = false
                     load()
                 }
                 .onFailure { e ->
                     _events.send(MeterEvent.ShowSnackbar(e.message ?: "Błąd dezaktywacji licznika"))
+                    _isProcessingAction.value = false
                 }
         }
     }
@@ -169,6 +176,7 @@ class MeterDetailViewModel @Inject constructor(
     val meterId: String = checkNotNull(savedStateHandle["meterId"])
     val serialNumber: String = checkNotNull(savedStateHandle["serialNumber"])
     val mediumType: String = checkNotNull(savedStateHandle["mediumType"])
+    val isActive: Boolean = checkNotNull(savedStateHandle["isActive"])
 
     private val _state = MutableStateFlow<MeterDetailState>(MeterDetailState.Loading)
     val state: StateFlow<MeterDetailState> = _state.asStateFlow()

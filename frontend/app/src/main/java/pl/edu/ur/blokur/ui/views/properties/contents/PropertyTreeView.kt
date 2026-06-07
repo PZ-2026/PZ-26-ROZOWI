@@ -48,8 +48,8 @@ fun PropertyTreeView(
     onDelete: (DeleteTarget) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Group buildings by property
-    val buildingsByProperty = buildings.groupBy { it.estateName ?: "Bez wspólnoty" }
+    // Group buildings by propertyId
+    val buildingsByProperty = buildings.groupBy { it.propertyId }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -79,7 +79,7 @@ fun PropertyTreeView(
 
         // Render properties
         properties.forEach { property ->
-            val propertyBuildings = buildingsByProperty[property.name] ?: emptyList()
+            val propertyBuildings = buildingsByProperty[property.id] ?: emptyList()
             val isExpanded = property.name in expandedProperties
 
             item(key = "prop_${property.id}") {
@@ -171,8 +171,8 @@ fun PropertyTreeView(
         }
 
         // Unassigned buildings (no matching property)
-        val assignedNames = properties.map { it.name }.toSet()
-        val unassigned = buildings.filter { (it.estateName ?: "Bez wspólnoty") !in assignedNames }
+        val assignedIds = properties.map { it.id }.toSet()
+        val unassigned = buildings.filter { it.propertyId == null || it.propertyId !in assignedIds }
         if (unassigned.isNotEmpty()) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))

@@ -13,6 +13,7 @@ data class BuildingTreeNodeDto(
     @SerializedName("address") val address: String,
     @SerializedName("latitude") val latitude: BigDecimal?,
     @SerializedName("longitude") val longitude: BigDecimal?,
+    @SerializedName("propertyId") val propertyId: String?,
     @SerializedName("staircases") val staircases: List<StaircaseNodeDto>
 )
 

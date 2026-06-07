@@ -111,13 +111,15 @@ fun MeterDetailScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = viewModel::openCreateDialog,
-                icon = { Icon(Icons.Rounded.Add, null) },
-                text = { Text("Wprowadź stan") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
+            if (viewModel.isActive) {
+                ExtendedFloatingActionButton(
+                    onClick = viewModel::openCreateDialog,
+                    icon = { Icon(Icons.Rounded.Add, null) },
+                    text = { Text("Wprowadź stan") },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -167,6 +169,7 @@ fun MeterDetailScreen(
                             items(s.readings, key = { it.id }) { reading ->
                                 ReadingCard(
                                     reading = reading,
+                                    isActive = viewModel.isActive,
                                     onEdit = { viewModel.openEditDialog(reading) },
                                     onDelete = { readingToDelete = reading.id }
                                 )
@@ -199,6 +202,7 @@ fun MeterDetailScreen(
 @Composable
 private fun ReadingCard(
     reading: MeterReadingResponseDto,
+    isActive: Boolean,
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -241,22 +245,24 @@ private fun ReadingCard(
             }
         }
 
-        Row {
-            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.Rounded.Edit,
-                    contentDescription = "Edytuj odczyt",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.Rounded.Close,
-                    contentDescription = "Usuń odczyt",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(18.dp)
-                )
+        if (isActive) {
+            Row {
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Rounded.Edit,
+                        contentDescription = "Edytuj odczyt",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "Usuń odczyt",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }

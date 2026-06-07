@@ -11,8 +11,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.services.AnnualSettlementDistributionRequestDto
+import pl.edu.ur.blokur.services.PropertyApiService
 import pl.edu.ur.blokur.services.DocumentApiService
 import pl.edu.ur.blokur.services.RateChangeDistributionRequestDto
+import pl.edu.ur.blokur.dtos.BuildingTreeNodeDto
+import pl.edu.ur.blokur.dtos.StaircaseNodeDto
+import pl.edu.ur.blokur.dtos.ApartmentNodeDto
 import javax.inject.Inject
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
@@ -41,6 +45,9 @@ data class DocDistributionState(
     // ── Shared recipient config
     val recipientScope: RecipientScope = RecipientScope.ALL,
     val targetId: String = "",
+    val selectedBuildingId: String? = null,
+    val selectedApartmentId: String? = null,
+    val buildingTree: List<BuildingTreeNodeDto> = emptyList(),
     // ── Status
     val isSubmitting: Boolean = false,
     val lastSentTab: DocDistributionTab? = null
@@ -54,7 +61,8 @@ sealed interface DocDistributionEvent {
 
 @HiltViewModel
 class DocDistributionViewModel @Inject constructor(
-    private val documentApiService: DocumentApiService
+    private val documentApiService: DocumentApiService,
+    private val propertyApiService: PropertyApiService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DocDistributionState())
@@ -62,6 +70,21 @@ class DocDistributionViewModel @Inject constructor(
 
     private val _events = Channel<DocDistributionEvent>()
     val events: Flow<DocDistributionEvent> = _events.receiveAsFlow()
+
+    init {
+        loadBuildingTree()
+    }
+
+    private fun loadBuildingTree() {
+        viewModelScope.launch {
+            runCatching { propertyApiService.getBuildingTree() }
+                .onSuccess { response ->
+                    if (response.isSuccessful) {
+                        _state.value = _state.value.copy(buildingTree = response.body() ?: emptyList())
+                    }
+                }
+        }
+    }
 
     // ── Tab navigation ────────────────────────────────────────────────────────
 
@@ -96,11 +119,32 @@ class DocDistributionViewModel @Inject constructor(
     // ── Shared handlers ───────────────────────────────────────────────────────
 
     fun onRecipientScopeChanged(scope: RecipientScope) {
-        _state.value = _state.value.copy(recipientScope = scope, targetId = "")
+        _state.value = _state.value.copy(
+            recipientScope = scope,
+            targetId = "",
+            selectedBuildingId = null,
+            selectedApartmentId = null
+        )
     }
 
     fun onTargetIdChanged(v: String) {
         _state.value = _state.value.copy(targetId = v)
+    }
+
+    fun onBuildingSelected(buildingId: String) {
+        val scope = _state.value.recipientScope
+        _state.value = _state.value.copy(
+            selectedBuildingId = buildingId,
+            selectedApartmentId = null,
+            targetId = if (scope == RecipientScope.BUILDING) buildingId else ""
+        )
+    }
+
+    fun onApartmentSelected(apartmentId: String) {
+        _state.value = _state.value.copy(
+            selectedApartmentId = apartmentId,
+            targetId = apartmentId
+        )
     }
 
     // ── Send actions ──────────────────────────────────────────────────────────

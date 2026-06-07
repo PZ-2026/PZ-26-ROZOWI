@@ -21,7 +21,8 @@ sealed interface MeterRoutes : AppRoute {
         val apartmentId: String,
         val meterId: String,
         val serialNumber: String,
-        val mediumType: String
+        val mediumType: String,
+        val isActive: Boolean
     ) : MeterRoutes
 }
 
@@ -31,12 +32,13 @@ fun NavGraphBuilder.metersGraph(navController: NavController) {
         val viewModel: MeterListViewModel = hiltViewModel()
         MeterListScreen(
             viewModel = viewModel,
-            onNavigateToDetail = { meterId, serialNumber, mediumType ->
+            onNavigateToDetail = { meterId, serialNumber, mediumType, isActive ->
                 navController.navigate(MeterRoutes.Detail(
                     apartmentId = args.apartmentId,
                     meterId = meterId,
                     serialNumber = serialNumber,
-                    mediumType = mediumType
+                    mediumType = mediumType,
+                    isActive = isActive
                 ))
             },
             onNavigateBack = { navController.popBackStack() }

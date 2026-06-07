@@ -196,7 +196,13 @@ public class BuildingService {
     @Transactional
     public void deleteApartment(UUID staircaseId, UUID apartmentId) {
         var apartment = findApartmentInStaircase(staircaseId, apartmentId);
-        apartmentRepository.delete(apartment);
+        try {
+            apartmentRepository.delete(apartment);
+            apartmentRepository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new BusinessValidationException(
+                    "Nie można usunąć lokalu, ponieważ posiada on przypisaną historię transakcji finansowych.");
+        }
     }
 
     private void applyApartmentRequest(Apartment apartment, ApartmentRequest request) {
@@ -317,6 +323,10 @@ public class BuildingService {
         buildingTreeDto.setAddress(building.getAddress());
         buildingTreeDto.setLatitude(building.getLatitude());
         buildingTreeDto.setLongitude(building.getLongitude());
+
+        if (building.getProperty() != null) {
+            buildingTreeDto.setPropertyId(building.getProperty().getId());
+        }
 
         if (building.getStaircases() != null) {
             var staircases =

@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -35,6 +37,9 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -172,50 +177,57 @@ fun DocumentDistributionScreen(
             }
 
             // ── Zawartość aktywnej zakładki ──────────────────────────────────────
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
-                    .navigationBarsPadding(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp)
+                    .navigationBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 when (state.activeTab) {
                     DocDistributionTab.RATE_CHANGE -> {
-                        item {
-                            RateChangeFormCard(
-                                subject = state.rateChangeSubject,
-                                body = state.rateChangeBody,
-                                effectiveDate = state.rateChangeEffectiveDate,
-                                recipientScope = state.recipientScope,
-                                targetId = state.targetId,
-                                isSubmitting = state.isSubmitting,
-                                isSent = state.lastSentTab == DocDistributionTab.RATE_CHANGE,
-                                onSubjectChanged = viewModel::onRateChangeSubjectChanged,
-                                onBodyChanged = viewModel::onRateChangeBodyChanged,
-                                onEffectiveDateChanged = viewModel::onRateChangeEffectiveDateChanged,
-                                onScopeChanged = viewModel::onRecipientScopeChanged,
-                                onTargetIdChanged = viewModel::onTargetIdChanged,
-                                onSend = viewModel::sendRateChange
-                            )
-                        }
+                        RateChangeFormCard(
+                            subject = state.rateChangeSubject,
+                            body = state.rateChangeBody,
+                            effectiveDate = state.rateChangeEffectiveDate,
+                            recipientScope = state.recipientScope,
+                            targetId = state.targetId,
+                            isSubmitting = state.isSubmitting,
+                            isSent = state.lastSentTab == DocDistributionTab.RATE_CHANGE,
+                            onSubjectChanged = viewModel::onRateChangeSubjectChanged,
+                            onBodyChanged = viewModel::onRateChangeBodyChanged,
+                            onEffectiveDateChanged = viewModel::onRateChangeEffectiveDateChanged,
+                            onScopeChanged = viewModel::onRecipientScopeChanged,
+                            onTargetIdChanged = viewModel::onTargetIdChanged,
+                            onBuildingSelected = viewModel::onBuildingSelected,
+                            onApartmentSelected = viewModel::onApartmentSelected,
+                            selectedBuildingId = state.selectedBuildingId,
+                            selectedApartmentId = state.selectedApartmentId,
+                            buildingTree = state.buildingTree,
+                            onSend = viewModel::sendRateChange
+                        )
                     }
                     DocDistributionTab.ANNUAL_SETTLEMENT -> {
-                        item {
-                            AnnualSettlementFormCard(
-                                year = state.settlementYear,
-                                note = state.settlementNote,
-                                recipientScope = state.recipientScope,
-                                targetId = state.targetId,
-                                isSubmitting = state.isSubmitting,
-                                isSent = state.lastSentTab == DocDistributionTab.ANNUAL_SETTLEMENT,
-                                onYearChanged = viewModel::onSettlementYearChanged,
-                                onNoteChanged = viewModel::onSettlementNoteChanged,
-                                onScopeChanged = viewModel::onRecipientScopeChanged,
-                                onTargetIdChanged = viewModel::onTargetIdChanged,
-                                onSend = viewModel::sendAnnualSettlement
-                            )
-                        }
+                        AnnualSettlementFormCard(
+                            year = state.settlementYear,
+                            note = state.settlementNote,
+                            recipientScope = state.recipientScope,
+                            targetId = state.targetId,
+                            isSubmitting = state.isSubmitting,
+                            isSent = state.lastSentTab == DocDistributionTab.ANNUAL_SETTLEMENT,
+                            onYearChanged = viewModel::onSettlementYearChanged,
+                            onNoteChanged = viewModel::onSettlementNoteChanged,
+                            onScopeChanged = viewModel::onRecipientScopeChanged,
+                            onTargetIdChanged = viewModel::onTargetIdChanged,
+                            onBuildingSelected = viewModel::onBuildingSelected,
+                            onApartmentSelected = viewModel::onApartmentSelected,
+                            selectedBuildingId = state.selectedBuildingId,
+                            selectedApartmentId = state.selectedApartmentId,
+                            buildingTree = state.buildingTree,
+                            onSend = viewModel::sendAnnualSettlement
+                        )
                     }
                 }
             }
@@ -242,6 +254,11 @@ private fun RateChangeFormCard(
     onEffectiveDateChanged: (String) -> Unit,
     onScopeChanged: (RecipientScope) -> Unit,
     onTargetIdChanged: (String) -> Unit,
+    onBuildingSelected: (String) -> Unit,
+    onApartmentSelected: (String) -> Unit,
+    selectedBuildingId: String?,
+    selectedApartmentId: String?,
+    buildingTree: List<pl.edu.ur.blokur.dtos.BuildingTreeNodeDto>,
     onSend: () -> Unit
 ) {
     val context = LocalContext.current
@@ -349,8 +366,13 @@ private fun RateChangeFormCard(
             RecipientScopeSelector(
                 scope = recipientScope,
                 targetId = targetId,
+                selectedBuildingId = selectedBuildingId,
+                selectedApartmentId = selectedApartmentId,
+                buildingTree = buildingTree,
                 onScopeChanged = onScopeChanged,
-                onTargetIdChanged = onTargetIdChanged
+                onTargetIdChanged = onTargetIdChanged,
+                onBuildingSelected = onBuildingSelected,
+                onApartmentSelected = onApartmentSelected
             )
 
             SendButton(
@@ -358,7 +380,7 @@ private fun RateChangeFormCard(
                 isSent = isSent,
                 isEnabled = subject.isNotBlank() && body.isNotBlank() && effectiveDate.matches(
                     Regex("^\\d{4}-\\d{2}-\\d{2}$")
-                ) && !isSubmitting,
+                ) && !isSubmitting && (recipientScope == RecipientScope.ALL || targetId.isNotBlank()),
                 onClick = onSend
             )
         }
@@ -379,6 +401,11 @@ private fun AnnualSettlementFormCard(
     onNoteChanged: (String) -> Unit,
     onScopeChanged: (RecipientScope) -> Unit,
     onTargetIdChanged: (String) -> Unit,
+    onBuildingSelected: (String) -> Unit,
+    onApartmentSelected: (String) -> Unit,
+    selectedBuildingId: String?,
+    selectedApartmentId: String?,
+    buildingTree: List<pl.edu.ur.blokur.dtos.BuildingTreeNodeDto>,
     onSend: () -> Unit
 ) {
     Card(
@@ -432,14 +459,19 @@ private fun AnnualSettlementFormCard(
             RecipientScopeSelector(
                 scope = recipientScope,
                 targetId = targetId,
+                selectedBuildingId = selectedBuildingId,
+                selectedApartmentId = selectedApartmentId,
+                buildingTree = buildingTree,
                 onScopeChanged = onScopeChanged,
-                onTargetIdChanged = onTargetIdChanged
+                onTargetIdChanged = onTargetIdChanged,
+                onBuildingSelected = onBuildingSelected,
+                onApartmentSelected = onApartmentSelected
             )
 
             SendButton(
                 isSubmitting = isSubmitting,
                 isSent = isSent,
-                isEnabled = year.length == 4 && year.toIntOrNull() in 1990..2100 && !isSubmitting,
+                isEnabled = year.length == 4 && year.toIntOrNull() in 1990..2100 && !isSubmitting && (recipientScope == RecipientScope.ALL || targetId.isNotBlank()),
                 onClick = onSend
             )
         }
@@ -448,12 +480,18 @@ private fun AnnualSettlementFormCard(
 
 // ── Selektor zakresu odbiorców ─────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RecipientScopeSelector(
     scope: RecipientScope,
     targetId: String,
+    selectedBuildingId: String?,
+    selectedApartmentId: String?,
+    buildingTree: List<pl.edu.ur.blokur.dtos.BuildingTreeNodeDto>,
     onScopeChanged: (RecipientScope) -> Unit,
-    onTargetIdChanged: (String) -> Unit
+    onTargetIdChanged: (String) -> Unit,
+    onBuildingSelected: (String) -> Unit,
+    onApartmentSelected: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -523,19 +561,75 @@ private fun RecipientScopeSelector(
         }
 
         if (scope != RecipientScope.ALL) {
-            OutlinedTextField(
-                value = targetId,
-                onValueChange = onTargetIdChanged,
-                label = {
-                    Text(
-                        if (scope == RecipientScope.BUILDING) "ID budynku (UUID)"
-                        else "ID lokalu (UUID)"
+            var expandedBuilding by remember { mutableStateOf(false) }
+            val selectedBuildingName = buildingTree.find { it.id == selectedBuildingId }?.name ?: ""
+
+            ExposedDropdownMenuBox(
+                expanded = expandedBuilding,
+                onExpandedChange = { expandedBuilding = !expandedBuilding }
+            ) {
+                OutlinedTextField(
+                    value = selectedBuildingName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Wybierz budynek") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBuilding) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedBuilding,
+                    onDismissRequest = { expandedBuilding = false }
+                ) {
+                    buildingTree.forEach { building ->
+                        DropdownMenuItem(
+                            text = { Text(building.name) },
+                            onClick = {
+                                onBuildingSelected(building.id)
+                                expandedBuilding = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (scope == RecipientScope.APARTMENT && selectedBuildingId != null) {
+                var expandedApartment by remember { mutableStateOf(false) }
+                val selectedBuilding = buildingTree.find { it.id == selectedBuildingId }
+                val apartments = selectedBuilding?.staircases?.flatMap { it.apartments } ?: emptyList()
+                val selectedApartmentNum = apartments.find { it.id == selectedApartmentId }?.number ?: ""
+
+                ExposedDropdownMenuBox(
+                    expanded = expandedApartment,
+                    onExpandedChange = { expandedApartment = !expandedApartment }
+                ) {
+                    OutlinedTextField(
+                        value = selectedApartmentNum,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Wybierz lokal") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedApartment) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        shape = RoundedCornerShape(12.dp)
                     )
-                },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
+                    ExposedDropdownMenu(
+                        expanded = expandedApartment,
+                        onDismissRequest = { expandedApartment = false }
+                    ) {
+                        apartments.forEach { apt ->
+                            DropdownMenuItem(
+                                text = { Text("Lokal nr ${apt.number}") },
+                                onClick = {
+                                    onApartmentSelected(apt.id)
+                                    expandedApartment = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

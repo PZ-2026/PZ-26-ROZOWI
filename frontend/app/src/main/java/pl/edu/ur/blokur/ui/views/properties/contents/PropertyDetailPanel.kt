@@ -200,17 +200,14 @@ private fun PropertyFields(
     ) {
         OutlinedTextField(
             value = form.managerEmail,
-            onValueChange = { 
-                onChange(form.copy(managerEmail = it))
-                expanded = true
-            },
+            onValueChange = { },
+            readOnly = true,
             label = { Text("E-mail zarządcy") },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
             placeholder = { Text("np. zarzadca@wspolnota.pl") },
             enabled = enabled,
             singleLine = true,
             shape = MaterialTheme.shapes.medium,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             trailingIcon = {
                 if (enabled && availableManagers.isNotEmpty()) {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -218,24 +215,26 @@ private fun PropertyFields(
             }
         )
         if (enabled && availableManagers.isNotEmpty()) {
-            val filteredManagers = availableManagers.filter {
-                it.contains(form.managerEmail, ignoreCase = true)
+            val isExactMatch = availableManagers.any { it.equals(form.managerEmail, ignoreCase = true) }
+            val filteredManagers = if (form.managerEmail.isBlank() || isExactMatch) {
+                availableManagers
+            } else {
+                availableManagers.filter { it.contains(form.managerEmail, ignoreCase = true) }
             }
-            if (filteredManagers.isNotEmpty()) {
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    filteredManagers.forEach { email ->
-                        DropdownMenuItem(
-                            text = { Text(email) },
-                            onClick = {
-                                onChange(form.copy(managerEmail = email))
-                                expanded = false
-                            },
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                        )
-                    }
+            val managersWithEmpty = listOf("") + filteredManagers
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                managersWithEmpty.forEach { email ->
+                    DropdownMenuItem(
+                        text = { Text(if (email.isBlank()) "Brak zarządcy" else email) },
+                        onClick = {
+                            onChange(form.copy(managerEmail = email))
+                            expanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
                 }
             }
         }

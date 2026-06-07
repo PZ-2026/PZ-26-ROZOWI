@@ -79,22 +79,7 @@ class PropertyTreeViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val users = response.body() ?: emptyList()
                     val managers = users.filter { it.role == "ZARZADCA" && it.active }
-                    val currentState = _state.value
-                    if (currentState is PropertyTreeState.Success) {
-                        // Only exclude the current property's manager when EDITING; in ADD mode exclude all assigned managers
-                        val currentPropertyId = if (_formMode.value == FormMode.EDIT) {
-                            (_selectedNode.value as? SelectedNode.Property)?.property?.id
-                        } else null
-                        val unassignedManagers = managers.filter { m ->
-                            val alreadyAssigned = currentState.properties.any { p ->
-                                p.managerEmail.equals(m.email, ignoreCase = true) && p.id != currentPropertyId
-                            }
-                            !alreadyAssigned
-                        }.map { it.email }
-                        _availableManagers.value = unassignedManagers
-                    } else {
-                        _availableManagers.value = managers.map { it.email }
-                    }
+                    _availableManagers.value = managers.map { it.email }
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -161,7 +146,8 @@ class PropertyTreeViewModel @Inject constructor(
             name = building.name,
             address = building.address,
             latitude = building.latitude?.toPlainString() ?: "",
-            longitude = building.longitude?.toPlainString() ?: ""
+            longitude = building.longitude?.toPlainString() ?: "",
+            propertyId = building.propertyId
         )
         _showBottomSheet.value = true
     }
@@ -306,20 +292,8 @@ class PropertyTreeViewModel @Inject constructor(
                 }
                 return "Użytkownik o tym adresie e-mail jest $roleName. Zarządcą nieruchomości może być tylko użytkownik z rolą Zarządca."
             }
-
-            // Check if this manager already has a property assigned.
-            // In EDIT mode, exclude the currently edited property. In ADD mode exclude all.
-            val currentState = _state.value
-            if (currentState is PropertyTreeState.Success) {
-                val currentPropertyId = if (_formMode.value == FormMode.EDIT) {
-                    (_selectedNode.value as? SelectedNode.Property)?.property?.id
-                } else null
-                val alreadyAssigned = currentState.properties.any {
-                    it.managerEmail.equals(email, ignoreCase = true) && it.id != currentPropertyId
-                }
-                if (alreadyAssigned) {
-                    return "Ten zarządca ma już przypisaną inną nieruchomość."
-                }
+            if (!matchedUser.active) {
+                return "Wybrany zarządca jest nieaktywny."
             }
         } catch (e: Exception) {
             return "Błąd połączenia podczas weryfikacji zarządcy."

@@ -143,7 +143,7 @@ fun PropertyTreeScreen(
             val text = when (target) {
                 is DeleteTarget.Building -> "Czy na pewno chcesz usunąć budynek ${target.name}?"
                 is DeleteTarget.Staircase -> "Czy na pewno chcesz usunąć klatkę ${target.label}?"
-                is DeleteTarget.Apartment -> "Czy na pewno chcesz usunąć lokal ${target.number}?"
+                is DeleteTarget.Apartment -> "UWAGA: Usunięcie lokalu ${target.number} bezpowrotnie usunie wszystkie przypisane do niego liczniki oraz historię odczytów! Upewnij się, że lokal nie posiada ważnych danych.\n\nCzy na pewno chcesz kontynuować?"
             }
 
             AlertDialog(

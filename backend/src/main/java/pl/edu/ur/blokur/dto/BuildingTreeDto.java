@@ -15,6 +15,7 @@ public class BuildingTreeDto {
     private String address;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private UUID propertyId;
     private List<StaircaseDto> staircases;
 
     /** DTO reprezentujące klatkę schodową w drzewie budynku. */

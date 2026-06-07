@@ -57,6 +57,7 @@ public class SecurityConfig {
                                                 "/api/auth/reset-password",
                                                 "/api/auth/accept-invitation",
                                                 "/api/categories",
+                                                "/uploads/**",
                                                 "/error")
                                         .permitAll()
                                         .anyRequest()
