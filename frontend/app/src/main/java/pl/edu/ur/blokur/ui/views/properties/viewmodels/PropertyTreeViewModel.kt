@@ -69,6 +69,9 @@ class PropertyTreeViewModel @Inject constructor(
     private val _availableManagers = MutableStateFlow<List<String>>(emptyList())
     val availableManagers: StateFlow<List<String>> = _availableManagers.asStateFlow()
 
+    // Stores the parent entity ID when initiating an ADD operation (e.g., buildingId for STAIRCASE)
+    private val _addParentId = MutableStateFlow<String?>(null)
+
     fun loadAvailableManagers() {
         viewModelScope.launch {
             try {
@@ -78,7 +81,10 @@ class PropertyTreeViewModel @Inject constructor(
                     val managers = users.filter { it.role == "ZARZADCA" && it.active }
                     val currentState = _state.value
                     if (currentState is PropertyTreeState.Success) {
-                        val currentPropertyId = (_selectedNode.value as? SelectedNode.Property)?.property?.id
+                        // Only exclude the current property's manager when EDITING; in ADD mode exclude all assigned managers
+                        val currentPropertyId = if (_formMode.value == FormMode.EDIT) {
+                            (_selectedNode.value as? SelectedNode.Property)?.property?.id
+                        } else null
                         val unassignedManagers = managers.filter { m ->
                             val alreadyAssigned = currentState.properties.any { p ->
                                 p.managerEmail.equals(m.email, ignoreCase = true) && p.id != currentPropertyId
@@ -195,6 +201,7 @@ class PropertyTreeViewModel @Inject constructor(
         _formError.value = null
         _formMode.value = FormMode.ADD
         _addTarget.value = target
+        _addParentId.value = parentContext
         when (target) {
             AddTarget.PROPERTY -> {
                 _propertyForm.value = PropertyFormFields()
@@ -212,6 +219,7 @@ class PropertyTreeViewModel @Inject constructor(
         _showBottomSheet.value = false
         _formMode.value = FormMode.VIEW
         _addTarget.value = null
+        _addParentId.value = null
     }
 
     // ─── Form updates ────────────────────────────────────────────────
@@ -299,10 +307,13 @@ class PropertyTreeViewModel @Inject constructor(
                 return "Użytkownik o tym adresie e-mail jest $roleName. Zarządcą nieruchomości może być tylko użytkownik z rolą Zarządca."
             }
 
-            // Check if this manager already has a property assigned
+            // Check if this manager already has a property assigned.
+            // In EDIT mode, exclude the currently edited property. In ADD mode exclude all.
             val currentState = _state.value
             if (currentState is PropertyTreeState.Success) {
-                val currentPropertyId = (_selectedNode.value as? SelectedNode.Property)?.property?.id
+                val currentPropertyId = if (_formMode.value == FormMode.EDIT) {
+                    (_selectedNode.value as? SelectedNode.Property)?.property?.id
+                } else null
                 val alreadyAssigned = currentState.properties.any {
                     it.managerEmail.equals(email, ignoreCase = true) && it.id != currentPropertyId
                 }
@@ -392,19 +403,17 @@ class PropertyTreeViewModel @Inject constructor(
                 )
             }
             AddTarget.STAIRCASE -> {
-                val node = _selectedNode.value
-                val buildingId = when (node) {
-                    is SelectedNode.Building -> node.building.id
-                    else -> throw Exception("Nie wybrano budynku")
-                }
+                // Prefer the parent ID passed from the tree row button; fall back to selected node
+                val buildingId = _addParentId.value
+                    ?: (_selectedNode.value as? SelectedNode.Building)?.building?.id
+                    ?: throw Exception("Nie wybrano budynku")
                 propertyService.createStaircase(buildingId, StaircaseRequestDto(_staircaseForm.value.label))
             }
             AddTarget.APARTMENT -> {
-                val node = _selectedNode.value
-                val staircaseId = when (node) {
-                    is SelectedNode.Staircase -> node.staircase.id
-                    else -> throw Exception("Nie wybrano klatki")
-                }
+                // Prefer the parent ID passed from the tree row button; fall back to selected node
+                val staircaseId = _addParentId.value
+                    ?: (_selectedNode.value as? SelectedNode.Staircase)?.staircase?.id
+                    ?: throw Exception("Nie wybrano klatki")
                 val f = _apartmentForm.value
                 propertyService.createApartment(
                     staircaseId,

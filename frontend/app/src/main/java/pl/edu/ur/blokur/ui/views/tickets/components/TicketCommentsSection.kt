@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Send
@@ -104,11 +105,43 @@ fun TicketCommentsSection(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Caretaker info banner — they can only send internal comments
+                if (currentRole == "KONSERWATOR") {
+                    Surface(
+                        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "Komentarz będzie wewnętrzny — widoczny tylko dla zarządcy",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = commentText,
                     onValueChange = { commentText = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Napisz komentarz...") },
+                    placeholder = {
+                        Text(
+                            if (currentRole == "KONSERWATOR") "Napisz komentarz wewnętrzny..."
+                            else "Napisz komentarz..."
+                        )
+                    },
                     shape = RoundedCornerShape(12.dp),
                     maxLines = 4,
                     trailingIcon = {
