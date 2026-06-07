@@ -5,7 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -25,6 +25,7 @@ fun PropertyDetailPanel(
     buildingForm: BuildingFormFields,
     staircaseForm: StaircaseFormFields,
     apartmentForm: ApartmentFormFields,
+    availableManagers: List<String> = emptyList(),
     onPropertyFormChange: (PropertyFormFields) -> Unit,
     onBuildingFormChange: (BuildingFormFields) -> Unit,
     onStaircaseFormChange: (StaircaseFormFields) -> Unit,
@@ -33,6 +34,7 @@ fun PropertyDetailPanel(
     onSave: () -> Unit,
     onDismiss: () -> Unit,
     onNavigateToMeters: (String) -> Unit = {},
+    onNavigateToLedger: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isEditable = formMode == FormMode.EDIT || formMode == FormMode.ADD
@@ -68,7 +70,7 @@ fun PropertyDetailPanel(
         when {
             formMode == FormMode.ADD && addTarget == AddTarget.PROPERTY ||
             formMode != FormMode.ADD && selectedNode is SelectedNode.Property -> {
-                PropertyFields(propertyForm, onPropertyFormChange, isEditable)
+                PropertyFields(propertyForm, onPropertyFormChange, isEditable, availableManagers)
             }
             formMode == FormMode.ADD && addTarget == AddTarget.BUILDING ||
             formMode != FormMode.ADD && selectedNode is SelectedNode.Building -> {
@@ -105,6 +107,13 @@ fun PropertyDetailPanel(
             FormMode.VIEW -> {
                 if (selectedNode is SelectedNode.Apartment) {
                     OutlinedButton(
+                        onClick = { onNavigateToLedger(selectedNode.apartment.id) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Kartoteka finansowa")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
                         onClick = { onNavigateToMeters(selectedNode.apartment.id) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -137,40 +146,100 @@ fun PropertyDetailPanel(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PropertyFields(
     form: PropertyFormFields,
     onChange: (PropertyFormFields) -> Unit,
-    enabled: Boolean
+    enabled: Boolean,
+    availableManagers: List<String>
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     OutlinedTextField(
         value = form.name, onValueChange = { onChange(form.copy(name = it)) },
         label = { Text("Nazwa wspólnoty") }, modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("np. Wspólnota Mieszkaniowa Słoneczna") },
         enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium
     )
     OutlinedTextField(
         value = form.address, onValueChange = { onChange(form.copy(address = it)) },
         label = { Text("Adres") }, modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("np. ul. Piłsudskiego 12, Rzeszów") },
         enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium
     )
     OutlinedTextField(
-        value = form.nip, onValueChange = { onChange(form.copy(nip = it)) },
+        value = form.nip, onValueChange = {
+            val filtered = it.filter { c -> c.isDigit() }
+            if (filtered.length <= 10) {
+                onChange(form.copy(nip = filtered))
+            }
+        },
         label = { Text("NIP") }, modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("np. 1234567890") },
         enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
     OutlinedTextField(
-        value = form.managerPhone, onValueChange = { onChange(form.copy(managerPhone = it)) },
+        value = form.managerPhone, onValueChange = {
+            val filtered = it.filter { c -> c.isDigit() || c == '+' || c == '-' || c == ' ' }
+            if (filtered.length <= 15) {
+                onChange(form.copy(managerPhone = filtered))
+            }
+        },
         label = { Text("Telefon zarządcy") }, modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("np. +48 123 456 789") },
         enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
     )
-    OutlinedTextField(
-        value = form.managerEmail, onValueChange = { onChange(form.copy(managerEmail = it)) },
-        label = { Text("E-mail zarządcy") }, modifier = Modifier.fillMaxWidth(),
-        enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-    )
+
+    // E-mail zarządcy dropdown/autocomplete selection
+    ExposedDropdownMenuBox(
+        expanded = enabled && expanded,
+        onExpandedChange = { if (enabled) expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = form.managerEmail,
+            onValueChange = { 
+                onChange(form.copy(managerEmail = it))
+                expanded = true
+            },
+            label = { Text("E-mail zarządcy") },
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            placeholder = { Text("np. zarzadca@wspolnota.pl") },
+            enabled = enabled,
+            singleLine = true,
+            shape = MaterialTheme.shapes.medium,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            trailingIcon = {
+                if (enabled && availableManagers.isNotEmpty()) {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+            }
+        )
+        if (enabled && availableManagers.isNotEmpty()) {
+            val filteredManagers = availableManagers.filter {
+                it.contains(form.managerEmail, ignoreCase = true)
+            }
+            if (filteredManagers.isNotEmpty()) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    filteredManagers.forEach { email ->
+                        DropdownMenuItem(
+                            text = { Text(email) },
+                            onClick = {
+                                onChange(form.copy(managerEmail = email))
+                                expanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -182,28 +251,43 @@ private fun BuildingFields(
     OutlinedTextField(
         value = form.name, onValueChange = { onChange(form.copy(name = it)) },
         label = { Text("Nazwa budynku") }, modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("np. Budynek A (Solaris)") },
         enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium
     )
     OutlinedTextField(
         value = form.address, onValueChange = { onChange(form.copy(address = it)) },
         label = { Text("Adres") }, modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("np. ul. Słoneczna 15") },
         enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium
     )
     OutlinedTextField(
         value = form.estateName, onValueChange = { onChange(form.copy(estateName = it)) },
         label = { Text("Nazwa osiedla") }, modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("np. Osiedle Zielone") },
         enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium
     )
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(
-            value = form.latitude, onValueChange = { onChange(form.copy(latitude = it)) },
+            value = form.latitude, onValueChange = {
+                val filtered = it.filter { c -> c.isDigit() || c == '.' || c == '-' }
+                if (filtered.length <= 15) {
+                    onChange(form.copy(latitude = filtered))
+                }
+            },
             label = { Text("Szer. geo.") }, modifier = Modifier.weight(1f),
+            placeholder = { Text("np. 50.0413") },
             enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
         OutlinedTextField(
-            value = form.longitude, onValueChange = { onChange(form.copy(longitude = it)) },
+            value = form.longitude, onValueChange = {
+                val filtered = it.filter { c -> c.isDigit() || c == '.' || c == '-' }
+                if (filtered.length <= 15) {
+                    onChange(form.copy(longitude = filtered))
+                }
+            },
             label = { Text("Dł. geo.") }, modifier = Modifier.weight(1f),
+            placeholder = { Text("np. 21.9990") },
             enabled = enabled, singleLine = true, shape = MaterialTheme.shapes.medium,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )

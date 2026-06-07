@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -79,6 +80,12 @@ fun CategoriesScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is CategoriesEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                is CategoriesEvent.ActionCompleted -> {
+                    showAddDialog = false
+                    editingCategory = null
+                    deactivatingCategory = null
+                    slaEditingCategory = null
+                }
             }
         }
     }
@@ -91,7 +98,6 @@ fun CategoriesScreen(
             onDismiss = { showAddDialog = false },
             onConfirm = { name ->
                 viewModel.createCategory(name)
-                showAddDialog = false
             }
         )
     }
@@ -104,14 +110,14 @@ fun CategoriesScreen(
             onDismiss = { editingCategory = null },
             onConfirm = { name ->
                 viewModel.updateCategory(category.id, name)
-                editingCategory = null
             }
         )
     }
 
     deactivatingCategory?.let { category ->
+        val isSubmitting = (state as? CategoriesUiState.Success)?.isSubmitting == true
         AlertDialog(
-            onDismissRequest = { deactivatingCategory = null },
+            onDismissRequest = { if (!isSubmitting) deactivatingCategory = null },
             icon = {
                 Icon(
                     Icons.Rounded.DeleteOutline,
@@ -121,24 +127,35 @@ fun CategoriesScreen(
             },
             title = { Text("Deaktywuj kategorię") },
             text = {
-                Text(
-                    "Czy na pewno chcesz deaktywować kategorię \"${category.name}\"?\n\n" +
-                    "Kategoria nie będzie widoczna dla mieszkańców przy tworzeniu zgłoszeń.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                if (isSubmitting) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.error)
+                        Text("Deaktywowanie...")
+                    }
+                } else {
+                    Text(
+                        "Czy na pewno chcesz deaktywować kategorię \"${category.name}\"?\n\n" +
+                        "Kategoria nie będzie widoczna dla mieszkańców przy tworzeniu zgłoszeń.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         viewModel.deactivateCategory(category.id, category.name)
-                        deactivatingCategory = null
-                    }
+                    },
+                    enabled = !isSubmitting
                 ) {
-                    Text("Deaktywuj", color = MaterialTheme.colorScheme.error)
+                    Text("Deaktywuj", color = if (isSubmitting) Color.Gray else MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deactivatingCategory = null }) { Text("Anuluj") }
+                TextButton(onClick = { deactivatingCategory = null }, enabled = !isSubmitting) { Text("Anuluj") }
             },
             shape = RoundedCornerShape(20.dp)
         )
@@ -199,7 +216,8 @@ fun CategoriesScreen(
             is CategoriesUiState.Loading -> LoadingIndicator()
             is CategoriesUiState.Error -> EmptyState(
                 title = "Błąd",
-                description = s.message
+                description = s.message,
+                onRetry = viewModel::loadCategories
             )
             is CategoriesUiState.Success -> {
                 if (s.categories.isEmpty()) {
@@ -290,7 +308,7 @@ private fun CategoryRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // SLA badge
-                val slaText = category.slaHours?.let { "${it}h SLA" } ?: "Brak SLA"
+                val slaText = category.slaHours?.let { "SLA: ${it} h" } ?: "Brak SLA"
                 val slaBg = if (category.slaHours != null)
                     Color(0xFF2563EB).copy(alpha = 0.1f)
                 else
@@ -356,7 +374,7 @@ private fun SlaEditDialog(
     onConfirm: (Int) -> Unit
 ) {
     var slaText by remember { mutableStateOf(currentSla?.toString() ?: "") }
-    val isValid = slaText.toIntOrNull()?.let { it >= 1 } == true
+    val isValid = slaText.toIntOrNull()?.let { it in 1..8760 } == true
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -389,7 +407,12 @@ private fun SlaEditDialog(
                     },
                     supportingText = {
                         if (slaText.isNotEmpty() && !isValid) {
-                            Text("Minimum 1 godzina", color = MaterialTheme.colorScheme.error)
+                            val msg = if (slaText.toIntOrNull()?.let { it < 1 } != false) {
+                                "Minimum 1 godzina"
+                            } else {
+                                "Maksymalnie 8760 godzin (365 dni)"
+                            }
+                            Text(msg, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 )

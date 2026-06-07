@@ -39,8 +39,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
             "SELECT d FROM Document d WHERE "
                     + "(:apartmentId IS NULL OR d.apartment.id = :apartmentId) AND "
                     + "(:type IS NULL OR d.type = :type) AND "
-                    + "(:startDate IS NULL OR d.createdAt >= :startDate) AND "
-                    + "(:endDate IS NULL OR d.createdAt <= :endDate) "
+                    + "(CAST(:startDate AS timestamp) IS NULL OR d.createdAt >= :startDate) AND "
+                    + "(CAST(:endDate AS timestamp) IS NULL OR d.createdAt <= :endDate) "
                     + "ORDER BY d.createdAt DESC")
     List<Document> findAllWithFilters(
             @Param("apartmentId") UUID apartmentId,

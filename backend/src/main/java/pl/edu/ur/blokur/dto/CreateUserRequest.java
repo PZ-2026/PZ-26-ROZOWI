@@ -23,5 +23,5 @@ public class CreateUserRequest {
             message = "Dozwolone role: ZARZADCA, MIESZKANIEC, KONSERWATOR")
     private String role;
 
-    @NotNull private UUID apartmentId;
+    private UUID apartmentId;
 }

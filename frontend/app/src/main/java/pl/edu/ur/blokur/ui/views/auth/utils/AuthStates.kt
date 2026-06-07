@@ -72,11 +72,14 @@ sealed interface ResetPasswordState {
     data object Loading : ResetPasswordState
     data class Success(val message: String) : ResetPasswordState
     data class Error(val message: String) : ResetPasswordState
+    /** Token z linku mailowego wygasł — użytkownik może poprosić o nowy link. */
+    data class TokenExpired(val message: String) : ResetPasswordState
 }
 
 /** Zdarzenia ekranu „Resetuj hasło". */
 sealed interface ResetPasswordEvent {
     data object NavigateToLogin : ResetPasswordEvent
+    data object NavigateToForgotPassword : ResetPasswordEvent
     data class ShowSnackbar(val message: String) : ResetPasswordEvent
 }
 
@@ -86,3 +89,29 @@ data class ResetPasswordFormFields(
     val confirmPassword: String = "",
     val passwordVisible: Boolean = false
 )
+
+// ─── Akceptacja zaproszenia ──────────────────────────────────────────
+
+/** Stan ekranu „Akceptuj zaproszenie”. */
+sealed interface AcceptInvitationState {
+    data object Idle : AcceptInvitationState
+    data object Loading : AcceptInvitationState
+    data class Success(val message: String) : AcceptInvitationState
+    data class Error(val message: String) : AcceptInvitationState
+    /** Link zaproszenia wygasł. */
+    data class TokenExpired(val message: String) : AcceptInvitationState
+}
+
+/** Zdarzenia ekranu „Akceptuj zaproszenie”. */
+sealed interface AcceptInvitationEvent {
+    data object NavigateToLogin : AcceptInvitationEvent
+    data class ShowSnackbar(val message: String) : AcceptInvitationEvent
+}
+
+/** Pola formularza akceptacji zaproszenia. */
+data class AcceptInvitationFormFields(
+    val newPassword: String = "",
+    val confirmPassword: String = "",
+    val passwordVisible: Boolean = false
+)
+

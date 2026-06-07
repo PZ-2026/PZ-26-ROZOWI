@@ -150,7 +150,7 @@ SELECT 'ZGL/2026/001', 'Wyciek pod zlewem', 'Woda kapie spod syfonu w kuchni.', 
 
 -- Nowe zgłoszenie elektryczne (klatka)
 INSERT INTO tickets (ticket_number, title, description, status, category_id, author_id, assigned_to_id, staircase_id)
-SELECT 'ZGL/2026/002', 'Przepalona żarówka', 'Brak światła na 2. piętrze w klatce 1.', 'NOWE',
+SELECT 'ZGL/2026/002', 'Przepalona żarówka', 'Brak światła na 2. piętrze w klatce 1.', 'ZAPLANOWANO',
 (SELECT id FROM ticket_categories WHERE name = 'Elektryka'),
 (SELECT id FROM users WHERE email = 'anna.nowak@poczta.pl'),
 (SELECT id FROM users WHERE email = 'elektryk@blokur.pl'),

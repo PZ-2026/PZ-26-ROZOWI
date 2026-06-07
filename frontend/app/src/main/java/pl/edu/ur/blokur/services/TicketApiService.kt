@@ -42,7 +42,9 @@ interface TicketApiService {
         @Query("assignedTo") assignedTo: String? = null,
         @Query("dateFrom") dateFrom: String? = null,
         @Query("dateTo") dateTo: String? = null,
-        @Query("search") search: String? = null
+        @Query("search") search: String? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
     ): Response<List<TicketSummaryDto>>
 
     @GET("api/tickets/{id}")
@@ -57,36 +59,36 @@ interface TicketApiService {
     @GET("api/users")
     suspend fun getConservators(@Query("role") role: String = "KONSERWATOR"): Response<List<ConservatorDto>>
 
-    /** PATCH /api/tickets/{id}/assign — przypisanie konserwatora (ZARZADCA). */
+    /** PATCH api/tickets/{id}/assign — przypisanie konserwatora (ZARZADCA). */
     @PATCH("api/tickets/{id}/assign")
     suspend fun assignTicket(
         @Path("id") ticketId: String,
         @Body request: TicketAssignRequest
     ): Response<TicketDetailDto>
 
-    /** PATCH /api/tickets/{id}/close — zamknięcie zgłoszenia (ZARZADCA). */
+    /** PATCH api/tickets/{id}/close — zamknięcie zgłoszenia (ZARZADCA). */
     @PATCH("api/tickets/{id}/close")
     suspend fun closeTicket(@Path("id") ticketId: String): Response<TicketDetailDto>
 
-    /** PATCH /api/tickets/{id}/reject — odrzucenie zgłoszenia z powodem (ZARZADCA). */
+    /** PATCH api/tickets/{id}/reject — odrzucenie zgłoszenia z powodem (ZARZADCA). */
     @PATCH("api/tickets/{id}/reject")
     suspend fun rejectTicket(
         @Path("id") ticketId: String,
         @Body request: TicketRejectRequest
     ): Response<TicketDetailDto>
 
-    /** PATCH /api/tickets/{id}/start — rozpoczęcie prac (KONSERWATOR). */
+    /** PATCH api/tickets/{id}/start — rozpoczęcie prac (KONSERWATOR). */
     @PATCH("api/tickets/{id}/start")
     suspend fun startWork(@Path("id") ticketId: String): Response<TicketDetailDto>
 
-    /** PATCH /api/tickets/{id}/suspend — wstrzymanie prac z powodem (KONSERWATOR). */
+    /** PATCH api/tickets/{id}/suspend — wstrzymanie prac z powodem (KONSERWATOR). */
     @PATCH("api/tickets/{id}/suspend")
     suspend fun suspendWork(
         @Path("id") ticketId: String,
         @Body request: TicketSuspendRequest
     ): Response<TicketDetailDto>
 
-    /** POST /api/tickets/{id}/completion — zakończenie prac z opisem (KONSERWATOR). */
+    /** POST api/tickets/{id}/completion — zakończenie prac z opisem (KONSERWATOR). */
     @POST("api/tickets/{id}/completion")
     suspend fun completeWork(
         @Path("id") ticketId: String,

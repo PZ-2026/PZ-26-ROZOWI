@@ -26,12 +26,7 @@ class AnnouncementService @Inject constructor(
 
     /** Pobiera listę ogłoszeń dostępnych dla zalogowanego użytkownika. */
     suspend fun getAnnouncements(): List<AnnouncementDto> = withContext(Dispatchers.IO) {
-        val response = api.getAnnouncements()
-        if (response.isSuccessful) {
-            response.body() ?: emptyList()
-        } else {
-            throw Exception(handleError(response.code(), "pobierania ogłoszeń"))
-        }
+        ApiResponseHandler.requireSuccess(api.getAnnouncements(), "Błąd pobierania ogłoszeń")
     }
 
     /**
@@ -53,12 +48,7 @@ class AnnouncementService @Inject constructor(
                 it.toRequestBody("application/pdf".toMediaTypeOrNull())
             )
         }
-        val response = api.createAnnouncement(dataPart, attachmentPart)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Pusta odpowiedź z serwera")
-        } else {
-            throw Exception(handleError(response.code(), "tworzenia ogłoszenia"))
-        }
+        ApiResponseHandler.requireSuccess(api.createAnnouncement(dataPart, attachmentPart), "Błąd tworzenia ogłoszenia")
     }
 
     /**
@@ -82,36 +72,16 @@ class AnnouncementService @Inject constructor(
                 it.toRequestBody("application/pdf".toMediaTypeOrNull())
             )
         }
-        val response = api.updateAnnouncement(id, dataPart, attachmentPart)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Pusta odpowiedź z serwera")
-        } else {
-            throw Exception(handleError(response.code(), "aktualizacji ogłoszenia"))
-        }
+        ApiResponseHandler.requireSuccess(api.updateAnnouncement(id, dataPart, attachmentPart), "Błąd aktualizacji ogłoszenia")
     }
 
     /** Usuwa ogłoszenie (ZARZADCA). */
     suspend fun deleteAnnouncement(id: String) = withContext(Dispatchers.IO) {
-        val response = api.deleteAnnouncement(id)
-        if (!response.isSuccessful) {
-            throw Exception(handleError(response.code(), "usuwania ogłoszenia"))
-        }
+        ApiResponseHandler.requireSuccessNoBody(api.deleteAnnouncement(id), "Błąd usuwania ogłoszenia")
     }
 
     /** Pobiera załącznik PDF ogłoszenia jako ResponseBody. */
     suspend fun getAttachment(id: String): ResponseBody = withContext(Dispatchers.IO) {
-        val response = api.getAttachment(id)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak treści odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "pobierania załącznika"))
-        }
-    }
-
-    private fun handleError(code: Int, action: String): String = when (code) {
-        401 -> "Brak autoryzacji. Zaloguj się ponownie."
-        403 -> "Brak uprawnień do $action."
-        404 -> "Nie znaleziono zasobu."
-        else -> "Błąd serwera ($code) podczas $action."
+        ApiResponseHandler.requireSuccess(api.getAttachment(id), "Błąd pobierania załącznika")
     }
 }

@@ -3,15 +3,18 @@ package pl.edu.ur.blokur.ui.views.tickets.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import pl.edu.ur.blokur.dtos.TicketSummaryDto
+import pl.edu.ur.blokur.services.PropertyService
 import pl.edu.ur.blokur.services.TicketService
+import pl.edu.ur.blokur.ui.views.tickets.utils.TicketFilterOptions
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketFilterState
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsListState
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsScreenEvent
@@ -19,7 +22,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TicketsViewModel @Inject constructor(
-    private val ticketService: TicketService
+    private val ticketService: TicketService,
+    private val propertyService: PropertyService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<TicketsListState>(TicketsListState.Loading)
@@ -28,54 +32,90 @@ class TicketsViewModel @Inject constructor(
     private val _events = Channel<TicketsScreenEvent>()
     val events: Flow<TicketsScreenEvent> = _events.receiveAsFlow()
 
+    private var currentFilter = TicketFilterState()
+    private var filterOptions = TicketFilterOptions()
+    private var isFetching = false
+    private var filterOptionsLoaded = false
+
     init {
         loadTickets()
     }
 
     fun loadTickets() {
+        if (isFetching) return
+
         viewModelScope.launch {
+            isFetching = true
+            val previousSuccess = _state.value as? TicketsListState.Success
             _state.value = TicketsListState.Loading
+
             runCatching {
-                val tickets = ticketService.getTickets()
                 val role = ticketService.getCurrentUserRole()
-                tickets to role
-            }.onSuccess { (tickets, role) ->
-                val currentFilter = (_state.value as? TicketsListState.Success)?.filterState
-                    ?: TicketFilterState()
-                _state.value = TicketsListState.Success(
-                    allTickets = tickets,
-                    filteredTickets = applyFilter(tickets, currentFilter),
-                    currentUserRole = role,
-                    filterState = currentFilter
+                if (role == "ZARZADCA" && !filterOptionsLoaded) {
+                    loadFilterOptions()
+                }
+
+                val fetchedTickets = ticketService.getTickets(
+                    status = currentFilter.selectedStatus.blankOrNull(),
+                    categoryId = currentFilter.categoryId.blankOrNull(),
+                    buildingId = currentFilter.buildingId.blankOrNull(),
+                    staircaseId = currentFilter.staircaseId.blankOrNull(),
+                    assignedTo = currentFilter.assignedTo.blankOrNull(),
+                    dateFrom = currentFilter.dateFrom.blankOrNull(),
+                    dateTo = currentFilter.dateTo.blankOrNull(),
+                    search = currentFilter.searchQuery.blankOrNull()
                 )
+                Triple(fetchedTickets, role, previousSuccess?.tickets)
+            }.onSuccess { (fetchedTickets, role, _) ->
+                _state.value = TicketsListState.Success(
+                    tickets = fetchedTickets,
+                    currentUserRole = role,
+                    filterState = currentFilter,
+                    filterOptions = filterOptions
+                )
+                isFetching = false
             }.onFailure { e ->
+                isFetching = false
                 _state.value = TicketsListState.Error(e.message ?: "Błąd ładowania zgłoszeń")
             }
         }
     }
 
-    fun onFilterChanged(newFilter: TicketFilterState) {
-        val current = _state.value as? TicketsListState.Success ?: return
-        _state.value = current.copy(
-            filteredTickets = applyFilter(current.allTickets, newFilter),
-            filterState = newFilter
-        )
+    private suspend fun loadFilterOptions() {
+        filterOptions = filterOptions.copy(isLoading = true)
+        runCatching {
+            coroutineScope {
+                val categoriesDeferred = async { ticketService.getCategories() }
+                val buildingsDeferred = async { propertyService.getBuildingTree() }
+                val conservatorsDeferred = async { ticketService.getAvailableConservators() }
+                Triple(
+                    categoriesDeferred.await(),
+                    buildingsDeferred.await(),
+                    conservatorsDeferred.await()
+                )
+            }
+        }.onSuccess { (categories, buildings, conservators) ->
+            filterOptions = TicketFilterOptions(
+                categories = categories,
+                buildings = buildings,
+                conservators = conservators,
+                isLoading = false
+            )
+            filterOptionsLoaded = true
+        }.onFailure { e ->
+            filterOptions = filterOptions.copy(isLoading = false)
+            _events.send(
+                TicketsScreenEvent.ShowSnackbar(
+                    e.message ?: "Nie udało się załadować opcji filtrów"
+                )
+            )
+        }
     }
 
-    private fun applyFilter(
-        tickets: List<TicketSummaryDto>,
-        filter: TicketFilterState
-    ): List<TicketSummaryDto> {
-        return tickets.filter { ticket ->
-            val matchesSearch = if (filter.searchQuery.isBlank()) true else {
-                ticket.title.contains(filter.searchQuery, ignoreCase = true) ||
-                ticket.ticketNumber.contains(filter.searchQuery, ignoreCase = true) ||
-                ticket.categoryName.contains(filter.searchQuery, ignoreCase = true)
-            }
-            val matchesStatus = if (filter.selectedStatus.isBlank()) true else {
-                ticket.status.name == filter.selectedStatus
-            }
-            matchesSearch && matchesStatus
+    fun onFilterChanged(newFilter: TicketFilterState) {
+        if (currentFilter != newFilter) {
+            currentFilter = newFilter
+            loadTickets()
         }
     }
 
@@ -90,4 +130,6 @@ class TicketsViewModel @Inject constructor(
             _events.send(TicketsScreenEvent.NavigateToCreate)
         }
     }
+
+    private fun String.blankOrNull(): String? = if (isBlank()) null else this
 }

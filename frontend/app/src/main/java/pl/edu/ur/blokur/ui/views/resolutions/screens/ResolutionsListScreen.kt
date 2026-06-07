@@ -87,7 +87,11 @@ fun ResolutionsListScreen(
     ) { innerPadding ->
         when (val s = state) {
             is ResolutionsListState.Loading -> LoadingIndicator()
-            is ResolutionsListState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is ResolutionsListState.Error -> EmptyState(
+                title = "Błąd",
+                description = s.message,
+                onRetry = viewModel::load
+            )
             is ResolutionsListState.Success -> {
                 if (s.resolutions.isEmpty()) {
                     Box(
@@ -177,8 +181,7 @@ private fun ResolutionCard(
             }
             // Data zakończenia
             val endLabel = try {
-                val ldt = java.time.LocalDateTime.parse(resolution.endDate)
-                "Do: ${ldt.toLocalDate()}"
+                "Do: ${pl.edu.ur.blokur.ui.utils.PolishFormat.formatDate(resolution.endDate)}"
             } catch (_: Exception) { "Do: ${resolution.endDate}" }
 
             Row(

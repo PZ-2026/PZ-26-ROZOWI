@@ -25,30 +25,32 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.TransactionDto
-import pl.edu.ur.blokur.dtos.TransactionType
+import pl.edu.ur.blokur.dtos.FinancialTransactionDto
 import pl.edu.ur.blokur.ui.components.NormalCard
 import pl.edu.ur.blokur.ui.components.StatusBadge
 import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.InfoBlue
 import pl.edu.ur.blokur.ui.theme.SuccessGreen
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 
 private data class TransactionPresentation(val label: String, val color: Color, val icon: ImageVector)
 
-private fun TransactionType.toPresentation() = when (this) {
-    TransactionType.WPLATA -> TransactionPresentation("Wpłata", SuccessGreen, Icons.Rounded.ArrowDownward)
-    TransactionType.NALICZENIE -> TransactionPresentation("Naliczenie", ErrorRed, Icons.Rounded.ArrowUpward)
-    TransactionType.KOREKTA -> TransactionPresentation("Korekta", InfoBlue, Icons.Rounded.SwapVert)
+@Composable
+private fun String.toPresentation() = when (this.uppercase()) {
+    "WPLATA" -> TransactionPresentation("Wpłata", SuccessGreen, Icons.Rounded.ArrowDownward)
+    "NALICZENIE" -> TransactionPresentation("Naliczenie", ErrorRed, Icons.Rounded.ArrowUpward)
+    "KOREKTA" -> TransactionPresentation("Korekta", InfoBlue, Icons.Rounded.SwapVert)
+    else -> TransactionPresentation(this, MaterialTheme.colorScheme.onSurface, Icons.Rounded.SwapVert)
 }
 
 @Composable
-fun TransactionItem(transaction: TransactionDto) {
+fun TransactionItem(transaction: FinancialTransactionDto) {
     val presentation = transaction.type.toPresentation()
     val amountText = run {
-        val prefix = if (transaction.amount >= 0) "+" else ""
-        "$prefix${"%.2f".format(transaction.amount)} PLN"
+        val prefix = if (transaction.amount >= java.math.BigDecimal.ZERO) "+" else ""
+        "$prefix${PolishFormat.formatMoney(transaction.amount.abs())}"
     }
-    val amountColor = if (transaction.amount >= 0) SuccessGreen else ErrorRed
+    val amountColor = if (transaction.amount >= java.math.BigDecimal.ZERO) SuccessGreen else ErrorRed
 
     NormalCard {
         Row(
@@ -73,15 +75,14 @@ fun TransactionItem(transaction: TransactionDto) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatusBadge(text = presentation.label, dotColor = presentation.color)
-                    Text(formatDate(transaction.transactionDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        PolishFormat.formatDate(transaction.transactionDate),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             Text(amountText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = amountColor)
         }
     }
 }
-
-private fun formatDate(date: String): String = try {
-    val parts = date.split("-")
-    if (parts.size == 3) "${parts[2]}.${parts[1]}.${parts[0]}" else date
-} catch (_: Exception) { date }

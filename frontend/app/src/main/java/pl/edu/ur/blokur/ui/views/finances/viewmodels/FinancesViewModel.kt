@@ -1,8 +1,13 @@
 package pl.edu.ur.blokur.ui.views.finances.viewmodels
 
+import android.content.Context
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,17 +15,29 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import pl.edu.ur.blokur.dtos.UserDocumentDto
 import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.services.AuthService
-import pl.edu.ur.blokur.services.FinancesService
+import pl.edu.ur.blokur.services.FinancialLedgerService
+import pl.edu.ur.blokur.services.PropertyService
+import pl.edu.ur.blokur.services.UserApartmentException
+import pl.edu.ur.blokur.services.UserApartmentService
+import pl.edu.ur.blokur.services.UserDocumentService
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesEvent
 import pl.edu.ur.blokur.ui.views.finances.utils.FinancesState
+import java.io.File
+import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
 class FinancesViewModel @Inject constructor(
-    private val financesService: FinancesService,
-    private val authService: AuthService
+    private val ledgerService: FinancialLedgerService,
+    private val propertyService: PropertyService,
+    private val authService: AuthService,
+    private val userDocumentService: UserDocumentService,
+    private val userApartmentService: UserApartmentService,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<FinancesState>(FinancesState.Loading)
@@ -33,18 +50,37 @@ class FinancesViewModel @Inject constructor(
         loadData()
     }
 
-    private fun loadData() {
+    fun loadData() {
         viewModelScope.launch {
+            _state.value = FinancesState.Loading
             runCatching {
-                Triple(
-                    financesService.getBalance(),
-                    financesService.getTransactions(),
-                    financesService.getDocuments()
+                val role = authService.getCurrentUserRole()
+                val apartmentId = when (role) {
+                    UserRole.MIESZKANIEC -> userApartmentService.resolveForResident().apartmentId
+                    else -> null
+                }
+
+                if (role == UserRole.MIESZKANIEC && apartmentId == null) {
+                    error("Brak przypisanego lokalu.")
+                }
+
+                val transactionsData = apartmentId?.let { ledgerService.getTransactions(it) }
+                val documents = if (role == UserRole.MIESZKANIEC) userDocumentService.getDocuments() else emptyList()
+
+                transactionsData to documents
+            }.onSuccess { (transactionsData, documents) ->
+                _state.value = FinancesState.Data(
+                    currentBalance = transactionsData?.currentBalance ?: BigDecimal.ZERO,
+                    transactions = transactionsData?.transactions?.sortedByDescending { it.transactionDate }
+                        ?: emptyList(),
+                    documents = documents
                 )
-            }.onSuccess { (balance, transactions, documents) ->
-                _state.value = FinancesState.Data(balance, transactions, documents)
             }.onFailure { e ->
-                _state.value = FinancesState.Error(e.message ?: "Błąd ładowania finansów")
+                val message = when (e) {
+                    is UserApartmentException -> e.message
+                    else -> e.message ?: "Błąd ładowania finansów"
+                }
+                _state.value = FinancesState.Error(message ?: "Błąd ładowania finansów")
             }
         }
     }
@@ -66,5 +102,43 @@ class FinancesViewModel @Inject constructor(
 
     fun onNavigateToBalances() {
         viewModelScope.launch { _events.send(FinancesEvent.NavigateToBalances) }
+    }
+
+    fun downloadDocument(document: UserDocumentDto) {
+        val documentId = document.id
+        if (documentId.isBlank()) {
+            viewModelScope.launch {
+                _events.send(FinancesEvent.ShowSnackbar("Brak identyfikatora dokumentu"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            runCatching {
+                val body = userDocumentService.downloadDocument(documentId)
+
+                val pdfDir = File(context.cacheDir, "pdf").also { it.mkdirs() }
+                val safeTitle = document.title
+                    .replace(Regex("[^a-zA-Z0-9_-]"), "_")
+                    .take(50)
+                val pdfFile = File(pdfDir, "${safeTitle}_${documentId}.pdf")
+
+                withContext(Dispatchers.IO) {
+                    pdfFile.outputStream().use { out ->
+                        body.byteStream().use { it.copyTo(out) }
+                    }
+                }
+
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    pdfFile
+                )
+            }.onSuccess { uri: Uri ->
+                _events.send(FinancesEvent.OpenPdf(uri))
+            }.onFailure { e ->
+                _events.send(FinancesEvent.ShowSnackbar("Błąd pobierania: ${e.message}"))
+            }
+        }
     }
 }

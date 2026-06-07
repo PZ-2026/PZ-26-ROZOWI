@@ -13,6 +13,11 @@ public class WorkAcceptanceProtocolRequest {
     private List<String> beforeImagesPaths;
     private List<String> afterImagesPaths;
 
+    public WorkAcceptanceProtocolRequest() {
+        this.beforeImagesPaths = new java.util.ArrayList<>();
+        this.afterImagesPaths = new java.util.ArrayList<>();
+    }
+
     /**
      * Tworzy żądanie wygenerowania protokołu odbioru prac.
      *

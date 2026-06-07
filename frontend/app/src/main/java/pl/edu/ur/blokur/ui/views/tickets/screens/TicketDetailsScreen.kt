@@ -1,11 +1,12 @@
 package pl.edu.ur.blokur.ui.views.tickets.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +39,14 @@ fun TicketDetailsScreen(
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.uploadAfterImage(uri)
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -49,9 +58,9 @@ fun TicketDetailsScreen(
                 is TicketDetailsScreenEvent.ConservatorAction ->
                     snackbarHostState.showSnackbar("Zaktualizowano status zgłoszenia")
                 is TicketDetailsScreenEvent.ShowSnackbar ->
-                    snackbarHostState.showSnackbar("Konserwator został przypisany pomyślnie")
+                    snackbarHostState.showSnackbar(event.message)
                 is TicketDetailsScreenEvent.ShowError ->
-                    snackbarHostState.showSnackbar("Błąd: ${event.message}")
+                    snackbarHostState.showSnackbar(event.message)
             }
         }
     }
@@ -62,7 +71,7 @@ fun TicketDetailsScreen(
             TopAppBar(
                 title = { Text("Szczegóły zgłoszenia", style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
-                    IconButton(onClick = viewModel::onNavigateBack) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Wróć")
                     }
                 },
@@ -78,12 +87,19 @@ fun TicketDetailsScreen(
             },
             onRejectTicket = viewModel::onRejectTicket,
             onConservatorAction = viewModel::onConservatorAction,
+            onAddComment = viewModel::addComment,
+            onAddAfterPhoto = {
+                photoPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
+            onResumeTicket = viewModel::onResumeTicket,
+            onDownloadProtocol = viewModel::downloadWorkAcceptanceProtocol,
+            onRetry = viewModel::reload,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
         )
     }

@@ -85,14 +85,6 @@ public class AdminUserService {
             throw new IllegalArgumentException("Podany adres email jest już zajęty.");
         }
 
-        var apartment =
-                apartmentRepository
-                        .findById(request.getApartmentId())
-                        .orElseThrow(
-                                () ->
-                                        new IllegalArgumentException(
-                                                "Lokal o podanym ID nie istnieje."));
-
         var user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -104,14 +96,24 @@ public class AdminUserService {
 
         var savedUser = userRepository.save(user);
 
-        UserApartment userApartment = new UserApartment();
-        userApartment.setUser(savedUser);
-        userApartment.setApartment(apartment);
-        savedUser.getUserApartments().add(userApartment);
+        if (request.getApartmentId() != null) {
+            var apartment =
+                    apartmentRepository
+                            .findById(request.getApartmentId())
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "Lokal o podanym ID nie istnieje."));
 
-        var finalUser = userRepository.save(savedUser);
-        invitationService.inviteUser(finalUser);
-        return finalUser;
+            UserApartment userApartment = new UserApartment();
+            userApartment.setUser(savedUser);
+            userApartment.setApartment(apartment);
+            savedUser.getUserApartments().add(userApartment);
+            savedUser = userRepository.save(savedUser);
+        }
+
+        invitationService.inviteUser(savedUser);
+        return savedUser;
     }
 
     /**
@@ -141,18 +143,22 @@ public class AdminUserService {
         user.setRole(request.getRole());
 
         if (request.getApartmentId() != null) {
-            var apartment =
-                    apartmentRepository
-                            .findById(request.getApartmentId())
-                            .orElseThrow(
-                                    () ->
-                                            new IllegalArgumentException(
-                                                    "Lokal o podanym ID nie istnieje."));
-            user.getUserApartments().clear();
-            UserApartment userApartment = new UserApartment();
-            userApartment.setUser(user);
-            userApartment.setApartment(apartment);
-            user.getUserApartments().add(userApartment);
+            boolean alreadyAssigned = user.getUserApartments().stream()
+                    .anyMatch(ua -> ua.getApartment().getId().equals(request.getApartmentId()));
+            if (!alreadyAssigned) {
+                var apartment =
+                        apartmentRepository
+                                .findById(request.getApartmentId())
+                                .orElseThrow(
+                                        () ->
+                                                new IllegalArgumentException(
+                                                        "Lokal o podanym ID nie istnieje."));
+                user.getUserApartments().clear();
+                UserApartment userApartment = new UserApartment();
+                userApartment.setUser(user);
+                userApartment.setApartment(apartment);
+                user.getUserApartments().add(userApartment);
+            }
         }
 
         return userRepository.save(user);

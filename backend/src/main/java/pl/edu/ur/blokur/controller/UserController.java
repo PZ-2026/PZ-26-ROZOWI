@@ -30,4 +30,15 @@ public class UserController {
     public ResponseEntity<List<UserWithTicketsDto>> getUsersByRole(@RequestParam String role) {
         return ResponseEntity.ok(userService.getUsersWithActiveTicketCountByRole(role));
     }
+
+    /**
+     * Zwraca dane zalogowanego użytkownika (profil).
+     *
+     * @param principal zalogowany użytkownik pobrany z kontekstu bezpieczeństwa
+     * @return DTO z profilem
+     */
+    @GetMapping("/me")
+    public ResponseEntity<pl.edu.ur.blokur.dto.UserResponse> getMe(java.security.Principal principal) {
+        return ResponseEntity.ok(userService.getMe(principal.getName()));
+    }
 }

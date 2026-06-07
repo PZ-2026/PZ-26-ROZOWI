@@ -41,6 +41,13 @@ enum class AddTarget {
     PROPERTY, BUILDING, STAIRCASE, APARTMENT
 }
 
+/** Obiekt do usunięcia */
+sealed interface DeleteTarget {
+    data class Building(val id: String, val name: String) : DeleteTarget
+    data class Staircase(val buildingId: String, val staircaseId: String, val label: String) : DeleteTarget
+    data class Apartment(val staircaseId: String, val apartmentId: String, val number: String) : DeleteTarget
+}
+
 // ─── Formularze ──────────────────────────────────────────────────────
 
 data class PropertyFormFields(

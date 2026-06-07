@@ -209,8 +209,8 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      */
     @Query(
             value =
-                    "SELECT COALESCE(MAX(CAST(SPLIT_PART(ticket_number, '-', 3) AS INTEGER)), 0)"
-                            + " FROM tickets WHERE ticket_number LIKE CONCAT('ZGL-', :year, '-%')",
+                    "SELECT COALESCE(MAX(CAST(SPLIT_PART(ticket_number, '/', 3) AS INTEGER)), 0)"
+                            + " FROM tickets WHERE ticket_number LIKE CONCAT('ZGL/', :year, '/%')",
             nativeQuery = true)
     int findMaxSequenceForYear(@Param("year") int year);
 

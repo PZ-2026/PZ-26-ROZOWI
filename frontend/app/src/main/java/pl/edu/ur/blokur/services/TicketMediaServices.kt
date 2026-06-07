@@ -21,9 +21,7 @@ class TicketCommentService @Inject constructor(
 ) {
     /** GET /api/tickets/{id}/comments — lista komentarzy do zgłoszenia. */
     suspend fun getComments(ticketId: String): List<TicketCommentDto> = withContext(Dispatchers.IO) {
-        val response = api.getComments(ticketId)
-        if (response.isSuccessful) response.body() ?: emptyList()
-        else throw Exception(handleError(response.code(), "pobierania komentarzy"))
+        ApiResponseHandler.requireSuccess(api.getComments(ticketId), "Błąd pobierania komentarzy")
     }
 
     /**
@@ -35,18 +33,7 @@ class TicketCommentService @Inject constructor(
         content: String,
         commentType: String = "PUBLICZNY"
     ): TicketCommentDto = withContext(Dispatchers.IO) {
-        val response = api.addComment(ticketId, TicketCommentRequestDto(content, commentType))
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Pusta odpowiedź z serwera")
-        } else {
-            throw Exception(handleError(response.code(), "dodawania komentarza"))
-        }
-    }
-
-    private fun handleError(code: Int, action: String): String = when (code) {
-        403 -> "Brak uprawnień do $action."
-        404 -> "Nie znaleziono zgłoszenia."
-        else -> "Błąd serwera ($code) podczas $action."
+        ApiResponseHandler.requireSuccess(api.addComment(ticketId, TicketCommentRequestDto(content, commentType)), "Błąd dodawania komentarza")
     }
 }
 
@@ -58,9 +45,7 @@ class TicketImageService @Inject constructor(
 ) {
     /** GET /api/tickets/{id}/images — lista metadanych zdjęć do zgłoszenia. */
     suspend fun getImages(ticketId: String): List<TicketImageDto> = withContext(Dispatchers.IO) {
-        val response = api.getImagesForTicket(ticketId)
-        if (response.isSuccessful) response.body() ?: emptyList()
-        else throw Exception(handleError(response.code(), "pobierania zdjęć"))
+        ApiResponseHandler.requireSuccess(api.getImagesForTicket(ticketId), "Błąd pobierania zdjęć")
     }
 
     /**
@@ -81,29 +66,11 @@ class TicketImageService @Inject constructor(
         val part = MultipartBody.Part.createFormData("file", filename, requestBody)
         // imageType przekazywany jako multipart form field (nie query param)
         val imageTypeBody: RequestBody = imageType.toRequestBody("text/plain".toMediaTypeOrNull())
-        val response = api.uploadImage(ticketId, imageTypeBody, part)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Pusta odpowiedź z serwera")
-        } else {
-            throw Exception(handleError(response.code(), "wgrywania zdjęcia"))
-        }
+        ApiResponseHandler.requireSuccess(api.uploadImage(ticketId, imageTypeBody, part), "Błąd wgrywania zdjęcia")
     }
 
     /** GET /api/images/{id} — pobiera surowe bajty zdjęcia. */
     suspend fun serveImage(imageId: String): ResponseBody = withContext(Dispatchers.IO) {
-        val response = api.serveImage(imageId)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak treści odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "pobierania zdjęcia"))
-        }
-    }
-
-    private fun handleError(code: Int, action: String): String = when (code) {
-        403 -> "Brak uprawnień do $action."
-        404 -> "Nie znaleziono zgłoszenia lub zdjęcia."
-        413 -> "Plik jest zbyt duży."
-        415 -> "Nieobsługiwany format pliku (dozwolone: JPEG, PNG)."
-        else -> "Błąd serwera ($code) podczas $action."
+        ApiResponseHandler.requireSuccess(api.serveImage(imageId), "Błąd pobierania zdjęcia")
     }
 }

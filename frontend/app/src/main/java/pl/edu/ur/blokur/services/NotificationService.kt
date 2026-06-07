@@ -15,22 +15,15 @@ class NotificationService @Inject constructor(
     suspend fun getSettings(): List<NotificationConfigDto> {
         return runCatching {
             val resp = api.getSettings()
-            if (!resp.isSuccessful) throw Exception("Błąd pobierania ustawień (${resp.code()})")
-            resp.body() ?: emptyList()
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+            ApiResponseHandler.requireSuccess(resp, "Błąd pobierania ustawień powiadomień")
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania ustawień powiadomień") }
     }
 
     /** Włącza lub wyłącza globalnie wybrany typ powiadomień. */
     suspend fun updateSetting(eventType: String, enabled: Boolean): NotificationConfigDto {
         return runCatching {
             val resp = api.updateSetting(eventType, UpdateNotificationConfigRequest(enabled))
-            if (!resp.isSuccessful) throw Exception(
-                when (resp.code()) {
-                    404 -> "Nieznany typ powiadomienia."
-                    else -> "Błąd aktualizacji (${resp.code()})"
-                }
-            )
-            resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+            ApiResponseHandler.requireSuccess(resp, "Błąd aktualizacji ustawień powiadomień")
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd aktualizacji ustawień powiadomień") }
     }
 }

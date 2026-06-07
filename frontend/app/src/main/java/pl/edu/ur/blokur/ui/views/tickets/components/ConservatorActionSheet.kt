@@ -1,9 +1,5 @@
 package pl.edu.ur.blokur.ui.views.tickets.components
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -50,23 +46,20 @@ import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 @Composable
 fun ConservatorActionSheet(
     actionType: ConservatorActionType,
+    isLoading: Boolean = false,
     onDismissRequest: () -> Unit,
     onSubmit: (comment: String, pause: Boolean) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { !isLoading }
+    )
 
     var comment by remember { mutableStateOf("") }
     var pauseTicket by remember { mutableStateOf(false) }
-    var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 3)
-    ) { uris ->
-        selectedImages = (selectedImages + uris.take(3 - selectedImages.size))
-    }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = { if (!isLoading) onDismissRequest() },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -94,9 +87,18 @@ fun ConservatorActionSheet(
                     Button(
                         onClick = { onSubmit("", false) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
+                        enabled = !isLoading,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Rozpocznij pracę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Rozpocznij pracę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
 
@@ -107,33 +109,35 @@ fun ConservatorActionSheet(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "Opisz wykonane naprawy i opcjonalnie dodaj zdjęcia dokumentujące.",
+                        "Opisz wykonane naprawy. Zdjęcia dodasz przyciskiem „Dodaj zdjęcie po pracach” w sekcji zdjęć.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
                         value = comment,
                         onValueChange = { comment = it },
+                        enabled = !isLoading,
                         modifier = Modifier.fillMaxWidth().height(120.dp),
                         placeholder = { Text("Np. Wymieniono uszkodzony zawór. Przetestowano — brak przecieków.") },
                         shape = RoundedCornerShape(12.dp)
-                    )
-                    PhotoUploaderRow(
-                        images = selectedImages,
-                        onAddClick = {
-                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        },
-                        onRemove = { uri -> selectedImages = selectedImages - uri }
                     )
                     Spacer(Modifier.height(4.dp))
                     Button(
                         onClick = { onSubmit(comment, false) },
                         colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                        enabled = comment.isNotBlank(),
+                        enabled = comment.isNotBlank() && !isLoading,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Zakończ usterkę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Zakończ usterkę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
 
@@ -160,80 +164,67 @@ fun ConservatorActionSheet(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Switch(checked = pauseTicket, onCheckedChange = { pauseTicket = it })
+                        Switch(checked = pauseTicket, onCheckedChange = { pauseTicket = it }, enabled = !isLoading)
                     }
                     OutlinedTextField(
                         value = comment,
                         onValueChange = { comment = it },
+                        enabled = !isLoading,
                         modifier = Modifier.fillMaxWidth().height(100.dp),
                         placeholder = { Text("Dodaj treść komentarza...") },
                         shape = RoundedCornerShape(12.dp)
-                    )
-                    PhotoUploaderRow(
-                        images = selectedImages,
-                        onAddClick = {
-                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        },
-                        onRemove = { uri -> selectedImages = selectedImages - uri }
                     )
                     Spacer(Modifier.height(4.dp))
                     Button(
                         onClick = { onSubmit(comment, pauseTicket) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                        enabled = comment.isNotBlank(),
+                        enabled = comment.isNotBlank() && !isLoading,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Dodaj wpis", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Dodaj wpis", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                }
+
+                ConservatorActionType.CLOSE_VERIFICATION -> {
+                    Text(
+                        "Zamknij zgłoszenie",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Prace zostały zweryfikowane. Potwierdź zamknięcie zgłoszenia — status zmieni się na 'Zamknięte'.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Button(
+                        onClick = { onSubmit("", false) },
+                        colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Zatwierdź i zamknij", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
             }
             Spacer(Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-private fun PhotoUploaderRow(
-    images: List<Uri>,
-    onAddClick: () -> Unit,
-    onRemove: (Uri) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Załączniki (opcjonalnie)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (images.size < 3) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .clickable(onClick = onAddClick),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = "Dodaj zdjęcie", tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-            images.forEach { uri ->
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f), modifier = Modifier.size(32.dp))
-                    IconButton(
-                        onClick = { onRemove(uri) },
-                        modifier = Modifier.align(Alignment.TopEnd).size(20.dp).padding(2.dp)
-                            .background(MaterialTheme.colorScheme.surface.copy(0.7f), RoundedCornerShape(10.dp))
-                    ) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Usuń", modifier = Modifier.size(12.dp))
-                    }
-                }
-            }
         }
     }
 }

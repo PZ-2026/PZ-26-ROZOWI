@@ -13,10 +13,32 @@ enum class UserRole {
 sealed class AuthException(message: String) : Exception(message) {
     data object InvalidCredentials : AuthException("Nieprawidłowy e-mail lub hasło")
     data object AccountLocked : AuthException("Konto zostało zablokowane. Spróbuj ponownie za 15 minut")
+    data class RateLimited(val retryAfterSeconds: Int?) :
+        AuthException(formatRateLimitMessage(retryAfterSeconds))
+    data class TokenExpired(override val message: String) : AuthException(message)
     data class ApiError(val code: Int) : AuthException("Błąd serwera: $code")
     data object EmptyResponse : AuthException("Brak danych w odpowiedzi serwera")
     data class UnknownRole(val role: String) : AuthException("Nieznana rola użytkownika: $role")
 }
+
+/** Komunikat dla HTTP 429 z nagłówkiem Retry-After (sekundy). */
+fun formatRateLimitMessage(retryAfterSeconds: Int?): String {
+    val minutes = retryAfterSeconds?.let { seconds ->
+        when {
+            seconds <= 60 -> 1
+            else -> (seconds + 59) / 60
+        }
+    }
+    return if (minutes != null) {
+        "Zbyt wiele prób. Spróbuj za $minutes min."
+    } else {
+        "Zbyt wiele prób. Spróbuj ponownie za chwilę."
+    }
+}
+
+/** Wykrywa wygasły token resetu hasła lub zaproszenia po treści komunikatu z API. */
+fun isExpiredTokenMessage(message: String): Boolean =
+    message.contains("wygas", ignoreCase = true)
 
 /** POST /api/auth/login — ciało żądania. */
 data class LoginRequestDto(

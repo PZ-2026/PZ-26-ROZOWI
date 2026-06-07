@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,15 +22,19 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +48,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.ConservatorDto
 import pl.edu.ur.blokur.dtos.TicketDetailDto
+import pl.edu.ur.blokur.dtos.TicketCommentDto
+import pl.edu.ur.blokur.dtos.TicketImageDto
 import pl.edu.ur.blokur.dtos.TicketStatus
 import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
@@ -53,8 +61,11 @@ import pl.edu.ur.blokur.ui.theme.SuccessGreen
 import pl.edu.ur.blokur.ui.views.tickets.components.AssignConservatorSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ConservatorActionSheet
 import pl.edu.ur.blokur.ui.views.tickets.components.ManagerRejectSheet
+import pl.edu.ur.blokur.ui.views.tickets.components.TicketCommentsSection
+import pl.edu.ur.blokur.ui.views.tickets.components.TicketImagesSection
 import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketDetailsListState
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
 
 @Composable
@@ -63,18 +74,40 @@ fun TicketDetailsContent(
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
+    onAddComment: (String, String) -> Unit = { _, _ -> },
+    onAddAfterPhoto: () -> Unit = {},
+    onResumeTicket: () -> Unit = {},
+    onDownloadProtocol: () -> Unit = {},
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when (state) {
         is TicketDetailsListState.Loading -> LoadingIndicator()
-        is TicketDetailsListState.Error -> EmptyState(title = "Błąd", description = state.message)
+        is TicketDetailsListState.Error -> EmptyState(
+            title = "Błąd",
+            description = state.message,
+            onRetry = onRetry
+        )
         is TicketDetailsListState.Success -> TicketDetailsSuccessContent(
             ticket = state.ticket,
             conservators = state.availableConservators,
             currentUserRole = state.currentUserRole,
+            comments = state.comments,
+            images = state.images,
+            isLoadingComments = state.isLoadingComments,
+            isLoadingImages = state.isLoadingImages,
+            isSendingComment = state.isSendingComment,
+            commentResetKey = state.commentResetKey,
+            isUploadingImage = state.isUploadingImage,
+            isDownloadingProtocol = state.isDownloadingProtocol,
+            isActionInProgress = state.isActionInProgress,
             onAssignConservator = onAssignConservator,
             onRejectTicket = onRejectTicket,
             onConservatorAction = onConservatorAction,
+            onAddComment = onAddComment,
+            onAddAfterPhoto = onAddAfterPhoto,
+            onResumeTicket = onResumeTicket,
+            onDownloadProtocol = onDownloadProtocol,
             modifier = modifier
         )
     }
@@ -85,20 +118,43 @@ private fun TicketDetailsSuccessContent(
     ticket: TicketDetailDto,
     conservators: List<ConservatorDto>,
     currentUserRole: String,
+    comments: List<TicketCommentDto>,
+    images: List<TicketImageDto>,
+    isLoadingComments: Boolean,
+    isLoadingImages: Boolean,
+    isSendingComment: Boolean,
+    commentResetKey: Int,
+    isUploadingImage: Boolean,
+    isDownloadingProtocol: Boolean,
+    isActionInProgress: Boolean,
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
+    onAddComment: (String, String) -> Unit,
+    onAddAfterPhoto: () -> Unit,
+    onResumeTicket: () -> Unit,
+    onDownloadProtocol: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val presentation = ticket.status.toPresentation()
 
-    var showAssignSheet by remember { mutableStateOf(false) }
-    var showRejectSheet by remember { mutableStateOf(false) }
-    var conservatorActionType by remember { mutableStateOf<ConservatorActionType?>(null) }
+    var showAssignSheet by remember(ticket.status) { mutableStateOf(false) }
+    var showRejectSheet by remember(ticket.status) { mutableStateOf(false) }
+    var showResumeDialog by remember(ticket.status) { mutableStateOf(false) }
+    var conservatorActionType by remember(ticket.status) { mutableStateOf<ConservatorActionType?>(null) }
+
+    val canUploadAfter = currentUserRole == "KONSERWATOR" && ticket.status in listOf(
+        TicketStatus.W_REALIZACJI,
+        TicketStatus.WSTRZYMANO,
+        TicketStatus.ZAKONCZONE_DO_WERYFIKACJI
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Spacer(Modifier.height(4.dp))
@@ -132,7 +188,7 @@ private fun TicketDetailsSuccessContent(
                 MetadataRow(Icons.Rounded.Article, "Numer zgłoszenia", ticket.ticketNumber)
                 HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                 MetadataRow(Icons.Rounded.Person, "Zgłaszający", ticket.authorName)
-                
+
                 ticket.locationLabel?.takeIf { it.isNotBlank() }?.let { location ->
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.Place, "Lokalizacja", location)
@@ -155,7 +211,7 @@ private fun TicketDetailsSuccessContent(
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.CheckCircle, "Data zamknięcia", formatDateTime(it))
                 }
-                
+
                 ticket.plannedVisitAt?.let {
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
                     MetadataRow(Icons.Rounded.CalendarToday, "Planowana wizyta", formatDateTime(it))
@@ -184,6 +240,26 @@ private fun TicketDetailsSuccessContent(
                     )
                 }
             }
+
+            TicketImagesSection(
+                images = images,
+                isLoading = isLoadingImages,
+                isUploading = isUploadingImage,
+                showUploadAfter = canUploadAfter,
+                onAddAfterPhoto = onAddAfterPhoto,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            TicketCommentsSection(
+                comments = comments,
+                currentRole = currentUserRole,
+                isLoading = isLoadingComments,
+                isSending = isSendingComment,
+                commentResetKey = commentResetKey,
+                isClosed = ticket.status == TicketStatus.ZAMKNIETE || ticket.status == TicketStatus.ODRZUCONE,
+                onAddComment = onAddComment,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(Modifier.height(100.dp))
         }
@@ -218,7 +294,24 @@ private fun TicketDetailsSuccessContent(
                                 icon = Icons.Rounded.PlayArrow,
                                 contentDescription = "Wznów zgłoszenie",
                                 containerColor = MaterialTheme.colorScheme.primary,
-                                onClick = { showAssignSheet = true }
+                                onClick = { showResumeDialog = true }
+                            )
+                        }
+                        TicketStatus.ZAKONCZONE_DO_WERYFIKACJI -> {
+                            TicketFab(
+                                icon = Icons.Rounded.CheckCircle,
+                                contentDescription = "Zatwierdź i zamknij",
+                                containerColor = SuccessGreen,
+                                onClick = { conservatorActionType = ConservatorActionType.CLOSE_VERIFICATION }
+                            )
+                        }
+                        TicketStatus.ZAMKNIETE -> {
+                            TicketFab(
+                                icon = Icons.Rounded.PictureAsPdf,
+                                contentDescription = "Pobierz protokół odbioru",
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                isLoading = isDownloadingProtocol,
+                                onClick = onDownloadProtocol
                             )
                         }
                         else -> Unit
@@ -226,15 +319,15 @@ private fun TicketDetailsSuccessContent(
                 }
                 "KONSERWATOR" -> {
                     when (ticket.status) {
-                        TicketStatus.ZAPLANOWANO -> {
+                        TicketStatus.ZAPLANOWANO, TicketStatus.WSTRZYMANO -> {
                             TicketFab(
                                 icon = Icons.Rounded.PlayArrow,
-                                contentDescription = "Rozpocznij realizację",
+                                contentDescription = if (ticket.status == TicketStatus.WSTRZYMANO) "Wznów realizację" else "Rozpocznij realizację",
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 onClick = { conservatorActionType = ConservatorActionType.START }
                             )
                         }
-                        TicketStatus.W_REALIZACJI, TicketStatus.WSTRZYMANO -> {
+                        TicketStatus.W_REALIZACJI -> {
                             TicketFab(
                                 icon = Icons.Rounded.Pause,
                                 contentDescription = "Wstrzymaj / Komentarz",
@@ -249,6 +342,15 @@ private fun TicketDetailsSuccessContent(
                                 onClick = { conservatorActionType = ConservatorActionType.FINISH }
                             )
                         }
+                        TicketStatus.ZAMKNIETE -> {
+                            TicketFab(
+                                icon = Icons.Rounded.PictureAsPdf,
+                                contentDescription = "Pobierz protokół odbioru",
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                isLoading = isDownloadingProtocol,
+                                onClick = onDownloadProtocol
+                            )
+                        }
                         else -> Unit
                     }
                 }
@@ -257,12 +359,43 @@ private fun TicketDetailsSuccessContent(
         }
     }
 
+    if (showResumeDialog) {
+        AlertDialog(
+            onDismissRequest = { showResumeDialog = false },
+            title = { Text("Wznów zgłoszenie") },
+            text = { Text("Czy na pewno chcesz wznowić realizację tego zgłoszenia? Konserwator pozostaje bez zmian.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResumeDialog = false
+                    onResumeTicket()
+                }) {
+                    Text("Wznów")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResumeDialog = false }) {
+                    Text("Anuluj")
+                }
+            }
+        )
+    }
+
+    var lastActionInProgress by remember { mutableStateOf(false) }
+    LaunchedEffect(isActionInProgress) {
+        if (lastActionInProgress && !isActionInProgress) {
+            showAssignSheet = false
+            showRejectSheet = false
+            conservatorActionType = null
+        }
+        lastActionInProgress = isActionInProgress
+    }
+
     if (showAssignSheet) {
         AssignConservatorSheet(
             conservators = conservators,
-            onDismissRequest = { showAssignSheet = false },
+            isLoading = isActionInProgress,
+            onDismissRequest = { if (!isActionInProgress) showAssignSheet = false },
             onAssign = { conservator, scheduledAt ->
-                showAssignSheet = false
                 onAssignConservator(conservator, scheduledAt)
             }
         )
@@ -270,9 +403,9 @@ private fun TicketDetailsSuccessContent(
 
     if (showRejectSheet) {
         ManagerRejectSheet(
-            onDismissRequest = { showRejectSheet = false },
+            isLoading = isActionInProgress,
+            onDismissRequest = { if (!isActionInProgress) showRejectSheet = false },
             onSubmit = { reason ->
-                showRejectSheet = false
                 onRejectTicket(reason)
             }
         )
@@ -281,12 +414,26 @@ private fun TicketDetailsSuccessContent(
     conservatorActionType?.let { type ->
         ConservatorActionSheet(
             actionType = type,
-            onDismissRequest = { conservatorActionType = null },
+            isLoading = isActionInProgress,
+            onDismissRequest = { if (!isActionInProgress) conservatorActionType = null },
             onSubmit = { comment, pause ->
-                conservatorActionType = null
                 onConservatorAction(type, comment, pause)
             }
         )
+    }
+
+    if (isActionInProgress) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = {}) {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.material3.CircularProgressIndicator()
+            }
+        }
     }
 }
 
@@ -296,6 +443,7 @@ private fun TicketFab(
     contentDescription: String,
     containerColor: androidx.compose.ui.graphics.Color,
     contentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.White,
+    isLoading: Boolean = false,
     onClick: () -> Unit
 ) {
     FloatingActionButton(
@@ -304,7 +452,15 @@ private fun TicketFab(
         contentColor = contentColor,
         elevation = FloatingActionButtonDefaults.elevation(4.dp)
     ) {
-        Icon(icon, contentDescription = contentDescription)
+        if (isLoading) {
+            androidx.compose.material3.CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = contentColor,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Icon(icon, contentDescription = contentDescription)
+        }
     }
 }
 
@@ -330,10 +486,7 @@ private fun MetadataRow(icon: ImageVector, label: String, value: String) {
     }
 }
 
-private fun formatDateTime(iso: String): String = try {
-    val parts = iso.split("T")
-    if (parts.size == 2) "${parts[0]}, ${parts[1].take(5)}" else iso
-} catch (_: Exception) { iso }
+private fun formatDateTime(iso: String): String = PolishFormat.formatDate(iso)
 
 @Preview(showBackground = true)
 @Composable

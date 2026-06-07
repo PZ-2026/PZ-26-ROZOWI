@@ -27,12 +27,7 @@ class UserDocumentService @Inject constructor(
         endDate: String? = null,
         type: String? = null
     ): List<UserDocumentDto> = withContext(Dispatchers.IO) {
-        val response = api.getDocuments(apartmentId, startDate, endDate, type)
-        if (response.isSuccessful) {
-            response.body() ?: emptyList()
-        } else {
-            throw Exception(handleError(response.code(), "pobierania dokumentów"))
-        }
+        ApiResponseHandler.requireSuccess(api.getDocuments(apartmentId, startDate, endDate, type), "Błąd pobierania dokumentów")
     }
 
     /**
@@ -40,18 +35,6 @@ class UserDocumentService @Inject constructor(
      * Wynik (ResponseBody) należy zapisać do pliku lub otworzyć przez FileProvider/Intent.
      */
     suspend fun downloadDocument(documentId: String): ResponseBody = withContext(Dispatchers.IO) {
-        val response = api.downloadDocument(documentId)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak treści odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "pobierania pliku dokumentu"))
-        }
-    }
-
-    private fun handleError(code: Int, action: String): String = when (code) {
-        401 -> "Brak autoryzacji. Zaloguj się ponownie."
-        403 -> "Brak uprawnień do $action."
-        404 -> "Nie znaleziono dokumentu."
-        else -> "Błąd serwera ($code) podczas $action."
+        ApiResponseHandler.requireSuccess(api.downloadDocument(documentId), "Błąd pobierania pliku dokumentu")
     }
 }

@@ -7,6 +7,8 @@ import pl.edu.ur.blokur.dtos.LoginRequestDto
 import pl.edu.ur.blokur.dtos.MessageResponseDto
 import pl.edu.ur.blokur.dtos.ResetPasswordRequestDto
 import pl.edu.ur.blokur.dtos.UserRole
+import pl.edu.ur.blokur.dtos.isExpiredTokenMessage
+import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -21,6 +23,8 @@ class AuthService @Inject constructor(
     private val tokenStorage: TokenStorage
 ) {
 
+    private val gson = Gson()
+
     /**
      * Loguje użytkownika przez POST /api/auth/login, zapisuje tokeny i zwraca rolę.
      */
@@ -28,10 +32,18 @@ class AuthService @Inject constructor(
         val response = authApiService.login(LoginRequestDto(username = email, password = password))
 
         if (!response.isSuccessful) {
+            val serverMessage = parseMessage(response)
             throw when (response.code()) {
                 401 -> AuthException.InvalidCredentials
                 423 -> AuthException.AccountLocked
-                else -> AuthException.ApiError(response.code())
+                429 -> AuthException.RateLimited(parseRetryAfter(response))
+                else -> {
+                    if (!serverMessage.isNullOrBlank()) {
+                        Exception(serverMessage)
+                    } else {
+                        AuthException.ApiError(response.code())
+                    }
+                }
             }
         }
 
@@ -43,7 +55,8 @@ class AuthService @Inject constructor(
         tokenStorage.saveTokens(
             accessToken = body.token,
             refreshToken = body.refreshToken,
-            role = body.role
+            role = body.role,
+            email = email
         )
 
         return role
@@ -68,17 +81,9 @@ class AuthService @Inject constructor(
      */
     suspend fun forgotPassword(email: String): String {
         val response = authApiService.forgotPassword(ForgotPasswordRequestDto(email))
-
         if (!response.isSuccessful) {
-            val errorBody = response.errorBody()?.string()
-            val message = try {
-                Gson().fromJson(errorBody, MessageResponseDto::class.java).message
-            } catch (_: Exception) {
-                "Błąd serwera: ${response.code()}"
-            }
-            throw Exception(message)
+            throw mapAuthFailure(response, "Nie udało się wysłać linku resetującego")
         }
-
         return response.body()?.message
             ?: "Jeśli podany adres e-mail istnieje w systemie, wysłaliśmy link do resetowania hasła."
     }
@@ -94,18 +99,59 @@ class AuthService @Inject constructor(
         val response = authApiService.resetPassword(
             ResetPasswordRequestDto(token = token, newPassword = newPassword)
         )
-
         if (!response.isSuccessful) {
-            val errorBody = response.errorBody()?.string()
-            val message = try {
-                Gson().fromJson(errorBody, MessageResponseDto::class.java).message
-            } catch (_: Exception) {
-                "Błąd serwera: ${response.code()}"
-            }
-            throw Exception(message)
+            throw mapAuthFailure(response, "Nie udało się zmienić hasła", checkExpiredToken = true)
         }
-
         return response.body()?.message
             ?: "Hasło zostało zmienione. Możesz się teraz zalogować."
+    }
+
+    /**
+     * Ustawia hasło i akceptuje zaproszenie do systemu.
+     *
+     * @param token token zaproszenia z linku.
+     * @param newPassword nowe hasło użytkownika.
+     * @return komunikat z serwera.
+     */
+    suspend fun acceptInvitation(token: String, newPassword: String): String {
+        val response = authApiService.acceptInvitation(
+            pl.edu.ur.blokur.dtos.AcceptInvitationRequestDto(
+                token = token,
+                newPassword = newPassword
+            )
+        )
+        if (!response.isSuccessful) {
+            throw mapAuthFailure(response, "Nie udało się aktywować konta", checkExpiredToken = true)
+        }
+        return response.body()?.message
+            ?: "Konto aktywowane. Możesz się teraz zalogować."
+    }
+
+    private fun parseRetryAfter(response: Response<*>): Int? =
+        response.headers()["Retry-After"]?.toIntOrNull()
+
+    private fun parseMessage(response: Response<*>): String? {
+        val errorBody = response.errorBody()?.string() ?: return null
+        return try {
+            gson.fromJson(errorBody, MessageResponseDto::class.java).message
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun mapAuthFailure(
+        response: Response<*>,
+        defaultMessage: String,
+        checkExpiredToken: Boolean = false
+    ): Exception {
+        when (response.code()) {
+            429 -> return AuthException.RateLimited(parseRetryAfter(response))
+        }
+        val message = parseMessage(response)
+            ?: "Błąd serwera: ${response.code()}"
+        if (checkExpiredToken && isExpiredTokenMessage(message)) {
+            return AuthException.TokenExpired(message)
+        }
+        return Exception(message)
     }
 }

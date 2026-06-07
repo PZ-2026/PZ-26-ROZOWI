@@ -7,13 +7,8 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Hilt module rejestrujący FcmTokenProvider.
- *
- * Obecnie używa NoOpFcmTokenProvider (zwraca null — brak Firebase w projekcie).
- * Gdy Firebase Messaging zostanie dodane do build.gradle:
- *   1. Dodaj zależność: implementation("com.google.firebase:firebase-messaging-ktx")
- *   2. Dodaj zależność: implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services")
- *   3. Zastąp NoOpFcmTokenProvider implementacją używającą FirebaseMessaging.getInstance().token.await()
+ * Hilt module rejestrujący [FcmTokenProvider].
+ * Używa [FirebaseFcmTokenProvider] — przy braku GMS zwraca null.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -21,5 +16,7 @@ object FcmModule {
 
     @Provides
     @Singleton
-    fun provideFcmTokenProvider(): FcmTokenProvider = NoOpFcmTokenProvider()
+    fun provideFcmTokenProvider(
+        firebaseProvider: FirebaseFcmTokenProvider
+    ): FcmTokenProvider = firebaseProvider
 }

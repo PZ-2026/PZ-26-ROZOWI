@@ -74,11 +74,7 @@ class CsvImportViewModel @Inject constructor(
                     requestBody
                 )
 
-                val resp = financialApi.importCsv(part)
-                if (!resp.isSuccessful) {
-                    throw Exception("Błąd importu (${resp.code()})")
-                }
-                resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+                pl.edu.ur.blokur.services.ApiResponseHandler.requireSuccess(financialApi.importCsv(part), "Błąd importu")
             }
                 .onSuccess { result ->
                     _state.value = CsvImportUiState.Result(result)

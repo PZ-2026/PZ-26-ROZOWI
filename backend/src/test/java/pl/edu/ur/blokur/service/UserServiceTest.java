@@ -38,4 +38,36 @@ class UserServiceTest {
         assertThat(result.get(0).getActiveTicketsCount()).isEqualTo(5);
         verify(userRepository).findUsersWithActiveTicketsByRole(role);
     }
+
+    @Test
+    @DisplayName("getMe — powinno zwrocic dane zalogowanego uzytkownika")
+    void shouldReturnMe() {
+        String email = "jan@blokur.pl";
+        pl.edu.ur.blokur.models.User user = new pl.edu.ur.blokur.models.User();
+        user.setId(UUID.randomUUID());
+        user.setEmail(email);
+        user.setFirstName("Jan");
+        user.setLastName("Kowalski");
+        user.setRole("MIESZKANIEC");
+        user.setPhone("123456789");
+
+        pl.edu.ur.blokur.models.Apartment apartment = new pl.edu.ur.blokur.models.Apartment();
+        apartment.setId(UUID.randomUUID());
+
+        pl.edu.ur.blokur.models.UserApartment ua = new pl.edu.ur.blokur.models.UserApartment();
+        ua.setUser(user);
+        ua.setApartment(apartment);
+        user.getUserApartments().add(ua);
+
+        when(userRepository.findByEmail(email)).thenReturn(java.util.Optional.of(user));
+
+        var result = userService.getMe(email);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getEmail()).isEqualTo(email);
+        assertThat(result.getFirstName()).isEqualTo("Jan");
+        assertThat(result.getLastName()).isEqualTo("Kowalski");
+        assertThat(result.getRole()).isEqualTo("MIESZKANIEC");
+        assertThat(result.getApartmentId()).isEqualTo(apartment.getId());
+    }
 }

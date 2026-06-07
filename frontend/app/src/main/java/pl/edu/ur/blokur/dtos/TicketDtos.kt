@@ -103,3 +103,11 @@ data class TicketStatusChangeRequest(
     val status: String,
     val comment: String? = null
 )
+
+/** DTO dla osi historii zgłoszenia. */
+data class TicketHistoryDto(
+    val status: String,
+    val changedBy: String,
+    val comment: String?,
+    val createdAt: String
+)

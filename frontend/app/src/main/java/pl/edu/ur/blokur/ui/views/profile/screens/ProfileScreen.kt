@@ -30,11 +30,12 @@ fun ProfileScreen(
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
-    onNavigateToCategories: () -> Unit = {}
+    onNavigateToCategories: () -> Unit = {},
+    onNavigateToFinances: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showDialog by remember { mutableStateOf(false) }
     var isManager by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -45,8 +46,6 @@ fun ProfileScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is ProfileEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
-                is ProfileEvent.ShowSaveDialog -> showDialog = true
-                is ProfileEvent.SaveSuccess -> Unit
             }
         }
     }
@@ -57,21 +56,15 @@ fun ProfileScreen(
     ) { innerPadding ->
         ProfileContent(
             state = state,
-            showSaveDialog = showDialog,
-            onNameChanged = viewModel::onNameChanged,
-            onRequestSave = viewModel::requestSave,
-            onConfirmSave = {
-                showDialog = false
-                viewModel.confirmSave()
-            },
-            onDismissDialog = { showDialog = false },
-            onSendNotification = viewModel::sendTestNotification,
             isManager = isManager,
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             onNavigateToInspections = onNavigateToInspections,
             onNavigateToCategories = onNavigateToCategories,
+            onNavigateToFinances = onNavigateToFinances,
+            onNavigateToAnnouncements = onNavigateToAnnouncements,
+            onRetry = viewModel::reload,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

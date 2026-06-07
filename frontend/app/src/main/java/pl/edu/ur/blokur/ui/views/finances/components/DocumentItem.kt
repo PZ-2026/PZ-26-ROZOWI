@@ -26,8 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import pl.edu.ur.blokur.dtos.DocumentType
-import pl.edu.ur.blokur.dtos.DocumentDto
+import pl.edu.ur.blokur.dtos.UserDocumentDto
 import pl.edu.ur.blokur.ui.components.NormalCard
 import pl.edu.ur.blokur.ui.components.TagBadge
 import pl.edu.ur.blokur.ui.theme.ErrorRed
@@ -37,17 +36,19 @@ import pl.edu.ur.blokur.ui.theme.WarningOrange
 
 private data class DocumentPresentation(val label: String, val color: Color, val icon: ImageVector)
 
-private fun DocumentType.toPresentation() = when (this) {
-    DocumentType.NALICZENIE -> DocumentPresentation("Naliczenie", InfoBlue, Icons.Rounded.Receipt)
-    DocumentType.ROZLICZENIE -> DocumentPresentation("Rozliczenie", SuccessGreen, Icons.Rounded.BarChart)
-    DocumentType.ZAWIADOMIENIE -> DocumentPresentation("Zawiadomienie", WarningOrange, Icons.Rounded.Campaign)
-    DocumentType.FAKTURA -> DocumentPresentation("Faktura", ErrorRed, Icons.Rounded.Receipt)
-    DocumentType.INNE -> DocumentPresentation("Inne", InfoBlue, Icons.Rounded.Description)
+private fun String?.toPresentation() = when (this?.uppercase()) {
+    "NALICZENIE"   -> DocumentPresentation("Naliczenie", InfoBlue, Icons.Rounded.Receipt)
+    "ROZLICZENIE"  -> DocumentPresentation("Rozliczenie", SuccessGreen, Icons.Rounded.BarChart)
+    "ZAWIADOMIENIE"-> DocumentPresentation("Zawiadomienie", WarningOrange, Icons.Rounded.Campaign)
+    "FAKTURA"      -> DocumentPresentation("Faktura", ErrorRed, Icons.Rounded.Receipt)
+    "PROTOKOL"     -> DocumentPresentation("Protokół", InfoBlue, Icons.Rounded.Description)
+    "UCHWALA"      -> DocumentPresentation("Uchwała", WarningOrange, Icons.Rounded.Description)
+    else           -> DocumentPresentation("Dokument", InfoBlue, Icons.Rounded.Description)
 }
 
 @Composable
 fun DocumentItem(
-    document: DocumentDto,
+    document: UserDocumentDto,
     onDownload: () -> Unit
 ) {
     val presentation = document.type.toPresentation()
@@ -62,7 +63,12 @@ fun DocumentItem(
                 modifier = Modifier.size(44.dp).background(presentation.color.copy(alpha = 0.12f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(presentation.icon, contentDescription = null, tint = presentation.color, modifier = Modifier.size(22.dp))
+                Icon(
+                    presentation.icon,
+                    contentDescription = null,
+                    tint = presentation.color,
+                    modifier = Modifier.size(22.dp)
+                )
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
@@ -72,13 +78,26 @@ fun DocumentItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     TagBadge(text = presentation.label)
-                    Text("${document.issueYear}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    document.createdAt?.let { date ->
+                        Text(
+                            text = date.take(10), // "YYYY-MM-DD"
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             IconButton(onClick = onDownload) {
-                Icon(Icons.Rounded.Download, contentDescription = "Pobierz", tint = MaterialTheme.colorScheme.primary)
+                Icon(
+                    Icons.Rounded.Download,
+                    contentDescription = "Pobierz PDF",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

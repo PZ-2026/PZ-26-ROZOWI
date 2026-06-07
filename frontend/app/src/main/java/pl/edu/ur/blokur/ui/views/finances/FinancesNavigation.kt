@@ -47,6 +47,7 @@ fun NavGraphBuilder.financesGraph(navController: NavController) {
         val viewModel: FinancesViewModel = hiltViewModel()
         FinancesScreen(
             viewModel = viewModel,
+            onNavigateBack = { navController.popBackStack() },
             onNavigateToTransactions = { navController.navigate(FinancesRoutes.Transactions) },
             onNavigateToDocuments = { navController.navigate(FinancesRoutes.Documents) },
             onNavigateToLedger = { navController.navigate(FinancesRoutes.Ledger()) },
@@ -56,8 +57,16 @@ fun NavGraphBuilder.financesGraph(navController: NavController) {
     }
 
     composable<FinancesRoutes.Transactions> {
-        val parentEntry = navController.getBackStackEntry(FinancesRoutes.Main)
-        val viewModel: FinancesViewModel = hiltViewModel(parentEntry)
+        val parentEntry = try {
+            navController.getBackStackEntry(FinancesRoutes.Main)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+        val viewModel: FinancesViewModel = if (parentEntry != null) {
+            hiltViewModel(parentEntry)
+        } else {
+            hiltViewModel()
+        }
         TransactionsScreen(
             viewModel = viewModel,
             onNavigateBack = { navController.popBackStack() }
@@ -65,8 +74,16 @@ fun NavGraphBuilder.financesGraph(navController: NavController) {
     }
 
     composable<FinancesRoutes.Documents> {
-        val parentEntry = navController.getBackStackEntry(FinancesRoutes.Main)
-        val viewModel: FinancesViewModel = hiltViewModel(parentEntry)
+        val parentEntry = try {
+            navController.getBackStackEntry(FinancesRoutes.Main)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+        val viewModel: FinancesViewModel = if (parentEntry != null) {
+            hiltViewModel(parentEntry)
+        } else {
+            hiltViewModel()
+        }
         DocumentsScreen(
             viewModel = viewModel,
             onNavigateBack = { navController.popBackStack() }

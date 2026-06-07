@@ -37,7 +37,8 @@ import pl.edu.ur.blokur.ui.views.auth.viewmodels.ResetPasswordViewModel
 @Composable
 fun ResetPasswordScreen(
     viewModel: ResetPasswordViewModel,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val formFields by viewModel.formFields.collectAsState()
@@ -46,6 +47,7 @@ fun ResetPasswordScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is ResetPasswordEvent.NavigateToLogin -> onNavigateToLogin()
+                is ResetPasswordEvent.NavigateToForgotPassword -> onNavigateToForgotPassword()
                 is ResetPasswordEvent.ShowSnackbar -> Unit
             }
         }
@@ -69,7 +71,7 @@ fun ResetPasswordScreen(
             Spacer(modifier = Modifier.height(64.dp))
 
             Text(
-                text = "Blokur",
+                text = "BlokUR",
                 style = MaterialTheme.typography.displayMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -90,7 +92,8 @@ fun ResetPasswordScreen(
                 formFields = formFields,
                 onFormChanged = viewModel::onFormChanged,
                 onSubmit = viewModel::submit,
-                onNavigateToLogin = viewModel::navigateToLogin
+                onNavigateToLogin = viewModel::navigateToLogin,
+                onNavigateToForgotPassword = viewModel::navigateToForgotPassword
             )
 
             Spacer(modifier = Modifier.height(48.dp))

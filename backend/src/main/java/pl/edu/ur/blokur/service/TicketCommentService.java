@@ -12,6 +12,7 @@ import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.Ticket;
 import pl.edu.ur.blokur.models.TicketComment;
 import pl.edu.ur.blokur.models.TicketCommentType;
+import pl.edu.ur.blokur.models.TicketStatus;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.repository.TicketCommentRepository;
 import pl.edu.ur.blokur.repository.TicketRepository;
@@ -59,6 +60,11 @@ public class TicketCommentService {
                         .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
         validateCommentPermissions(ticket, user, request.getCommentType());
+
+        if (ticket.getStatus() == TicketStatus.ZAMKNIETE || ticket.getStatus() == TicketStatus.ODRZUCONE) {
+            throw new BusinessValidationException(
+                    "Nie można dodawać komentarzy do zamkniętego lub odrzuconego zgłoszenia.");
+        }
 
         var comment = new TicketComment();
         comment.setTicket(ticket);

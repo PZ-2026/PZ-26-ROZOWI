@@ -23,11 +23,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -38,30 +42,43 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
+import dagger.hilt.android.EntryPointAccessors
+import pl.edu.ur.blokur.di.CoilEntryPoint
+import pl.edu.ur.blokur.ui.views.settings.viewmodels.CommunityLogoEvent
+import pl.edu.ur.blokur.ui.views.settings.viewmodels.CommunityLogoViewModel
 
-/** Ekran zarządzania logo wspólnoty — pozwala zarządcy wybrać i załadować plik graficzny logo. */
+/** Ekran zarządzania logo wspólnoty — wybór wspólnoty i upload pliku graficznego. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityLogoScreen(
-    viewModel: pl.edu.ur.blokur.ui.views.settings.viewmodels.CommunityLogoViewModel,
+    viewModel: CommunityLogoViewModel,
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val imageLoader = remember(context) {
+        EntryPointAccessors.fromApplication(context.applicationContext, CoilEntryPoint::class.java)
+            .imageLoader()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is pl.edu.ur.blokur.ui.views.settings.viewmodels.CommunityLogoEvent.ShowSnackbar ->
-                    snackbarHostState.showSnackbar(event.message)
+                is CommunityLogoEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
             }
         }
     }
@@ -118,6 +135,21 @@ fun CommunityLogoScreen(
         ) {
             Spacer(Modifier.height(8.dp))
 
+            if (state.isLoadingProperties) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (state.showPropertyPicker) {
+                PropertyPickerDropdown(
+                    properties = state.properties,
+                    selectedPropertyId = state.selectedPropertyId,
+                    onPropertySelected = viewModel::onPropertySelected
+                )
+            }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -134,7 +166,7 @@ fun CommunityLogoScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        "Logo wspólnoty",
+                        state.selectedPropertyName ?: "Logo wspólnoty",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -142,6 +174,7 @@ fun CommunityLogoScreen(
                     Box(
                         modifier = Modifier
                             .size(160.dp)
+                            .clip(RoundedCornerShape(20.dp))
                             .border(
                                 2.dp,
                                 if (state.uploadSuccess)
@@ -152,33 +185,43 @@ fun CommunityLogoScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (state.uploadSuccess) {
-                            Icon(
-                                Icons.Rounded.CheckCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(64.dp)
-                            )
-                        } else {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
+                        when {
+                            state.selectedFileName != null -> {
+                                PlaceholderLogoContent(state.selectedFileName)
+                            }
+                            state.logoUrl != null -> {
+                                SubcomposeAsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(state.logoUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    imageLoader = imageLoader,
+                                    contentDescription = "Aktualne logo",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(18.dp)),
+                                    contentScale = ContentScale.Fit,
+                                    loading = {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(32.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    },
+                                    error = {
+                                        PlaceholderLogoContent(null)
+                                    }
+                                )
+                            }
+                            state.uploadSuccess -> {
                                 Icon(
-                                    Icons.Rounded.Image,
+                                    Icons.Rounded.CheckCircle,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(48.dp)
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(64.dp)
                                 )
-                                Text(
-                                    if (state.selectedFileName != null)
-                                        state.selectedFileName!!
-                                    else
-                                        "Wybierz plik",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
-                                )
+                            }
+                            else -> {
+                                PlaceholderLogoContent(null)
                             }
                         }
                     }
@@ -187,7 +230,8 @@ fun CommunityLogoScreen(
                         onClick = { filePickerLauncher.launch("image/*") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        enabled = !state.isUploading && !state.isLoadingProperties
+                        enabled = !state.isUploading && !state.isLoadingProperties &&
+                            state.selectedPropertyId != null
                     ) {
                         Icon(
                             Icons.Rounded.AddPhotoAlternate,
@@ -232,6 +276,67 @@ fun CommunityLogoScreen(
                         textAlign = TextAlign.Center
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaceholderLogoContent(fileName: String?) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            Icons.Rounded.Image,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(48.dp)
+        )
+        Text(
+            fileName ?: "Wybierz plik",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PropertyPickerDropdown(
+    properties: List<pl.edu.ur.blokur.dtos.PropertyResponseDto>,
+    selectedPropertyId: String?,
+    onPropertySelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedName = properties.find { it.id == selectedPropertyId }?.name ?: "Wybierz wspólnotę"
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedName,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Wspólnota") },
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            shape = RoundedCornerShape(12.dp)
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            properties.forEach { property ->
+                DropdownMenuItem(
+                    text = { Text(property.name) },
+                    onClick = {
+                        onPropertySelected(property.id)
+                        expanded = false
+                    }
+                )
             }
         }
     }

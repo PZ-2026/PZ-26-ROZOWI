@@ -48,11 +48,13 @@ fun ResetPasswordForm(
     formFields: ResetPasswordFormFields,
     onFormChanged: (ResetPasswordFormFields) -> Unit,
     onSubmit: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     val isLoading = state is ResetPasswordState.Loading
     val isSuccess = state is ResetPasswordState.Success
+    val isTokenExpired = state is ResetPasswordState.TokenExpired
 
     Column(
         modifier = Modifier
@@ -107,7 +109,23 @@ fun ResetPasswordForm(
             }
         }
 
-        if (!isSuccess) {
+        if (isTokenExpired) {
+            Text(
+                text = (state as ResetPasswordState.TokenExpired).message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryButton(
+                text = "Poproś o nowy link",
+                onClick = onNavigateToForgotPassword,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (!isSuccess && !isTokenExpired) {
             OutlinedTextField(
                 value = formFields.newPassword,
                 onValueChange = { onFormChanged(formFields.copy(newPassword = it)) },

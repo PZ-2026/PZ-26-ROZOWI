@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.ui.views.users.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +61,7 @@ import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.InfoBlue
 import pl.edu.ur.blokur.ui.theme.SuccessGreen
 import pl.edu.ur.blokur.ui.theme.WarningOrange
+import androidx.compose.material3.CircularProgressIndicator
 import pl.edu.ur.blokur.ui.views.users.viewmodels.UsersEvent
 import pl.edu.ur.blokur.ui.views.users.viewmodels.UsersUiState
 import pl.edu.ur.blokur.ui.views.users.viewmodels.UsersViewModel
@@ -67,13 +69,27 @@ import pl.edu.ur.blokur.ui.views.users.viewmodels.UsersViewModel
 @Composable
 fun UsersScreen(
     viewModel: UsersViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToUser: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val formState by viewModel.formState.collectAsState()
     val showDialog by viewModel.showDialog.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmDeactivate by remember { mutableStateOf<AdminUserDto?>(null) }
+
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.reload()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -143,7 +159,11 @@ fun UsersScreen(
     ) { innerPadding ->
         when (val s = state) {
             is UsersUiState.Loading -> LoadingIndicator()
-            is UsersUiState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is UsersUiState.Error -> EmptyState(
+                title = "Błąd",
+                description = s.message,
+                onRetry = viewModel::reload
+            )
             is UsersUiState.Success -> {
                 Column(
                     modifier = Modifier
@@ -197,8 +217,26 @@ fun UsersScreen(
                             items(s.filtered, key = { it.id }) { user ->
                                 UserRow(
                                     user = user,
-                                    onDeactivate = { confirmDeactivate = user }
+                                    onDeactivate = { confirmDeactivate = user },
+                                    onClick = { onNavigateToUser(user.id) }
                                 )
+                            }
+                            
+                            if (s.isFetchingNextPage) {
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            } else if (!s.isLastPage && s.users.isNotEmpty()) {
+                                item {
+                                    LaunchedEffect(Unit) {
+                                        viewModel.loadNextPage()
+                                    }
+                                }
                             }
                         }
                     }
@@ -213,7 +251,8 @@ fun UsersScreen(
 @Composable
 private fun UserRow(
     user: AdminUserDto,
-    onDeactivate: () -> Unit
+    onDeactivate: () -> Unit,
+    onClick: () -> Unit
 ) {
     val roleColor = when (user.role) {
         "ZARZADCA" -> MaterialTheme.colorScheme.tertiary
@@ -235,6 +274,7 @@ private fun UserRow(
                 if (user.active) MaterialTheme.colorScheme.surface
                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
+            .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)

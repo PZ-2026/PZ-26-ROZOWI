@@ -13,19 +13,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AdminPanelSettings
+import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,46 +33,43 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.components.NormalCard
-import pl.edu.ur.blokur.ui.components.PrimaryButton
-import pl.edu.ur.blokur.ui.components.SecondaryButton
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 
 @Composable
 fun ProfileContent(
     state: ProfileState,
-    showSaveDialog: Boolean,
-    onNameChanged: (String) -> Unit,
-    onRequestSave: () -> Unit,
-    onConfirmSave: () -> Unit,
-    onDismissDialog: () -> Unit,
-    onSendNotification: () -> Unit,
     isManager: Boolean = false,
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
+    onNavigateToFinances: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when (state) {
         is ProfileState.Loading -> LoadingIndicator()
+        is ProfileState.Error -> EmptyState(
+            title = "Błąd",
+            description = state.message,
+            onRetry = onRetry
+        )
         is ProfileState.Data -> ProfileDataContent(
             data = state,
-            showSaveDialog = showSaveDialog,
-            onNameChanged = onNameChanged,
-            onRequestSave = onRequestSave,
-            onConfirmSave = onConfirmSave,
-            onDismissDialog = onDismissDialog,
-            onSendNotification = onSendNotification,
             isManager = isManager,
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             onNavigateToInspections = onNavigateToInspections,
             onNavigateToCategories = onNavigateToCategories,
+            onNavigateToFinances = onNavigateToFinances,
+            onNavigateToAnnouncements = onNavigateToAnnouncements,
             modifier = modifier
         )
     }
@@ -82,34 +78,16 @@ fun ProfileContent(
 @Composable
 private fun ProfileDataContent(
     data: ProfileState.Data,
-    showSaveDialog: Boolean,
-    onNameChanged: (String) -> Unit,
-    onRequestSave: () -> Unit,
-    onConfirmSave: () -> Unit,
-    onDismissDialog: () -> Unit,
-    onSendNotification: () -> Unit,
     isManager: Boolean = false,
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
+    onNavigateToFinances: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    if (showSaveDialog) {
-        AlertDialog(
-            onDismissRequest = onDismissDialog,
-            title = { Text("Potwierdzenie") },
-            text = { Text("Czy chcesz zapisać dane użytkownika?") },
-            confirmButton = {
-                TextButton(onClick = onConfirmSave) { Text("Zapisz") }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismissDialog) { Text("Anuluj") }
-            }
-        )
-    }
-
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -124,36 +102,67 @@ private fun ProfileDataContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Zmień podstawowe informacje profilu.",
+                "Edycja profilu będzie dostępna po rozszerzeniu systemu.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = data.name,
-                onValueChange = onNameChanged,
+                value = data.role,
+                onValueChange = { },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Imię i nazwisko") },
-                singleLine = true
+                label = { Text("Rola") },
+                singleLine = true,
+                readOnly = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            PrimaryButton(
-                text = "Zapisz zmiany",
-                onClick = onRequestSave,
-                modifier = Modifier.fillMaxWidth()
+            OutlinedTextField(
+                value = data.email,
+                onValueChange = { },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Adres e-mail") },
+                singleLine = true,
+                readOnly = true
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            SecondaryButton(
-                text = "Wyślij powiadomienie testowe",
-                onClick = onSendNotification,
-                modifier = Modifier.fillMaxWidth()
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = data.name.ifBlank { "—" },
+                onValueChange = { },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Imię i nazwisko") },
+                singleLine = true,
+                readOnly = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = data.phone.ifBlank { "—" },
+                onValueChange = { },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Numer telefonu") },
+                singleLine = true,
+                readOnly = true
+            )
+
+        }
+
+        if (!isManager) {
+            AdminNavRow(
+                icon = Icons.Rounded.DateRange,
+                title = "Przeglądy w budynku",
+                subtitle = "Harmonogram przeglądów technicznych (podgląd)",
+                isFirst = true,
+                isLast = true,
+                onClick = onNavigateToInspections
             )
         }
 
-        // ── Sekcja administracyjna — tylko dla ZARZADCA ───────────────────────
         if (isManager) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
@@ -177,10 +186,28 @@ private fun ProfileDataContent(
                 }
 
                 AdminNavRow(
+                    icon = Icons.Rounded.DateRange,
+                    title = "Finanse",
+                    subtitle = "Salda, import CSV, kartoteki lokali",
+                    isFirst = true,
+                    isLast = false,
+                    onClick = onNavigateToFinances
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                AdminNavRow(
+                    icon = Icons.Rounded.Campaign,
+                    title = "Ogłoszenia",
+                    subtitle = "Twórz i edytuj ogłoszenia dla mieszkańców",
+                    isFirst = false,
+                    isLast = false,
+                    onClick = onNavigateToAnnouncements
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                AdminNavRow(
                     icon = Icons.Rounded.Notifications,
                     title = "Ustawienia powiadomień",
                     subtitle = "Konfiguruj alerty per typ zdarzenia",
-                    isFirst = true,
+                    isFirst = false,
                     isLast = false,
                     onClick = onNavigateToNotificationSettings
                 )
@@ -260,19 +287,25 @@ private fun AdminNavRow(
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
-        Icon(Icons.Rounded.ChevronRight, null,
+        Icon(
+            Icons.Rounded.ChevronRight,
+            null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp))
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun ProfileContentLoadingPreview() {
-    PreviewTheme { ProfileContent(ProfileState.Loading, false, {}, {}, {}, {}, {}) }
+    PreviewTheme { ProfileContent(ProfileState.Loading) }
 }
 
 @Preview(showBackground = true)
@@ -280,13 +313,12 @@ private fun ProfileContentLoadingPreview() {
 private fun ProfileContentDataPreview() {
     PreviewTheme {
         ProfileContent(
-            state = ProfileState.Data(name = "Jan Kowalski"),
-            showSaveDialog = false,
-            onNameChanged = {},
-            onRequestSave = {},
-            onConfirmSave = {},
-            onDismissDialog = {},
-            onSendNotification = {}
+            state = ProfileState.Data(
+                role = "Mieszkaniec",
+                email = "jan@example.com",
+                name = "",
+                phone = ""
+            )
         )
     }
 }
@@ -296,13 +328,11 @@ private fun ProfileContentDataPreview() {
 private fun ProfileContentManagerPreview() {
     PreviewTheme {
         ProfileContent(
-            state = ProfileState.Data(name = "Anna Zarządca"),
-            showSaveDialog = false,
-            onNameChanged = {},
-            onRequestSave = {},
-            onConfirmSave = {},
-            onDismissDialog = {},
-            onSendNotification = {},
+            state = ProfileState.Data(
+                role = "Zarządca",
+                email = "admin@example.com",
+                phone = ""
+            ),
             isManager = true
         )
     }

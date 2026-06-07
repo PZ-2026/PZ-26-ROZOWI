@@ -4,29 +4,131 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.ui.views.announcements.contents.SampleAnnouncementsContent
+import pl.edu.ur.blokur.ui.views.announcements.utils.AnnouncementsEvent
 import pl.edu.ur.blokur.ui.views.announcements.viewmodels.AnnouncementsViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnnouncementsScreen(
     viewModel: AnnouncementsViewModel,
+    onNavigateBack: () -> Unit,
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToEdit: (pl.edu.ur.blokur.dtos.AnnouncementDto) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
+    val isManager by viewModel.isManager.collectAsState()
+    val isDeleting by viewModel.isDeleting.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var announcementToDelete by remember { mutableStateOf<String?>(null) }
 
-    SampleAnnouncementsContent(
-        state = state,
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp)
-            .navigationBarsPadding()
-    )
+    announcementToDelete?.let { id ->
+        AlertDialog(
+            onDismissRequest = { if (!isDeleting) announcementToDelete = null },
+            title = { Text("Usunąć ogłoszenie?") },
+            text = { Text("Tej operacji nie można cofnąć.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteAnnouncement(id) {
+                            announcementToDelete = null
+                        }
+                    },
+                    enabled = !isDeleting
+                ) {
+                    if (isDeleting) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Usuń", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { announcementToDelete = null },
+                    enabled = !isDeleting
+                ) {
+                    Text("Anuluj")
+                }
+            }
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is AnnouncementsEvent.ShowError ->
+                    snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
+    androidx.compose.material3.Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text("Ogłoszenia") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Wstecz")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            if (isManager) {
+                androidx.compose.material3.FloatingActionButton(onClick = onNavigateToCreate) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "Dodaj ogłoszenie"
+                    )
+                }
+            }
+        }
+    ) { paddingValues ->
+        SampleAnnouncementsContent(
+            state = state,
+            isManager = isManager,
+            onDownloadAttachment = viewModel::downloadAttachment,
+            onEditAnnouncement = onNavigateToEdit,
+            onDeleteAnnouncement = { announcementToDelete = it },
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+        )
+    }
 }
-

@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.TicketSummaryDto
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketListItem
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
 
 @Composable
@@ -22,10 +23,11 @@ fun TicketListContent(
         tickets.forEach { ticket ->
             val presentation = ticket.status.toPresentation()
             val assignedTo = ticket.assignedToName
+            val formattedDate = PolishFormat.formatDate(ticket.createdAt)
             val dateOrAssignee = if (assignedTo != null)
-                "${ticket.createdAt.take(10)} • Przypisane: $assignedTo"
+                "$formattedDate • Przypisane: $assignedTo"
             else
-                "${ticket.createdAt.take(10)} • Brak przypisania"
+                "$formattedDate • Brak przypisania"
 
             TicketListItem(
                 title = ticket.title,

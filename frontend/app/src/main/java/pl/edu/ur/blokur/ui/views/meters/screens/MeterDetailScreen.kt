@@ -8,12 +8,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ShowChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,8 +32,8 @@ import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.components.TopBar
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailState
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailViewModel
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterEvent
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun MeterDetailScreen(
@@ -38,7 +43,29 @@ fun MeterDetailScreen(
     val state by viewModel.state.collectAsState()
     val showDialog by viewModel.showCreateDialog.collectAsState()
     val formState by viewModel.formState.collectAsState()
-    val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+    val editingReading by viewModel.editingReading.collectAsState()
+    val editFormState by viewModel.editFormState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var readingToDelete by remember { mutableStateOf<String?>(null) }
+
+    readingToDelete?.let { readingId ->
+        AlertDialog(
+            onDismissRequest = { readingToDelete = null },
+            title = { Text("Usunąć odczyt?") },
+            text = { Text("Tej operacji nie można cofnąć.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteReading(readingId)
+                    readingToDelete = null
+                }) {
+                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { readingToDelete = null }) { Text("Anuluj") }
+            }
+        )
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -55,6 +82,18 @@ fun MeterDetailScreen(
             onValueChanged = viewModel::onValueChanged,
             onReadingDateChanged = viewModel::onReadingDateChanged,
             onConfirm = viewModel::submitCreate
+        )
+    }
+
+    // Dialog edycji odczytu
+    if (editingReading != null) {
+        CreateMeterReadingDialog(
+            formState = editFormState,
+            onDismiss = viewModel::closeEditDialog,
+            onValueChanged = viewModel::onEditValueChanged,
+            onReadingDateChanged = viewModel::onEditReadingDateChanged,
+            onConfirm = viewModel::submitUpdate,
+            confirmLabel = "Zaktualizuj"
         )
     }
 
@@ -100,7 +139,11 @@ fun MeterDetailScreen(
 
             when (val s = state) {
                 is MeterDetailState.Loading -> LoadingIndicator()
-                is MeterDetailState.Error -> EmptyState(title = "Błąd", description = s.message)
+                is MeterDetailState.Error -> EmptyState(
+                    title = "Błąd",
+                    description = s.message,
+                    onRetry = viewModel::load
+                )
                 is MeterDetailState.Success -> {
                     if (s.readings.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
@@ -122,7 +165,28 @@ fun MeterDetailScreen(
                             contentPadding = PaddingValues(bottom = 100.dp)
                         ) {
                             items(s.readings, key = { it.id }) { reading ->
-                                ReadingCard(reading = reading)
+                                ReadingCard(
+                                    reading = reading,
+                                    onEdit = { viewModel.openEditDialog(reading) },
+                                    onDelete = { readingToDelete = reading.id }
+                                )
+                            }
+
+                            if (s.isFetchingNextPage) {
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            } else if (!s.isLastPage && s.readings.isNotEmpty()) {
+                                item {
+                                    LaunchedEffect(Unit) {
+                                        viewModel.loadNextPage()
+                                    }
+                                }
                             }
                         }
                     }
@@ -133,7 +197,11 @@ fun MeterDetailScreen(
 }
 
 @Composable
-private fun ReadingCard(reading: MeterReadingResponseDto) {
+private fun ReadingCard(
+    reading: MeterReadingResponseDto,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -160,7 +228,7 @@ private fun ReadingCard(reading: MeterReadingResponseDto) {
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Data: ${reading.readingDate}",
+                "Data: ${PolishFormat.formatDate(reading.readingDate)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -169,6 +237,25 @@ private fun ReadingCard(reading: MeterReadingResponseDto) {
                     "Osoba spisująca: $it",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Row {
+            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Rounded.Edit,
+                    contentDescription = "Edytuj odczyt",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Rounded.Close,
+                    contentDescription = "Usuń odczyt",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

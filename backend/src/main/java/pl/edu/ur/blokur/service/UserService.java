@@ -26,4 +26,30 @@ public class UserService {
     public List<UserWithTicketsDto> getUsersWithActiveTicketCountByRole(String role) {
         return userRepository.findUsersWithActiveTicketsByRole(role);
     }
+
+    /**
+     * Zwraca profil zalogowanego użytkownika na podstawie jego adresu e-mail.
+     *
+     * @param email adres e-mail użytkownika
+     * @return DTO z profilem użytkownika
+     */
+    @Transactional(readOnly = true)
+    public pl.edu.ur.blokur.dto.UserResponse getMe(String email) {
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new pl.edu.ur.blokur.exception.NotFoundException("Użytkownik o podanym adresie email nie istnieje"));
+        var apartmentId = user.getUserApartments().isEmpty() 
+                ? null 
+                : user.getUserApartments().get(0).getApartment().getId();
+        return new pl.edu.ur.blokur.dto.UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole(),
+                user.isActive(),
+                user.getCreatedAt(),
+                apartmentId
+        );
+    }
 }

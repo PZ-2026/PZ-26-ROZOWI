@@ -1,7 +1,9 @@
 package pl.edu.ur.blokur.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -23,6 +25,8 @@ fun EmptyState(
     title: String = "EMPTY STATE TITLE",
     description: String = "EMPTY STATE DESCRIPTION",
     icon: ImageVector = Icons.Outlined.Inbox,
+    onRetry: (() -> Unit)? = null,
+    retryLabel: String = "Spróbuj ponownie"
 ) {
     Column(
         modifier = Modifier
@@ -54,6 +58,14 @@ fun EmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
+
+        if (onRetry != null) {
+            Spacer(Modifier.height(16.dp))
+            PrimaryButton(
+                text = retryLabel,
+                onClick = onRetry
+            )
+        }
     }
 }
 

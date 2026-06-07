@@ -15,6 +15,7 @@ import pl.edu.ur.blokur.dtos.AuthException
 import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.DeviceService
 import pl.edu.ur.blokur.services.FcmTokenProvider
+import pl.edu.ur.blokur.services.TokenStorage
 import pl.edu.ur.blokur.ui.views.auth.utils.AuthEvent
 import pl.edu.ur.blokur.ui.views.auth.utils.AuthState
 import pl.edu.ur.blokur.ui.views.auth.utils.LoginFormFields
@@ -35,7 +36,8 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val authService: AuthService,
     private val deviceService: DeviceService,
-    private val fcmTokenProvider: FcmTokenProvider
+    private val fcmTokenProvider: FcmTokenProvider,
+    private val tokenStorage: TokenStorage
 ) : ViewModel() {
 
     companion object {
@@ -76,13 +78,12 @@ class AuthViewModel @Inject constructor(
                     tryRegisterFcmToken()
                 }
                 .onFailure { e ->
-                    // HTTP 423 — konto zablokowane po przekroczeniu limitu prób
-                    _state.value = if (e is AuthException.AccountLocked) {
-                        AuthState.AccountLocked(
+                    _state.value = when (e) {
+                        is AuthException.AccountLocked -> AuthState.AccountLocked(
                             e.message ?: "Konto zostało zablokowane. Spróbuj ponownie za 15 minut."
                         )
-                    } else {
-                        AuthState.Error(e.message ?: "Błąd logowania")
+                        is AuthException.RateLimited -> AuthState.Error(e.message ?: "Zbyt wiele prób.")
+                        else -> AuthState.Error(e.message ?: "Błąd logowania")
                     }
                 }
         }
@@ -97,7 +98,10 @@ class AuthViewModel @Inject constructor(
             try {
                 val token = fcmTokenProvider.getToken()
                 if (token != null) {
-                    deviceService.registerDevice(token)
+                    val ok = deviceService.registerDevice(token)
+                    if (ok) {
+                        tokenStorage.saveFcmToken(token)
+                    }
                 } else {
                     Log.d(TAG, "FCM token niedostępny — pominięto rejestrację urządzenia")
                 }

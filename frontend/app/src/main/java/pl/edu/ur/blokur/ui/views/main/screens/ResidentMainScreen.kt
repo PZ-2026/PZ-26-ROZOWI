@@ -12,6 +12,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.remember
+import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.TopBar
 import pl.edu.ur.blokur.ui.views.main.contents.BottomNavBar
 import pl.edu.ur.blokur.ui.views.main.utils.NavBarOption
@@ -39,6 +45,7 @@ fun ResidentMainScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val availableNavItems by viewModel.availableNavItems.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -61,10 +68,11 @@ fun ResidentMainScreen(
         is ResidentMainState.ViewingInspections -> "Przeglądy"
         is ResidentMainState.ViewingNotifications -> "Powiadomienia"
         is ResidentMainState.Error -> "Błąd"
-        else -> "Blokur"
+        else -> "BlokUR"
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopBar(
                 title = title,
@@ -87,6 +95,20 @@ fun ResidentMainScreen(
             )
         }
     ) { innerPadding ->
-        innerContent(Modifier.padding(innerPadding))
+        if (state is ResidentMainState.Error) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                EmptyState(
+                    title = "Błąd krytyczny",
+                    description = (state as ResidentMainState.Error).message,
+                    onRetry = viewModel::loadRoleAndNav
+                )
+            }
+        } else {
+            innerContent(Modifier.padding(innerPadding))
+        }
     }
 }
