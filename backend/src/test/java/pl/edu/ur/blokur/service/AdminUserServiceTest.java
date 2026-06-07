@@ -401,7 +401,6 @@ class AdminUserServiceTest {
             updateRequest.setApartmentId(apartmentId);
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
             User result = adminUserService.updateUser(userId, updateRequest);
