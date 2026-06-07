@@ -91,9 +91,35 @@ class EditUserViewModel @Inject constructor(
             _formState.value = _formState.value.copy(isLoadingBuildings = true, buildingsError = null)
             runCatching { propertyService.getBuildingTree() }
                 .onSuccess { buildings ->
+                    val currentState = _state.value
+                    var matchedBuilding: BuildingTreeNodeDto? = null
+                    var matchedStaircase: StaircaseNodeDto? = null
+                    var matchedApartment: ApartmentNodeDto? = null
+                    
+                    if (currentState is EditUserUiState.Success) {
+                        val userApartmentId = currentState.user.apartmentId
+                        if (userApartmentId != null) {
+                            for (b in buildings) {
+                                for (s in b.staircases) {
+                                    val a = s.apartments.find { it.id == userApartmentId }
+                                    if (a != null) {
+                                        matchedBuilding = b
+                                        matchedStaircase = s
+                                        matchedApartment = a
+                                        break
+                                    }
+                                }
+                                if (matchedApartment != null) break
+                            }
+                        }
+                    }
+
                     _formState.value = _formState.value.copy(
                         buildings = buildings,
-                        isLoadingBuildings = false
+                        isLoadingBuildings = false,
+                        selectedBuilding = matchedBuilding ?: _formState.value.selectedBuilding,
+                        selectedStaircase = matchedStaircase ?: _formState.value.selectedStaircase,
+                        selectedApartment = matchedApartment ?: _formState.value.selectedApartment
                     )
                 }
                 .onFailure { e ->

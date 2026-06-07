@@ -30,7 +30,8 @@ sealed interface UsersUiState {
         val searchQuery: String = "",
         val page: Int = 0,
         val isFetchingNextPage: Boolean = false,
-        val isLastPage: Boolean = false
+        val isLastPage: Boolean = false,
+        val addressMap: Map<String, String> = emptyMap()
     ) : UsersUiState {
         val filtered: List<AdminUserDto> get() = users
     }
@@ -84,14 +85,54 @@ class UsersViewModel @Inject constructor(
     val showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
+    private var cachedBuildingTree: List<BuildingTreeNodeDto> = emptyList()
 
     init {
+        viewModelScope.launch {
+            runCatching { propertyService.getBuildingTree() }
+                .onSuccess { buildings ->
+                    cachedBuildingTree = buildings
+                    updateAddressMap()
+                }
+        }
+
         viewModelScope.launch {
             _searchQuery
                 .debounce(500L)
                 .collect { query ->
                     fetchUsers(reset = true, query = query)
                 }
+        }
+    }
+
+    private fun updateAddressMap() {
+        val current = _state.value as? UsersUiState.Success ?: return
+        if (cachedBuildingTree.isEmpty() || current.users.isEmpty()) return
+        
+        val newMap = current.addressMap.toMutableMap()
+        var updated = false
+        for (user in current.users) {
+            val apartmentId = user.apartmentId
+            if (apartmentId != null && !newMap.containsKey(user.id)) {
+                var address = ""
+                for (b in cachedBuildingTree) {
+                    for (s in b.staircases) {
+                        val a = s.apartments.find { it.id == apartmentId }
+                        if (a != null) {
+                            address = "${b.name}, ${s.label}, M. ${a.number}"
+                            break
+                        }
+                    }
+                    if (address.isNotEmpty()) break
+                }
+                if (address.isNotEmpty()) {
+                    newMap[user.id] = address
+                    updated = true
+                }
+            }
+        }
+        if (updated) {
+            _state.value = current.copy(addressMap = newMap)
         }
     }
 
@@ -126,8 +167,10 @@ class UsersViewModel @Inject constructor(
                         searchQuery = query,
                         page = currentPage + 1,
                         isFetchingNextPage = false,
-                        isLastPage = pageDto.last
+                        isLastPage = pageDto.last,
+                        addressMap = current?.addressMap ?: emptyMap()
                     )
+                    updateAddressMap()
                 }
                 .onFailure { e ->
                     if (reset) {

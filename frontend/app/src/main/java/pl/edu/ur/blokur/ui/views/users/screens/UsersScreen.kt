@@ -217,6 +217,7 @@ fun UsersScreen(
                             items(s.filtered, key = { it.id }) { user ->
                                 UserRow(
                                     user = user,
+                                    address = (s as? UsersUiState.Success)?.addressMap?.get(user.id),
                                     onDeactivate = { confirmDeactivate = user },
                                     onClick = { onNavigateToUser(user.id) }
                                 )
@@ -251,6 +252,7 @@ fun UsersScreen(
 @Composable
 private fun UserRow(
     user: AdminUserDto,
+    address: String?,
     onDeactivate: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -314,6 +316,9 @@ private fun UserRow(
                 }
             }
             Text(user.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (address != null) {
+                Text(address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            }
             Spacer(Modifier.height(4.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,

@@ -94,8 +94,6 @@ public class AdminUserService {
         user.setActive(true);
         user.setCreatedAt(LocalDateTime.now());
 
-        var savedUser = userRepository.save(user);
-
         if (request.getApartmentId() != null) {
             var apartment =
                     apartmentRepository
@@ -105,13 +103,17 @@ public class AdminUserService {
                                             new IllegalArgumentException(
                                                     "Lokal o podanym ID nie istnieje."));
 
+            var savedUser = userRepository.save(user);
             UserApartment userApartment = new UserApartment();
             userApartment.setUser(savedUser);
             userApartment.setApartment(apartment);
             savedUser.getUserApartments().add(userApartment);
             savedUser = userRepository.save(savedUser);
+            invitationService.inviteUser(savedUser);
+            return savedUser;
         }
 
+        var savedUser = userRepository.save(user);
         invitationService.inviteUser(savedUser);
         return savedUser;
     }
