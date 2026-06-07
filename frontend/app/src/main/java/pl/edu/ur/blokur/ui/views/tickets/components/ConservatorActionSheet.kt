@@ -46,16 +46,20 @@ import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 @Composable
 fun ConservatorActionSheet(
     actionType: ConservatorActionType,
+    isLoading: Boolean = false,
     onDismissRequest: () -> Unit,
     onSubmit: (comment: String, pause: Boolean) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { !isLoading }
+    )
 
     var comment by remember { mutableStateOf("") }
     var pauseTicket by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = { if (!isLoading) onDismissRequest() },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -83,9 +87,18 @@ fun ConservatorActionSheet(
                     Button(
                         onClick = { onSubmit("", false) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
+                        enabled = !isLoading,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Rozpocznij pracę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Rozpocznij pracę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
 
@@ -103,6 +116,7 @@ fun ConservatorActionSheet(
                     OutlinedTextField(
                         value = comment,
                         onValueChange = { comment = it },
+                        enabled = !isLoading,
                         modifier = Modifier.fillMaxWidth().height(120.dp),
                         placeholder = { Text("Np. Wymieniono uszkodzony zawór. Przetestowano — brak przecieków.") },
                         shape = RoundedCornerShape(12.dp)
@@ -112,10 +126,18 @@ fun ConservatorActionSheet(
                         onClick = { onSubmit(comment, false) },
                         colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                        enabled = comment.isNotBlank(),
+                        enabled = comment.isNotBlank() && !isLoading,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Zakończ usterkę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Zakończ usterkę", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
 
@@ -142,11 +164,12 @@ fun ConservatorActionSheet(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Switch(checked = pauseTicket, onCheckedChange = { pauseTicket = it })
+                        Switch(checked = pauseTicket, onCheckedChange = { pauseTicket = it }, enabled = !isLoading)
                     }
                     OutlinedTextField(
                         value = comment,
                         onValueChange = { comment = it },
+                        enabled = !isLoading,
                         modifier = Modifier.fillMaxWidth().height(100.dp),
                         placeholder = { Text("Dodaj treść komentarza...") },
                         shape = RoundedCornerShape(12.dp)
@@ -155,10 +178,18 @@ fun ConservatorActionSheet(
                     Button(
                         onClick = { onSubmit(comment, pauseTicket) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                        enabled = comment.isNotBlank(),
+                        enabled = comment.isNotBlank() && !isLoading,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Dodaj wpis", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Dodaj wpis", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
 
@@ -178,9 +209,18 @@ fun ConservatorActionSheet(
                         onClick = { onSubmit("", false) },
                         colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                         modifier = Modifier.fillMaxWidth().height(56.dp),
+                        enabled = !isLoading,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Zatwierdź i zamknij", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        if (isLoading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Zatwierdź i zamknij", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
             }

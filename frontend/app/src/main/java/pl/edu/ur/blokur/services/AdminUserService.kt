@@ -44,31 +44,31 @@ class AdminUserService @Inject constructor(
                 numberOfElements = content.size,
                 empty = content.isEmpty()
             )
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania użytkowników") }
     }
 
     suspend fun createUser(request: CreateAdminUserRequest): AdminUserDto {
         return runCatching {
             ApiResponseHandler.requireSuccess(api.createUser(request), "Błąd tworzenia użytkownika")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd tworzenia użytkownika") }
     }
 
     suspend fun deactivateUser(id: String) {
         runCatching {
             ApiResponseHandler.requireSuccessNoBody(api.deactivateUser(id), "Błąd deaktywacji konta")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd deaktywacji konta") }
     }
 
     suspend fun getUserById(id: String): AdminUserDto {
         return runCatching {
             val users = ApiResponseHandler.requireSuccess(api.getAllUsers(), "Błąd pobierania użytkowników")
             users.find { it.id == id } ?: throw Exception("Nie znaleziono użytkownika")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania użytkowników") }
     }
 
     suspend fun updateUser(id: String, request: UpdateAdminUserRequest): AdminUserDto {
         return runCatching {
             ApiResponseHandler.requireSuccess(api.updateUser(id, request), "Błąd edycji profilu")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd edycji profilu") }
     }
 }

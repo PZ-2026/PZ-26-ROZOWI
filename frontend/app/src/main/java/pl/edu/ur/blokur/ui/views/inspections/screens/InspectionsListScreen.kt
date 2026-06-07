@@ -50,24 +50,41 @@ fun InspectionsListScreen(
     val formState by viewModel.formState.collectAsState()
     val editingInspection by viewModel.editingInspection.collectAsState()
     val editFormState by viewModel.editFormState.collectAsState()
+    val isDeleting by viewModel.isDeleting.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var inspectionToDelete by remember { mutableStateOf<String?>(null) }
 
     inspectionToDelete?.let { inspectionId ->
         AlertDialog(
-            onDismissRequest = { inspectionToDelete = null },
+            onDismissRequest = { if (!isDeleting) inspectionToDelete = null },
             title = { Text("Usunąć przegląd?") },
             text = { Text("Tej operacji nie można cofnąć.") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteInspection(inspectionId)
-                    inspectionToDelete = null
-                }) {
-                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                TextButton(
+                    onClick = {
+                        viewModel.deleteInspection(inspectionId) {
+                            inspectionToDelete = null
+                        }
+                    },
+                    enabled = !isDeleting
+                ) {
+                    if (isDeleting) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Usuń", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { inspectionToDelete = null }) { Text("Anuluj") }
+                TextButton(
+                    onClick = { inspectionToDelete = null },
+                    enabled = !isDeleting
+                ) {
+                    Text("Anuluj")
+                }
             }
         )
     }

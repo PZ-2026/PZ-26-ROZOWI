@@ -39,6 +39,9 @@ class AnnouncementsViewModel @Inject constructor(
     private val _isManager = MutableStateFlow(false)
     val isManager: StateFlow<Boolean> = _isManager.asStateFlow()
 
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
+
     init {
         viewModelScope.launch {
             _isManager.value = authService.getCurrentUserRole() == UserRole.ZARZADCA
@@ -90,14 +93,18 @@ class AnnouncementsViewModel @Inject constructor(
         }
     }
 
-    fun deleteAnnouncement(id: String) {
+    fun deleteAnnouncement(id: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
+            _isDeleting.value = true
             runCatching { announcementService.deleteAnnouncement(id) }
                 .onSuccess {
+                    _isDeleting.value = false
                     _events.send(AnnouncementsEvent.ShowError("Usunięto ogłoszenie"))
+                    onSuccess()
                     loadAnnouncements()
                 }
                 .onFailure { e ->
+                    _isDeleting.value = false
                     _events.send(AnnouncementsEvent.ShowError(e.message ?: "Błąd usuwania ogłoszenia"))
                 }
         }

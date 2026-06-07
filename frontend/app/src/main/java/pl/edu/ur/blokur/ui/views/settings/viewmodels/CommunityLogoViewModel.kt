@@ -114,11 +114,31 @@ class CommunityLogoViewModel @Inject constructor(
     }
 
     fun onFileSelected(uri: Uri, fileName: String?) {
-        selectedUri = uri
-        _state.value = _state.value.copy(
-            selectedFileName = fileName ?: "logo.png",
-            uploadSuccess = false
-        )
+        viewModelScope.launch {
+            runCatching {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val mimeType = context.contentResolver.getType(uri) ?: "image/png"
+                    if (mimeType != "image/jpeg" && mimeType != "image/png") {
+                        throw Exception("Dozwolone są tylko formaty JPG i PNG")
+                    }
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                        ?: throw Exception("Nie można otworzyć pliku")
+                    val bytes = inputStream.use { it.readBytes() }
+                    if (bytes.size > 2 * 1024 * 1024) {
+                        throw Exception("Plik jest zbyt duży (maksymalnie 2 MB)")
+                    }
+                    bytes
+                }
+            }.onSuccess {
+                selectedUri = uri
+                _state.value = _state.value.copy(
+                    selectedFileName = fileName ?: "logo.png",
+                    uploadSuccess = false
+                )
+            }.onFailure { e ->
+                _events.send(CommunityLogoEvent.ShowSnackbar(e.message ?: "Błąd odczytu pliku"))
+            }
+        }
     }
 
     fun upload() {
@@ -132,18 +152,12 @@ class CommunityLogoViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isUploading = true)
             runCatching {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                    ?: throw Exception("Nie można otworzyć pliku")
-                val bytes = inputStream.readBytes()
-                inputStream.close()
-
-                if (bytes.size > 2 * 1024 * 1024) {
-                    throw Exception("Plik jest zbyt duży (maksymalnie 2 MB)")
+                val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                        ?: throw Exception("Nie można otworzyć pliku")
+                    inputStream.use { it.readBytes() }
                 }
                 val mimeType = context.contentResolver.getType(uri) ?: "image/png"
-                if (mimeType != "image/jpeg" && mimeType != "image/png") {
-                    throw Exception("Dozwolone są tylko formaty JPG i PNG")
-                }
 
                 val requestBody = bytes.toRequestBody(mimeType.toMediaType())
                 val part = MultipartBody.Part.createFormData(

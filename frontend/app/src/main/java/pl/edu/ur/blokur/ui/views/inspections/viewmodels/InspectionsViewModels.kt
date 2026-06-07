@@ -63,6 +63,9 @@ class InspectionsListViewModel @Inject constructor(
     private val _showCreateDialog = MutableStateFlow(false)
     val showCreateDialog: StateFlow<Boolean> = _showCreateDialog.asStateFlow()
 
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
+
     private val _formState = MutableStateFlow(CreateInspectionFormState())
     val formState: StateFlow<CreateInspectionFormState> = _formState.asStateFlow()
 
@@ -229,14 +232,18 @@ class InspectionsListViewModel @Inject constructor(
 
     // ── Usuwanie przeglądu ──────────────────────────────────────────────────────
 
-    fun deleteInspection(id: String) {
+    fun deleteInspection(id: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
+            _isDeleting.value = true
             runCatching { inspectionService.delete(id) }
                 .onSuccess {
+                    _isDeleting.value = false
                     _events.send(InspectionEvent.ShowSnackbar("Przegląd został usunięty"))
+                    onSuccess()
                     load()
                 }
                 .onFailure { e ->
+                    _isDeleting.value = false
                     _events.send(InspectionEvent.ShowSnackbar(e.message ?: "Błąd usuwania przeglądu"))
                 }
         }

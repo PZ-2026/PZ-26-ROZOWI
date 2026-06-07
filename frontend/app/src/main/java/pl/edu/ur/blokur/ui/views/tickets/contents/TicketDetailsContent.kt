@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -97,6 +98,7 @@ fun TicketDetailsContent(
             commentResetKey = state.commentResetKey,
             isUploadingImage = state.isUploadingImage,
             isDownloadingProtocol = state.isDownloadingProtocol,
+            isActionInProgress = state.isActionInProgress,
             onAssignConservator = onAssignConservator,
             onRejectTicket = onRejectTicket,
             onConservatorAction = onConservatorAction,
@@ -122,6 +124,7 @@ private fun TicketDetailsSuccessContent(
     commentResetKey: Int,
     isUploadingImage: Boolean,
     isDownloadingProtocol: Boolean,
+    isActionInProgress: Boolean,
     onAssignConservator: (ConservatorDto, String) -> Unit,
     onRejectTicket: (String) -> Unit,
     onConservatorAction: (ConservatorActionType, String, Boolean) -> Unit,
@@ -371,12 +374,22 @@ private fun TicketDetailsSuccessContent(
         )
     }
 
+    var lastActionInProgress by remember { mutableStateOf(false) }
+    LaunchedEffect(isActionInProgress) {
+        if (lastActionInProgress && !isActionInProgress) {
+            showAssignSheet = false
+            showRejectSheet = false
+            conservatorActionType = null
+        }
+        lastActionInProgress = isActionInProgress
+    }
+
     if (showAssignSheet) {
         AssignConservatorSheet(
             conservators = conservators,
-            onDismissRequest = { showAssignSheet = false },
+            isLoading = isActionInProgress,
+            onDismissRequest = { if (!isActionInProgress) showAssignSheet = false },
             onAssign = { conservator, scheduledAt ->
-                showAssignSheet = false
                 onAssignConservator(conservator, scheduledAt)
             }
         )
@@ -384,9 +397,9 @@ private fun TicketDetailsSuccessContent(
 
     if (showRejectSheet) {
         ManagerRejectSheet(
-            onDismissRequest = { showRejectSheet = false },
+            isLoading = isActionInProgress,
+            onDismissRequest = { if (!isActionInProgress) showRejectSheet = false },
             onSubmit = { reason ->
-                showRejectSheet = false
                 onRejectTicket(reason)
             }
         )
@@ -395,15 +408,15 @@ private fun TicketDetailsSuccessContent(
     conservatorActionType?.let { type ->
         ConservatorActionSheet(
             actionType = type,
-            onDismissRequest = { conservatorActionType = null },
+            isLoading = isActionInProgress,
+            onDismissRequest = { if (!isActionInProgress) conservatorActionType = null },
             onSubmit = { comment, pause ->
-                conservatorActionType = null
                 onConservatorAction(type, comment, pause)
             }
         )
     }
 
-    if (state is TicketDetailsListState.Success && state.isActionInProgress) {
+    if (isActionInProgress) {
         androidx.compose.ui.window.Dialog(onDismissRequest = {}) {
             Box(
                 modifier = Modifier

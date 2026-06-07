@@ -17,34 +17,34 @@ class CategoryService @Inject constructor(
     suspend fun getCategories(): List<CategoryDto> {
         return runCatching {
             ApiResponseHandler.requireSuccess(ticketApi.getCategories(), "Błąd pobierania kategorii")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania kategorii") }
     }
 
     /** Tworzy nową kategorię. Dostęp: ZARZADCA. */
     suspend fun createCategory(name: String): AdminCategoryDto {
         return runCatching {
             ApiResponseHandler.requireSuccess(adminApi.createCategory(CategoryCreateRequest(name.trim())), "Błąd tworzenia kategorii")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd tworzenia kategorii") }
     }
 
     /** Aktualizuje istniejącą kategorię. Dostęp: ZARZADCA. */
     suspend fun updateCategory(id: String, name: String): AdminCategoryDto {
         return runCatching {
             ApiResponseHandler.requireSuccess(adminApi.updateCategory(id, CategoryCreateRequest(name.trim())), "Błąd aktualizacji kategorii")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd aktualizacji kategorii") }
     }
 
     /** Deaktywuje kategorię (soft delete). Dostęp: ZARZADCA. */
     suspend fun deactivateCategory(id: String) {
         runCatching {
             ApiResponseHandler.requireSuccessNoBody(adminApi.deactivateCategory(id), "Błąd deaktywacji kategorii")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd deaktywacji kategorii") }
     }
 
     /** Ustawia godziny SLA dla kategorii. Dostęp: ZARZADCA. */
     suspend fun setSla(id: String, hours: Int) {
         runCatching {
             ApiResponseHandler.requireSuccessNoBody(adminApi.setSla(id, SlaRequest(hours)), "Błąd ustawiania SLA")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd ustawiania SLA") }
     }
 }

@@ -28,6 +28,6 @@ class ApartmentBalanceService @Inject constructor(
                 api.getApartmentBalances(propertyId, minDebt, minDaysOverdue, sort),
                 "Błąd pobierania zestawienia"
             )
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania zestawienia") }
     }
 }

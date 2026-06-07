@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.MaterialTheme
@@ -34,24 +35,39 @@ fun AnnouncementsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val isManager by viewModel.isManager.collectAsState()
+    val isDeleting by viewModel.isDeleting.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var announcementToDelete by remember { mutableStateOf<String?>(null) }
 
     announcementToDelete?.let { id ->
         AlertDialog(
-            onDismissRequest = { announcementToDelete = null },
+            onDismissRequest = { if (!isDeleting) announcementToDelete = null },
             title = { Text("Usunąć ogłoszenie?") },
             text = { Text("Tej operacji nie można cofnąć.") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteAnnouncement(id)
-                    announcementToDelete = null
-                }) {
-                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                TextButton(
+                    onClick = {
+                        viewModel.deleteAnnouncement(id) {
+                            announcementToDelete = null
+                        }
+                    },
+                    enabled = !isDeleting
+                ) {
+                    if (isDeleting) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Usuń", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { announcementToDelete = null }) {
+                TextButton(
+                    onClick = { announcementToDelete = null },
+                    enabled = !isDeleting
+                ) {
                     Text("Anuluj")
                 }
             }

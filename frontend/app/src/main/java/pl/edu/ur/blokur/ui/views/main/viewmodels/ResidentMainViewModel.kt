@@ -45,10 +45,20 @@ class ResidentMainViewModel @Inject constructor(
     val events: Flow<ResidentMainEvent> = _events.receiveAsFlow()
 
     init {
+        loadRoleAndNav()
+    }
+
+    fun loadRoleAndNav() {
+        _state.value = ResidentMainState.Loading
         viewModelScope.launch {
-            val role = authService.getCurrentUserRole()
-            _availableNavItems.value = navItemsForRole(role)
-            _state.value = ResidentMainState.ViewingWelcome
+            runCatching {
+                authService.getCurrentUserRole()
+            }.onSuccess { role ->
+                _availableNavItems.value = navItemsForRole(role)
+                _state.value = ResidentMainState.ViewingWelcome
+            }.onFailure { e ->
+                _state.value = ResidentMainState.Error(e.message ?: "Nieznany błąd krytyczny")
+            }
         }
     }
 

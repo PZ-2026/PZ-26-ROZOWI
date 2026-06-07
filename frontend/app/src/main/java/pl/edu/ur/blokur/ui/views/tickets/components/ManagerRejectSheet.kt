@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -29,14 +30,18 @@ import pl.edu.ur.blokur.ui.theme.ErrorRed
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManagerRejectSheet(
+    isLoading: Boolean = false,
     onDismissRequest: () -> Unit,
     onSubmit: (String) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { !isLoading }
+    )
     var reason by remember { mutableStateOf("") }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = { if (!isLoading) onDismissRequest() },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -62,6 +67,7 @@ fun ManagerRejectSheet(
             OutlinedTextField(
                 value = reason,
                 onValueChange = { reason = it },
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth().height(120.dp),
                 placeholder = { Text("Np. Usterka leży po stronie właściciela...") },
                 shape = RoundedCornerShape(12.dp)
@@ -71,10 +77,18 @@ fun ManagerRejectSheet(
                 onClick = { onSubmit(reason) },
                 colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
                 modifier = Modifier.fillMaxWidth().height(54.dp),
-                enabled = reason.isNotBlank(),
+                enabled = reason.isNotBlank() && !isLoading,
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Odrzuć zgłoszenie", fontWeight = FontWeight.Bold)
+                if (isLoading) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Odrzuć zgłoszenie", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

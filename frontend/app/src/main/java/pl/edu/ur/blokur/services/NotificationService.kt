@@ -16,7 +16,7 @@ class NotificationService @Inject constructor(
         return runCatching {
             val resp = api.getSettings()
             ApiResponseHandler.requireSuccess(resp, "Błąd pobierania ustawień powiadomień")
-        }.getOrElse { throw if (it is ApiException) it else Exception(it.message ?: "Błąd połączenia", it) }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania ustawień powiadomień") }
     }
 
     /** Włącza lub wyłącza globalnie wybrany typ powiadomień. */
@@ -24,6 +24,6 @@ class NotificationService @Inject constructor(
         return runCatching {
             val resp = api.updateSetting(eventType, UpdateNotificationConfigRequest(enabled))
             ApiResponseHandler.requireSuccess(resp, "Błąd aktualizacji ustawień powiadomień")
-        }.getOrElse { throw if (it is ApiException) it else Exception(it.message ?: "Błąd połączenia", it) }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd aktualizacji ustawień powiadomień") }
     }
 }

@@ -55,6 +55,10 @@ object ApiResponseHandler {
         }
     }
 
+    fun wrapException(cause: Throwable, defaultMessage: String = "Błąd połączenia"): Exception {
+        return if (cause is ApiException) cause else Exception(cause.message ?: defaultMessage, cause)
+    }
+
     private fun parseJsonMessage(raw: String): String? = try {
         gson.fromJson(raw, MessageResponseDto::class.java).message?.takeIf { it.isNotBlank() }
     } catch (_: Exception) {

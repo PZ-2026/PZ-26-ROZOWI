@@ -569,6 +569,7 @@
 6. Poczekaj na odpowiedź.
 
 **Oczekiwany rezultat:**
+- W dolnym arkuszu akcji (ConservatorActionSheet) podczas zapisywania widać wskaźnik ładowania, a przyciski i możliwość zamknięcia arkusza (poprzez kliknięcie poza nim) są zablokowane aż do ukończenia operacji.
 - Status zgłoszenia zmienia się na **ZAKONCZONE_DO_WERYFIKACJI**.
 - Pojawia się informacja o wykonanej pracy.
 - Zgłoszenie znika z listy aktywnych zadań konserwatora (lub zmienia kolor/oznaczenie).
@@ -639,6 +640,7 @@
 8. Poczekaj na odpowiedź.
 
 **Oczekiwany rezultat:**
+- W dolnym arkuszu przypisywania (AssignConservatorSheet) podczas zapisywania widać wskaźnik ładowania, a przyciski i możliwość zamknięcia arkusza są zablokowane do momentu ukończenia operacji sieciowej.
 - Status zgłoszenia zmienia się na **W_REALIZACJI** (lub pozostaje NOWE z przypisanym konserwatorem, zależy od logiki backendu).
 - W szczegółach zgłoszenia pojawia się imię i nazwisko konserwatora: **Stanisław Wróbel**.
 - Planowana data wizyty jest wyświetlana.
@@ -670,6 +672,7 @@
 6. Poczekaj na odpowiedź.
 
 **Oczekiwany rezultat:**
+- W dolnym arkuszu odrzucania (ManagerRejectSheet) podczas zapisywania widać wskaźnik ładowania, a przyciski i możliwość zamknięcia arkusza są zablokowane.
 - Status ZGL/TEST/002 zmienia się na **ODRZUCONE**.
 - W szczegółach zgłoszenia widoczny jest powód odrzucenia.
 - Przycisk „Odrzuć" jest disabled dopóki pole powodu jest puste (walidacja).
@@ -963,6 +966,85 @@
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
 
+---
+
+## TEST-057 — Konfiguracja logo wspólnoty (z walidacją)
+
+**Rola:** ZARZĄDCA  
+**Konto testowe:** `admin1@blokur.pl` / `haslo123`  
+**Warunki wstępne:** Zalogowany. Posiadanie na urządzeniu pliku testowego PDF (lub pliku graficznego > 2 MB) oraz prawidłowego pliku graficznego (JPG/PNG < 2 MB).
+
+**Kroki:**
+1. Z zakładki **Profil** stuknij „Logo wspólnoty" (lub przejdź do ustawień logo).
+2. Spróbuj wybrać/przesłać plik PDF.
+3. Sprawdź, czy aplikacja odrzuca plik z odpowiednim komunikatem o błędzie formatu.
+4. Spróbuj wybrać/przesłać plik JPG/PNG o rozmiarze większym niż 2 MB.
+5. Sprawdź, czy aplikacja odrzuca plik z odpowiednim komunikatem o błędzie rozmiaru.
+6. Wybierz poprawny plik graficzny (JPG/PNG < 2 MB) i zatwierdź przesłanie.
+
+**Oczekiwany rezultat:**
+- Próba wyboru pliku PDF lub pliku > 2 MB skutkuje natychmiastowym wyświetleniem błędu (np. snackbar lub komunikat o błędzie walidacji) bez wysyłania zapytania do API.
+- Wybranie poprawnego pliku przesyła go do API i aktualizuje logo wspólnoty na ekranie.
+
+**Możliwe błędy:**
+- Jeśli plik PDF lub zbyt duży plik zostaje zaakceptowany i wysłany do serwera (zwracając błąd serwera 400/500 zamiast walidacji lokalnej) → BUG: brak walidacji klienta.
+- Jeśli brak jakiejkolwiek informacji o błędnym formacie/rozmiarze pliku → BUG UX.
+
+**Pole na wynik:** [ ] PASS  [ ] FAIL  
+**Notatki:** ___________
+
+---
+
+## TEST-058 — Usuwanie ogłoszenia
+
+**Rola:** ZARZĄDCA  
+**Konto testowe:** `admin1@blokur.pl` / `haslo123`  
+**Warunki wstępne:** Zalogowany. Istniejące ogłoszenie na liście (np. stworzone w TEST-054).
+
+**Kroki:**
+1. Przejdź do listy ogłoszeń.
+2. Znajdź ogłoszenie „Testowe ogłoszenie zarządcy".
+3. Stuknij ikonę usuwania (kosz) przy tym ogłoszeniu.
+4. W oknie potwierdzenia usunięcia stuknij przycisk „Usuń" i obserwuj interakcję.
+
+**Oczekiwany rezultat:**
+- Pojawia się okno dialogowe z pytaniem o potwierdzenie usunięcia.
+- Po kliknięciu „Usuń" w dialogu pojawia się wskaźnik ładowania (progress indicator), a przyciski „Usuń" oraz „Anuluj" stają się nieaktywne (disabled) na czas trwania usuwania.
+- Ogłoszenie znika z listy po pomyślnym zakończeniu operacji.
+
+**Możliwe błędy:**
+- Jeśli w oknie dialogowym podczas usuwania nie widać wskaźnika ładowania, a przyciski są aktywne (co pozwala na podwójne kliknięcie i błąd API) → BUG UX.
+- Jeśli ogłoszenie nie znika z listy mimo braku błędów → BUG: brak odświeżenia listy.
+
+**Pole na wynik:** [ ] PASS  [ ] FAIL  
+**Notatki:** ___________
+
+---
+
+## TEST-059 — Przeglądanie i usuwanie przeglądu (Inspections)
+
+**Rola:** ZARZĄDCA  
+**Konto testowe:** `admin1@blokur.pl` / `haslo123`  
+**Warunki wstępne:** Zalogowany. Istniejące przeglądy w bazie danych (np. „Przegląd roczny budynku", „Kontrola gaśnic", „Audit energetyczny" z seedów).
+
+**Kroki:**
+1. Z zakładki **Profil** przejdź do sekcji „Przeglądy techniczne" lub „Inspekcje".
+2. Sprawdź czy widzisz 3 przeglądy z seeda.
+3. Znajdź przegląd „Audit energetyczny" i stuknij ikonę usuwania (kosz).
+4. W oknie potwierdzenia usunięcia kliknij przycisk „Usuń" i obserwuj interakcję.
+
+**Oczekiwany rezultat:**
+- Lista przeglądów ładuje się poprawnie, pokazując szczegółowe informacje z seedów.
+- Dialog potwierdzenia usunięcia pojawia się prawidłowo.
+- Podczas procesu usuwania wewnątrz okna dialogowego widać wskaźnik ładowania, a przyciski interakcji stają się zablokowane.
+- Przegląd zostaje pomyślnie usunięty i znika z listy.
+
+**Możliwe błędy:**
+- Jeśli lista przeglądów nie ładuje się (błąd pobierania) → BUG: GET /api/inspections nie działa.
+- Jeśli brak wskaźnika ładowania lub przyciski w dialogu usuwania nie są blokowane podczas operacji → BUG UX.
+
+**Pole na wynik:** [ ] PASS  [ ] FAIL  
+**Notatki:** ___________
 
 ---
 
@@ -1051,6 +1133,35 @@
 - Jeśli przycisk jest aktywny mimo pustych pól i wysyłanie zwraca błąd 400 → BUG: brak walidacji po stronie klienta (tylko server-side).
 - Jeśli komunikat walidacji jest po angielsku → BUG: brak lokalizacji.
 - Jeśli aplikacja zawiesza się po próbie wysłania pustego formularza → KRYTYCZNY BUG: crash.
+
+**Pole na wynik:** [ ] PASS  [ ] FAIL  
+**Notatki:** ___________
+
+---
+
+## TEST-063 — Błąd krytyczny przy ładowaniu roli na starcie (obsługa Retry)
+
+**Rola:** (dowolna)  
+**Konto testowe:** `jan.kowalski@gmail.com` / `haslo123`  
+**Warunki wstępne:** Użytkownik jest już zalogowany w aplikacji. Brak połączenia internetowego przed uruchomieniem aplikacji.
+
+**Kroki:**
+1. Wyłącz połączenie sieciowe (Wi-Fi oraz dane komórkowe) na urządzeniu.
+2. Zamknij całkowicie aplikację BlokUR (ubij proces).
+3. Uruchom aplikację ponownie.
+4. Sprawdź zachowanie ekranu głównego (ResidentMainScreen).
+5. Włącz ponownie połączenie sieciowe.
+6. Stuknij przycisk „Spróbuj ponownie" (Retry) na ekranie błędu.
+
+**Oczekiwany rezultat:**
+- Aplikacja po uruchomieniu bez sieci nie wywala się (brak crashu).
+- Pojawia się stan błędu krytycznego informujący o braku możliwości wczytania danych roli/nawigacji.
+- Widoczny jest dedykowany przycisk „Spróbuj ponownie" (Retry).
+- Po przywróceniu sieci i kliknięciu przycisku retry, rola użytkownika jest poprawnie ładowana, a aplikacja przechodzi do odpowiedniego ekranu głównego (np. Profil mieszkańca).
+
+**Możliwe błędy:**
+- Jeśli aplikacja crashuje (np. NullPointerException przy próbie nawigacji bez wczytanej roli) → KRYTYCZNY BUG.
+- Jeśli brak przycisku „Spróbuj ponownie" na ekranie błędu krytycznego lub jego kliknięcie nic nie robi → BUG.
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________

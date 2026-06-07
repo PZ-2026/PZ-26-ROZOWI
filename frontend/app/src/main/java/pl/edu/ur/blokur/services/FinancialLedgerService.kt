@@ -13,7 +13,7 @@ class FinancialLedgerService @Inject constructor(
     suspend fun getTransactions(apartmentId: String): ApartmentTransactionsDto {
         return runCatching {
             ApiResponseHandler.requireSuccess(api.getTransactions(apartmentId), "Błąd pobierania transakcji")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania transakcji") }
     }
 
     suspend fun createTransaction(
@@ -22,6 +22,6 @@ class FinancialLedgerService @Inject constructor(
     ): FinancialTransactionDto {
         return runCatching {
             ApiResponseHandler.requireSuccess(api.createTransaction(apartmentId, request), "Błąd tworzenia transakcji")
-        }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd tworzenia transakcji") }
     }
 }

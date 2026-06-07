@@ -103,7 +103,8 @@ fun ResidentMainScreen(
             ) {
                 EmptyState(
                     title = "Błąd krytyczny",
-                    description = (state as ResidentMainState.Error).message
+                    description = (state as ResidentMainState.Error).message,
+                    onRetry = viewModel::loadRoleAndNav
                 )
             }
         } else {

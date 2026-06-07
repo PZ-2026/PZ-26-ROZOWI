@@ -58,10 +58,14 @@ import java.util.Locale
 @Composable
 fun AssignConservatorSheet(
     conservators: List<ConservatorDto>,
+    isLoading: Boolean = false,
     onDismissRequest: () -> Unit,
     onAssign: (ConservatorDto, String) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { !isLoading }
+    )
     
     var step by remember { mutableStateOf(1) }
     var selected by remember { mutableStateOf<ConservatorDto?>(null) }
@@ -125,7 +129,7 @@ fun AssignConservatorSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = { if (!isLoading) onDismissRequest() },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -218,8 +222,11 @@ fun AssignConservatorSheet(
                             Text("$formattedDate, $formattedTime", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         }
                     }
-                    IconButton(onClick = { step = 1 }) {
-                        Icon(Icons.Rounded.Edit, "Zmień", tint = MaterialTheme.colorScheme.primary)
+                    IconButton(
+                        onClick = { step = 1 },
+                        enabled = !isLoading
+                    ) {
+                        Icon(Icons.Rounded.Edit, "Zmień", tint = if (isLoading) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f) else MaterialTheme.colorScheme.primary)
                     }
                 }
 
@@ -234,7 +241,7 @@ fun AssignConservatorSheet(
                                     if (isSelected) MaterialTheme.colorScheme.primaryContainer
                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                                 )
-                                .clickable { selected = conservator }
+                                .clickable(enabled = !isLoading) { selected = conservator }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -262,10 +269,18 @@ fun AssignConservatorSheet(
                 Button(
                     onClick = { selected?.let { onAssign(it, isoDateTime ?: "") } },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
-                    enabled = selected != null,
+                    enabled = selected != null && !isLoading,
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Zatwierdź i powiadom", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    if (isLoading) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Zatwierdź i powiadom", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
