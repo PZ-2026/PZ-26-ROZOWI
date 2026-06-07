@@ -4,24 +4,22 @@ import pl.edu.ur.blokur.dtos.UserRole
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Informacja o lokalu przypisanym mieszkańcowi (rozwiązywana z istniejącego API). */
+/** Informacja o lokalu przypisanym mieszkańcowi (rozwiązywana z API profilu). */
 data class ResidentApartmentInfo(
     val apartmentId: String,
     val label: String
 )
 
-/** Brak możliwości ustalenia lokalu mieszkańca bez nowego endpointu backendowego. */
+/** Brak możliwości ustalenia lokalu mieszkańca bez poprawnych danych profilowych. */
 class UserApartmentException(message: String) : Exception(message)
 
 /**
- * Ustalanie lokalu mieszkańca wyłącznie przez istniejące API:
- * GET /api/tickets → GET /api/tickets/{id} → apartmentId.
- *
- * Backend nie filtruje GET /api/buildings/tree wg roli — nie używamy „pierwszego lokalu z drzewa”.
+ * Ustalanie lokalu mieszkańca za pomocą dedykowanego endpointu profilu użytkownika:
+ * GET /api/users/me.
  */
 @Singleton
 class UserApartmentService @Inject constructor(
-    private val ticketService: TicketService,
+    private val userService: UserService,
     private val authService: AuthService
 ) {
 
@@ -36,20 +34,11 @@ class UserApartmentService @Inject constructor(
             throw UserApartmentException("Usługa dostępna tylko dla roli MIESZKANIEC.")
         }
 
-        val tickets = ticketService.getTickets()
-        if (tickets.isEmpty()) {
-            throw UserApartmentException(
-                "Brak przypisanego lokalu. Utwórz zgłoszenie serwisowe, aby powiązać konto z lokalem."
-            )
-        }
-
-        val detail = ticketService.getTicketById(tickets.first().id)
-            ?: throw UserApartmentException("Nie znaleziono szczegółów zgłoszenia.")
-
-        val apartmentId = detail.apartmentId
+        val profile = userService.getMe()
+        val apartmentId = profile.apartmentId
             ?: throw UserApartmentException("Brak przypisanego lokalu w profilu użytkownika.")
 
-        val label = detail.locationLabel?.let { "Lokal $it" } ?: "Twój lokal"
+        val label = "Twój lokal"
         return ResidentApartmentInfo(apartmentId, label).also { cached = it }
     }
 

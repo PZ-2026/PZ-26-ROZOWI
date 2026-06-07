@@ -131,11 +131,11 @@ VALUES ('OGLOSZENIE', 'Piknik sąsiedzki', 'Zapraszamy na wspólnego grilla na t
 INSERT INTO financial_transactions (apartment_id, type, amount, description, transaction_date, recorded_by_id)
 VALUES 
 ((SELECT a.id FROM apartments a JOIN user_apartments ua ON a.id = ua.apartment_id JOIN users u ON ua.user_id = u.id WHERE u.email = 'jan.kowalski@gmail.com' AND a.number = '1'), 
- 'NALEZNOSC', 450.00, 'Czynsz 04/2026', '2026-04-01', (SELECT id FROM users WHERE email = 'admin1@blokur.pl')),
+ 'NALICZENIE', 450.00, 'Czynsz 04/2026', '2026-04-01', (SELECT id FROM users WHERE email = 'admin1@blokur.pl')),
 ((SELECT a.id FROM apartments a JOIN user_apartments ua ON a.id = ua.apartment_id JOIN users u ON ua.user_id = u.id WHERE u.email = 'jan.kowalski@gmail.com' AND a.number = '1'), 
  'WPLATA', 450.00, 'Przelew Czynsz 04/2026', '2026-04-05', (SELECT id FROM users WHERE email = 'admin1@blokur.pl')),
 ((SELECT a.id FROM apartments a JOIN user_apartments ua ON a.id = ua.apartment_id JOIN users u ON ua.user_id = u.id WHERE u.email = 'jan.kowalski@gmail.com' AND a.number = '1'), 
- 'NALEZNOSC', 12.50, 'Rozliczenie wody 03/2026', '2026-04-10', (SELECT id FROM users WHERE email = 'admin1@blokur.pl'));
+ 'NALICZENIE', 12.50, 'Rozliczenie wody 03/2026', '2026-04-10', (SELECT id FROM users WHERE email = 'admin1@blokur.pl'));
 
 -- ==========================================
 -- 10. UCHWAŁY (RESOLUTIONS)

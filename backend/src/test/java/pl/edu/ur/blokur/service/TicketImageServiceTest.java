@@ -50,6 +50,14 @@ class TicketImageServiceTest {
         resident.setRole("MIESZKANIEC");
         resident.setEmail("mieszkaniec@test.com");
 
+        pl.edu.ur.blokur.models.Apartment apartment = new pl.edu.ur.blokur.models.Apartment();
+        apartment.setId(UUID.randomUUID());
+
+        pl.edu.ur.blokur.models.UserApartment ua = new pl.edu.ur.blokur.models.UserApartment();
+        ua.setUser(resident);
+        ua.setApartment(apartment);
+        resident.getUserApartments().add(ua);
+
         conservator = new User();
         conservator.setId(UUID.randomUUID());
         conservator.setRole("KONSERWATOR");
@@ -60,6 +68,7 @@ class TicketImageServiceTest {
         ticket.setId(ticketId);
         ticket.setAuthor(resident);
         ticket.setAssignedTo(conservator);
+        ticket.setApartment(apartment);
     }
 
     @Nested
@@ -257,6 +266,14 @@ class TicketImageServiceTest {
             foreignResident.setRole("MIESZKANIEC");
             foreignResident.setEmail("obcy2@test.com");
 
+            pl.edu.ur.blokur.models.Apartment otherApartment = new pl.edu.ur.blokur.models.Apartment();
+            otherApartment.setId(UUID.randomUUID());
+
+            pl.edu.ur.blokur.models.UserApartment ua = new pl.edu.ur.blokur.models.UserApartment();
+            ua.setUser(foreignResident);
+            ua.setApartment(otherApartment);
+            foreignResident.getUserApartments().add(ua);
+
             when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
             when(userRepository.findByEmail(foreignResident.getEmail()))
                     .thenReturn(Optional.of(foreignResident));
@@ -264,7 +281,7 @@ class TicketImageServiceTest {
             assertThatThrownBy(
                             () ->
                                     ticketImageService.getImagesForTicket(
-                                            ticketId, foreignResident.getEmail()))
+                                             ticketId, foreignResident.getEmail()))
                     .isInstanceOf(SecurityException.class);
         }
 

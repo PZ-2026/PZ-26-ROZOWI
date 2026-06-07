@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.services.AuthService
-import pl.edu.ur.blokur.services.TokenStorage
+import pl.edu.ur.blokur.services.UserService
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileEvent
 import pl.edu.ur.blokur.ui.views.profile.utils.ProfileState
 import javax.inject.Inject
@@ -20,7 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authService: AuthService,
-    private val tokenStorage: TokenStorage
+    private val userService: UserService
 ) : ViewModel() {
 
     /** Zwraca true jeśli zalogowany użytkownik ma rolę ZARZADCA. */
@@ -45,23 +45,22 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _state.value = ProfileState.Loading
-                val role = authService.getCurrentUserRole()
-                val email = tokenStorage.getUserEmail().orEmpty()
+                val profile = userService.getMe()
+                val displayRole = when (profile.role) {
+                    "MIESZKANIEC" -> "Mieszkaniec"
+                    "KONSERWATOR" -> "Konserwator"
+                    "ZARZADCA" -> "Zarządca"
+                    else -> profile.role
+                }
                 _state.value = ProfileState.Data(
-                    role = role?.toDisplayLabel() ?: "Nieznana rola",
-                    email = email.ifBlank { "Brak zapisanego adresu e-mail" },
-                    name = "",
-                    phone = ""
+                    role = displayRole,
+                    email = profile.email,
+                    name = profile.fullName,
+                    phone = profile.phone.orEmpty()
                 )
             } catch (e: Exception) {
                 _state.value = ProfileState.Error(e.message ?: "Błąd ładowania profilu")
             }
         }
-    }
-
-    private fun UserRole.toDisplayLabel(): String = when (this) {
-        UserRole.MIESZKANIEC -> "Mieszkaniec"
-        UserRole.KONSERWATOR -> "Konserwator"
-        UserRole.ZARZADCA -> "Zarządca"
     }
 }

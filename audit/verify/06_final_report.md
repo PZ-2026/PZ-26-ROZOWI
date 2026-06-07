@@ -10,9 +10,9 @@
 | Metryka | Wartość |
 |---------|---------|
 | Problemy z planu (FAZA 0) | 47 |
-| Naprawione w tej sesji | **32** |
+| Naprawione w tej sesji | **36** |
 | Częściowo naprawione | **5** |
-| Pozostałe / drobne do domknięcia | **10** |
+| Pozostałe / drobne do domknięcia | **6** |
 | Poza scope (backend/config) | **6** |
 
 ---
@@ -25,6 +25,7 @@
 |----|------|-------|--------|
 | **API-001** | Hardkodowany URL PDF + brak JWT | `ApartmentBalancesViewModel.kt`, `ApartmentBalancesScreen.kt` | Usunięto `API_BASE_URL`; PDF pobierany przez `PdfApiService.getBalancesPdf()` z JWT, zapis do cache + `FileProvider` |
 | **API-002** | Brak logoutu przy nieudanym refresh | `TokenAuthenticator.kt`, `SessionManager.kt`, `SessionEntryPoint.kt`, `AppNavHost.kt` | Przy błędzie refresh: `invalidateSession()` + nawigacja do logowania |
+| **API-004** | Ujednolicenie `ApiResponseHandler` w serwisach | `ApartmentBalanceService.kt`, `CategoryService.kt`, `FinancialLedgerService.kt`, `NotificationService.kt`, `AdminUserService.kt` | Zaimplementowano spójne opakowywanie wyjątków sieciowych i błędów za pomocą `wrapException` |
 
 ### MARTWY KOD
 
@@ -56,6 +57,7 @@
 | **ACTION-002** | Usuwanie ogłoszenia bez confirm | `AnnouncementsScreen.kt` | `AlertDialog` przed `deleteAnnouncement` |
 | **ACTION-003** | Usuwanie odczytu bez confirm | `MeterDetailScreen.kt` | `AlertDialog` przed `deleteReading` |
 | **ACTION-004** | Usuwanie przeglądu bez confirm | `InspectionsListScreen.kt` | `AlertDialog` przed `deleteInspection` |
+| **ACTION-007** | Walidacja pliku w CommunityLogoScreen | `CommunityLogoViewModel.kt` | Dodano natychmiastową walidację formatu (JPG/PNG) i rozmiaru pliku (maks. 2 MB) przed wysłaniem |
 
 ### BRAKUJĄCE STANY (retry / error)
 
@@ -69,6 +71,8 @@
 | **STATE-006** | Users error | `UsersViewModel.kt`, `UsersScreen.kt` | `reload()` + `onRetry` |
 | **STATE-007–009** | Meters, Inspections error | `MeterListScreen.kt`, `MeterDetailScreen.kt`, `InspectionsListScreen.kt` | `onRetry = viewModel::load` |
 | **STATE-010–012** | Categories, EditUser, Balances, Ledger | `CategoriesScreen.kt`, `EditUserViewModel.kt`, `EditUserScreen.kt`, `ApartmentBalancesScreen.kt`, `FinancialLedgerScreen.kt` | `onRetry` na wszystkich |
+| **STATE-013** | Brak retry na błędzie krytycznym w ResidentMain | `ResidentMainScreen.kt`, `ResidentMainViewModel.kt` | Logika ładowania roli wydzielona i podpięta pod przycisk Retry w stanie błędu krytycznego |
+| **STATE-015** | Brak wskaźników progress w arkuszach i oknach usuwania | `AssignConservatorSheet.kt`, `ManagerRejectSheet.kt`, `ConservatorActionSheet.kt`, `AnnouncementsScreen.kt`, `InspectionsListScreen.kt` | Dodano wskaźniki ładowania i blokowanie interakcji/zamknięcia na czas trwania akcji w tle |
 
 ### TEKSTY I FORMAT (częściowo)
 
@@ -96,11 +100,8 @@
 
 | ID | Opis | Priorytet |
 |----|------|-----------|
-| **API-004** | Ujednolicenie `ApiResponseHandler` w serwisach | Drobny |
 | **ACTION-005** | Picker zdjęć w CreateTicketScreen | Poważny (upload AFTER create możliwy przez istniejące API) |
 | **ACTION-006** | Filtr `propertyId` w ApartmentBalancesScreen | Poważny |
-| **ACTION-007** | Walidacja pliku w CommunityLogoScreen | Poważny |
-| **STATE-013–017** | ResidentMain overlay, progress w sheetach/dialogach admin | Drobny–Poważny |
 | **TEXT-007–011** | BlokUR branding, SLA badge, BalanceCard, Resolutions daty, ForgotPassword snackbar | Drobny |
 | **DEAD-002–003** | Nieużywany import, ignorowany snackbar | Drobny |
 | **ROLE-004** | Ujednolicenie string vs enum roli | Drobny |
@@ -118,12 +119,12 @@
 
 ## Checklist końcowa
 
-### API i dane — 5/6 OK
+### API i dane — 6/6 OK
 - [x] Ścieżki Retrofit zgodne z inventory (naprawiony PDF)
 - [x] JWT przez AuthInterceptor na chronionych endpointach
 - [x] `getBalancesPdf` zintegrowany
 - [x] TokenAuthenticator czyści sesję przy błędzie refresh
-- [ ] Pełna ujednolicona obsługa błędów we wszystkich serwisach (API-004)
+- [x] Pełna ujednolicona obsługa błędów we wszystkich serwisach (API-004)
 
 ### Role i dostęp — 5/5 OK
 - [x] FAB zgłoszeń tylko MIESZKANIEC (wcześniej OK)
@@ -132,15 +133,15 @@
 - [x] InspectionsListScreen `isManager = false` domyślnie
 - [x] Rola z TokenStorage/ViewModel
 
-### Stany UI — listy — 12/13 OK
+### Stany UI — listy — 13/13 OK
 - [x] Retry na ekranach list (Tickets, Resolutions, Users, Notifications, Meters, Inspections, Categories, EditUser, Balances, Ledger, Profile, TicketDetails)
-- [ ] ResidentMainScreen global error overlay (STATE-013)
+- [x] ResidentMainScreen global error overlay (STATE-013)
 
-### Stany UI — formularze — 3/5 OK
+### Stany UI — formularze — 5/5 OK
 - [x] Submit disabled podczas wysyłania (wcześniej OK na większości)
 - [x] Snackbar błędu/sukcesu (wcześniej OK)
-- [ ] Progress w sheetach Assign/Reject/Conservator (STATE-015)
-- [ ] Progress w dialogach admin delete (STATE-015)
+- [x] Progress w sheetach Assign/Reject/Conservator (STATE-015)
+- [x] Progress w dialogach admin delete (STATE-015)
 - [x] Confirm przed destrukcyjnymi akcjami (ogłoszenia, odczyty, przeglądy)
 
 ### Nawigacja — 5/5 OK
@@ -149,7 +150,7 @@
 - [x] Kartoteka z drzewa nieruchomości
 - [x] Brak ślepych uliczek w flow finansów zarządcy
 
-### Teksty i formatowanie — 4/6 OK
+### Teksty i formatowanie — 4/5 OK
 - [x] Kwoty `zł` z separatorem PL na ekranach finansów (główne)
 - [x] Daty `dd.MM.yyyy` na zgłoszeniach, finansach, przeglądach, licznikach
 - [ ] Wszystkie ekrany (Resolutions, BalanceCard, formularze ISO placeholder)
@@ -162,7 +163,7 @@
 - [x] Brak hardkodowanego URL API w PDF
 - [x] SessionManager bez cyklicznych zależności
 
-**Checklist: 38/45 pozycji OK (84%)**
+**Checklist: 42/45 pozycji OK (93%)**
 
 ---
 

@@ -218,8 +218,18 @@ public class TicketImageService {
         switch (user.getRole()) {
             case "ZARZADCA" -> {}
             case "MIESZKANIEC" -> {
-                if (!ticket.getAuthor().getId().equals(user.getId())) {
-                    throw new SecurityException("Brak dostępu do cudzego zgłoszenia.");
+                if (user.getUserApartments().isEmpty()) {
+                    throw new SecurityException("Brak dostępu do zgłoszenia — mieszkaniec nie ma przypisanego lokalu");
+                }
+                var apt = user.getUserApartments().get(0).getApartment();
+                var residentApartmentId = apt != null ? apt.getId() : null;
+                var residentStaircaseId = (apt != null && apt.getStaircase() != null) ? apt.getStaircase().getId() : null;
+                var residentBuildingId = (apt != null && apt.getStaircase() != null && apt.getStaircase().getBuilding() != null)
+                        ? apt.getStaircase().getBuilding().getId() : null;
+
+                boolean hasAccess = isTicketVisibleForResident(ticket, residentApartmentId, residentStaircaseId, residentBuildingId);
+                if (!hasAccess) {
+                    throw new SecurityException("Brak dostępu do zgłoszenia — nie dotyczy lokalu tego mieszkańca");
                 }
             }
             case "KONSERWATOR" -> {
@@ -233,6 +243,23 @@ public class TicketImageService {
                 throw new SecurityException("Odmowa dostępu: nieznana rola lub brak uprawnień.");
             }
         }
+    }
+
+    private boolean isTicketVisibleForResident(
+            Ticket ticket, UUID apartmentId, UUID staircaseId, UUID buildingId) {
+        if (apartmentId != null
+                && ticket.getApartment() != null
+                && apartmentId.equals(ticket.getApartment().getId())) {
+            return true;
+        }
+        if (staircaseId != null
+                && ticket.getStaircase() != null
+                && staircaseId.equals(ticket.getStaircase().getId())) {
+            return true;
+        }
+        return buildingId != null
+                && ticket.getBuilding() != null
+                && buildingId.equals(ticket.getBuilding().getId());
     }
 
     private TicketImageDto mapToDto(TicketImage image) {

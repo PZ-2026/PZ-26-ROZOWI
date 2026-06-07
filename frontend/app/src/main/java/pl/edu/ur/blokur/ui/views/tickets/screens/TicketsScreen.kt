@@ -50,6 +50,7 @@ fun TicketsScreen(
     val showFab = (state as? TicketsListState.Success)?.currentUserRole == "MIESZKANIEC"
 
     LaunchedEffect(Unit) {
+        viewModel.loadTickets()
         viewModel.events.collect { event ->
             when (event) {
                 is TicketsScreenEvent.NavigateToDetails -> onNavigateToDetails(event.ticketId)

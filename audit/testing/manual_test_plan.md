@@ -53,7 +53,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+OKEJ
 ---
 
 ## TEST-002 — Logowanie poprawnymi danymi jako ZARZĄDCA
@@ -76,7 +76,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+OKEJ
 ---
 
 ## TEST-003 — Logowanie poprawnymi danymi jako KONSERWATOR
@@ -98,7 +98,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+OKEJ
 ---
 
 ## TEST-004 — Logowanie błędnym hasłem — komunikat błędu
@@ -125,7 +125,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+OKEJ
 ---
 
 ## TEST-005 — Reset hasła — flow z emailem
@@ -152,7 +152,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+OKEJ
 ---
 
 ## TEST-006 — Wylogowanie i ponowne logowanie
@@ -179,7 +179,7 @@
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
 
-
+OKEJ
 ---
 
 # GRUPA MIESZKANIEC — Zgłoszenia
@@ -212,7 +212,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+OKEJ
 ---
 
 ## TEST-011 — Otwarcie szczegółów istniejącego zgłoszenia
@@ -246,7 +246,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+NIE
 ---
 
 ## TEST-012 — Utworzenie nowego zgłoszenia z kategorią i opisem
@@ -278,7 +278,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+WMIARE
 ---
 
 ## TEST-013 — Dodanie komentarza do zgłoszenia
@@ -307,7 +307,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+OKEJ
 ---
 
 ## TEST-014 — Wyświetlenie zdjęć przy zgłoszeniu
@@ -333,7 +333,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+NIEMA ZDJ
 ---
 
 # GRUPA MIESZKANIEC — Finanse i reszta
@@ -369,7 +369,7 @@
 
 **Pole na wynik:** [ ] PASS  [ ] FAIL  
 **Notatki:** ___________
-
+NIE
 ---
 
 ## TEST-021 — Pobranie dokumentu PDF
