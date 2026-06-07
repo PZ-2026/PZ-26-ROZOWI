@@ -62,7 +62,7 @@ public class BuildingService {
      */
     @Transactional
     public BuildingResponse createBuilding(BuildingRequest request) {
-        Building building = new Building();
+        var building = new Building();
         applyBuildingRequest(building, request);
         building = buildingRepository.save(building);
         return mapToBuildingResponse(building);
@@ -77,7 +77,7 @@ public class BuildingService {
      */
     @Transactional
     public BuildingResponse updateBuilding(UUID id, BuildingRequest request) {
-        Building building = findBuildingOrThrow(id);
+        var building = findBuildingOrThrow(id);
         applyBuildingRequest(building, request);
         buildingRepository.save(building);
         return mapToBuildingResponse(building);
@@ -91,7 +91,7 @@ public class BuildingService {
      */
     @Transactional
     public void deleteBuilding(UUID id) {
-        Building building = findBuildingOrThrow(id);
+        var building = findBuildingOrThrow(id);
         boolean hasApartments =
                 building.getStaircases().stream()
                         .anyMatch(s -> s.getApartments() != null && !s.getApartments().isEmpty());
@@ -111,8 +111,8 @@ public class BuildingService {
      */
     @Transactional
     public StaircaseResponse createStaircase(UUID buildingId, StaircaseRequest request) {
-        Building building = findBuildingOrThrow(buildingId);
-        Staircase staircase = new Staircase();
+        var building = findBuildingOrThrow(buildingId);
+        var staircase = new Staircase();
         staircase.setLabel(request.getLabel());
         staircase.setBuilding(building);
         staircase = staircaseRepository.save(staircase);
@@ -130,7 +130,7 @@ public class BuildingService {
     @Transactional
     public StaircaseResponse updateStaircase(
             UUID buildingId, UUID staircaseId, StaircaseRequest request) {
-        Staircase staircase = findStaircaseInBuilding(buildingId, staircaseId);
+        var staircase = findStaircaseInBuilding(buildingId, staircaseId);
         staircase.setLabel(request.getLabel());
         staircaseRepository.save(staircase);
         return mapToStaircaseResponse(staircase);
@@ -145,7 +145,7 @@ public class BuildingService {
      */
     @Transactional
     public void deleteStaircase(UUID buildingId, UUID staircaseId) {
-        Staircase staircase = findStaircaseInBuilding(buildingId, staircaseId);
+        var staircase = findStaircaseInBuilding(buildingId, staircaseId);
         if (staircase.getApartments() != null && !staircase.getApartments().isEmpty()) {
             throw new BusinessValidationException(
                     "Nie można usunąć klatki schodowej, która posiada lokale mieszkalne");
@@ -162,8 +162,8 @@ public class BuildingService {
      */
     @Transactional
     public ApartmentResponse createApartment(UUID staircaseId, ApartmentRequest request) {
-        Staircase staircase = findStaircaseOrThrow(staircaseId);
-        Apartment apartment = new Apartment();
+        var staircase = findStaircaseOrThrow(staircaseId);
+        var apartment = new Apartment();
         applyApartmentRequest(apartment, request);
         apartment.setStaircase(staircase);
         apartment = apartmentRepository.save(apartment);
@@ -181,7 +181,7 @@ public class BuildingService {
     @Transactional
     public ApartmentResponse updateApartment(
             UUID staircaseId, UUID apartmentId, ApartmentRequest request) {
-        Apartment apartment = findApartmentInStaircase(staircaseId, apartmentId);
+        var apartment = findApartmentInStaircase(staircaseId, apartmentId);
         applyApartmentRequest(apartment, request);
         apartmentRepository.save(apartment);
         return mapToApartmentResponse(apartment);
@@ -195,8 +195,14 @@ public class BuildingService {
      */
     @Transactional
     public void deleteApartment(UUID staircaseId, UUID apartmentId) {
-        Apartment apartment = findApartmentInStaircase(staircaseId, apartmentId);
-        apartmentRepository.delete(apartment);
+        var apartment = findApartmentInStaircase(staircaseId, apartmentId);
+        try {
+            apartmentRepository.delete(apartment);
+            apartmentRepository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new BusinessValidationException(
+                    "Nie można usunąć lokalu, ponieważ posiada on przypisaną historię transakcji finansowych.");
+        }
     }
 
     private void applyApartmentRequest(Apartment apartment, ApartmentRequest request) {
@@ -217,7 +223,7 @@ public class BuildingService {
 
     private Apartment findApartmentInStaircase(UUID staircaseId, UUID apartmentId) {
         findStaircaseOrThrow(staircaseId);
-        Apartment apartment =
+        var apartment =
                 apartmentRepository
                         .findById(apartmentId)
                         .orElseThrow(
@@ -273,7 +279,7 @@ public class BuildingService {
 
     private Staircase findStaircaseInBuilding(UUID buildingId, UUID staircaseId) {
         findBuildingOrThrow(buildingId);
-        Staircase staircase =
+        var staircase =
                 staircaseRepository
                         .findById(staircaseId)
                         .orElseThrow(
@@ -288,7 +294,7 @@ public class BuildingService {
     }
 
     private BuildingResponse mapToBuildingResponse(Building building) {
-        BuildingResponse response = new BuildingResponse();
+        var response = new BuildingResponse();
         response.setId(building.getId());
         response.setEstateName(building.getEstateName());
         response.setName(building.getName());
@@ -302,7 +308,7 @@ public class BuildingService {
     }
 
     private StaircaseResponse mapToStaircaseResponse(Staircase staircase) {
-        StaircaseResponse response = new StaircaseResponse();
+        var response = new StaircaseResponse();
         response.setId(staircase.getId());
         response.setLabel(staircase.getLabel());
         response.setBuildingId(staircase.getBuilding().getId());
@@ -310,49 +316,53 @@ public class BuildingService {
     }
 
     private BuildingTreeDto mapToBuildingTreeDto(Building building) {
-        BuildingTreeDto dto = new BuildingTreeDto();
-        dto.setId(building.getId());
-        dto.setEstateName(building.getEstateName());
-        dto.setName(building.getName());
-        dto.setAddress(building.getAddress());
-        dto.setLatitude(building.getLatitude());
-        dto.setLongitude(building.getLongitude());
+        var buildingTreeDto = new BuildingTreeDto();
+        buildingTreeDto.setId(building.getId());
+        buildingTreeDto.setEstateName(building.getEstateName());
+        buildingTreeDto.setName(building.getName());
+        buildingTreeDto.setAddress(building.getAddress());
+        buildingTreeDto.setLatitude(building.getLatitude());
+        buildingTreeDto.setLongitude(building.getLongitude());
+
+        if (building.getProperty() != null) {
+            buildingTreeDto.setPropertyId(building.getProperty().getId());
+        }
 
         if (building.getStaircases() != null) {
-            List<BuildingTreeDto.StaircaseDto> staircases =
+            var staircases =
                     building.getStaircases().stream()
                             .map(this::mapToStaircaseDto)
                             .collect(Collectors.toList());
-            dto.setStaircases(staircases);
+            buildingTreeDto.setStaircases(staircases);
         }
 
-        return dto;
+        return buildingTreeDto;
     }
 
     private BuildingTreeDto.StaircaseDto mapToStaircaseDto(Staircase staircase) {
-        BuildingTreeDto.StaircaseDto dto = new BuildingTreeDto.StaircaseDto();
-        dto.setId(staircase.getId());
-        dto.setLabel(staircase.getLabel());
+        var staircaseDto = new BuildingTreeDto.StaircaseDto();
+        staircaseDto.setId(staircase.getId());
+        staircaseDto.setLabel(staircase.getLabel());
 
         if (staircase.getApartments() != null) {
             List<BuildingTreeDto.ApartmentDto> apartments =
                     staircase.getApartments().stream()
                             .map(this::mapToApartmentDto)
                             .collect(Collectors.toList());
-            dto.setApartments(apartments);
+            staircaseDto.setApartments(apartments);
         }
 
-        return dto;
+        return staircaseDto;
     }
 
     private BuildingTreeDto.ApartmentDto mapToApartmentDto(Apartment apartment) {
-        BuildingTreeDto.ApartmentDto dto = new BuildingTreeDto.ApartmentDto();
-        dto.setId(apartment.getId());
-        dto.setNumber(apartment.getNumber());
-        dto.setFloor(apartment.getFloor());
-        dto.setAreaM2(apartment.getAreaM2());
-        dto.setOwnershipType(apartment.getOwnershipType());
-        dto.setCurrentBalance(apartment.getCurrentBalance());
-        return dto;
+        var apartmentDto = new BuildingTreeDto.ApartmentDto();
+        apartmentDto.setId(apartment.getId());
+        apartmentDto.setNumber(apartment.getNumber());
+        apartmentDto.setFloor(apartment.getFloor());
+        apartmentDto.setAreaM2(apartment.getAreaM2());
+        apartmentDto.setOwnershipType(apartment.getOwnershipType());
+        apartmentDto.setCurrentBalance(apartment.getCurrentBalance());
+        return apartmentDto;
     }
 }

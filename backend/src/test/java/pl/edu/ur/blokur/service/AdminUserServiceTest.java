@@ -37,7 +37,7 @@ class AdminUserServiceTest {
 
     @Mock private ApartmentRepository apartmentRepository;
 
-    @Mock private PasswordResetService passwordResetService;
+    @Mock private InvitationService invitationService;
 
     @InjectMocks private AdminUserService adminUserService;
 
@@ -229,7 +229,7 @@ class AdminUserServiceTest {
 
             User result = adminUserService.createUser(request);
 
-            verify(passwordResetService).inviteUser(result);
+            verify(invitationService).inviteUser(result);
         }
 
         @Test
@@ -284,7 +284,21 @@ class AdminUserServiceTest {
 
             assertThatThrownBy(() -> adminUserService.createUser(request));
 
-            verify(passwordResetService, never()).inviteUser(any());
+            verify(invitationService, never()).inviteUser(any());
+        }
+
+        @Test
+        @DisplayName("Poprawne dane bez przypisanego lokalu — nie tworzy UserApartment")
+        void shouldSaveUserWithoutApartment() {
+            request.setApartmentId(null);
+            when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = adminUserService.createUser(request);
+
+            assertThat(result.getUserApartments()).isEmpty();
+            verify(apartmentRepository, never()).findById(any());
+            verify(invitationService).inviteUser(result);
         }
     }
 
@@ -374,6 +388,25 @@ class AdminUserServiceTest {
 
             assertThat(result.getUserApartments()).hasSize(1);
             assertThat(result.getUserApartments().get(0).getApartment()).isEqualTo(newApartment);
+        }
+
+        @Test
+        @DisplayName("Przypisanie do tego samego lokalu — nie modyfikuje przypisania")
+        void shouldNotModifyApartmentWhenAssignedToSameApartment() {
+            UserApartment existing = new UserApartment();
+            existing.setApartment(apartment);
+            existing.setUser(existingUser);
+            existingUser.getUserApartments().add(existing);
+
+            updateRequest.setApartmentId(apartmentId);
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = adminUserService.updateUser(userId, updateRequest);
+
+            assertThat(result.getUserApartments()).hasSize(1);
+            assertThat(result.getUserApartments().get(0)).isSameAs(existing);
         }
 
         @Test

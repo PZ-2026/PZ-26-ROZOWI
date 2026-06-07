@@ -48,3 +48,6 @@ local.properties
 .externalNativeBuild/
 .cxx/
 captures/
+
+# DOKUMENTY
+./backend/uploads/documents

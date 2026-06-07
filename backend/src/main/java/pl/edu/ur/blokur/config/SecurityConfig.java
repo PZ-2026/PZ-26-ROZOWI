@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import pl.edu.ur.blokur.security.JwtAuthenticationFilter;
+import pl.edu.ur.blokur.security.RateLimitFilter;
 
 /**
  * Konfiguracja zabezpieczeń aplikacji Spring Security. Definiuje reguły autoryzacji, filtry JWT
@@ -24,9 +25,12 @@ import pl.edu.ur.blokur.security.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter, RateLimitFilter rateLimitFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
     /**
@@ -51,27 +55,31 @@ public class SecurityConfig {
                                                 "/api/auth/refresh",
                                                 "/api/auth/forgot-password",
                                                 "/api/auth/reset-password",
-                                                "/api/pdf/**",
+                                                "/api/auth/accept-invitation",
                                                 "/api/categories",
+                                                "/uploads/**",
                                                 "/error")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated());
 
+
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
 
     /**
-     * Tworzy enkoder haseł oparty na algorytmie BCrypt. Używany zarówno do weryfikacji haseł przy
-     * logowaniu, jak i do hashowania nowych haseł.
+     * Tworzy enkoder haseł oparty na algorytmie BCrypt z kosztem 12. Używany zarówno do weryfikacji
+     * haseł przy logowaniu, jak i do hashowania nowych haseł. Koszt 12 spełnia minimalne wymagania
+     * specyfikacji bezpieczeństwa (WNF-03).
      *
-     * @return {@link PasswordEncoder} BCrypt
+     * @return {@link PasswordEncoder} BCrypt z kosztem 12
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(12);
     }
 
     /**

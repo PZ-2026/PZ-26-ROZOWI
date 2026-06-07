@@ -1,7 +1,6 @@
 package pl.edu.ur.blokur.service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -15,8 +14,8 @@ import pl.edu.ur.blokur.repository.PasswordResetTokenRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
 /**
- * Serwis obsługujący reset hasła użytkownika oraz wysyłanie zaproszeń dla nowo utworzonych kont.
- * Generuje jednorazowe tokeny i wysyła wiadomości e-mail z linkiem do ustawienia hasła.
+ * Serwis obsługujący reset hasła użytkownika. Generuje jednorazowy token z TTL 1 h i wysyła
+ * wiadomość e-mail z linkiem do ustawienia nowego hasła.
  */
 @Service
 public class PasswordResetService {
@@ -58,14 +57,13 @@ public class PasswordResetService {
      * @param email adres e-mail, na który ma zostać wysłany link resetujący
      */
     public void requestPasswordReset(String email) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        // Zawsze zwracamy sukces — nie ujawniamy czy email istnieje w bazie
+        var userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             return;
         }
 
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+        var token = UUID.randomUUID().toString();
+        var expiry = LocalDateTime.now().plusHours(1);
 
         tokenRepository.save(new PasswordResetToken(userOpt.get(), token, expiry));
 
@@ -80,7 +78,7 @@ public class PasswordResetService {
      * @throws IllegalArgumentException gdy token nie istnieje lub wygasł
      */
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken =
+        var resetToken =
                 tokenRepository
                         .findByToken(token)
                         .orElseThrow(
@@ -100,55 +98,22 @@ public class PasswordResetService {
         tokenRepository.delete(resetToken);
     }
 
-    /**
-     * Wysyła nowo utworzonemu użytkownikowi wiadomość powitalną z linkiem do ustawienia hasła
-     * (ważny 72h).
-     *
-     * @param user użytkownik do zaproszenia
-     */
-    public void inviteUser(User user) {
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiry = LocalDateTime.now().plusHours(72);
-        tokenRepository.save(new PasswordResetToken(user, token, expiry));
-        sendInvitationEmail(user.getEmail(), user.getFirstName(), token);
-    }
-
     @Async
     protected void sendResetEmail(String email, String token) {
-        SimpleMailMessage message = new SimpleMailMessage();
+        var message = new SimpleMailMessage();
         message.setFrom(fromAddress);
         message.setTo(email);
         message.setSubject("Blokur – reset hasła");
         message.setText(
-                "Otrzymaliśmy prośbę o reset hasła do Twojego konta w aplikacji Blokur.\n\n"
-                        + "Kliknij poniższy link, aby ustawić nowe hasło (ważny przez 1 godzinę):\n"
-                        + resetBaseUrl
-                        + "?token="
-                        + token
-                        + "\n\n"
-                        + "Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość.");
-        mailSender.send(message);
-    }
+                """
+                Otrzymaliśmy prośbę o reset hasła do Twojego konta w aplikacji Blokur.
 
-    @Async
-    protected void sendInvitationEmail(String email, String firstName, String token) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(email);
-        message.setSubject("Blokur – witamy w systemie!");
-        message.setText(
-                "Cześć "
-                        + firstName
-                        + "!\n\n"
-                        + "Administrator utworzył dla Ciebie konto w aplikacji Blokur.\n\n"
-                        + "Kliknij poniższy link, aby ustawić swoje hasło (link ważny przez 72"
-                        + " godziny):\n"
-                        + resetBaseUrl
-                        + "?token="
-                        + token
-                        + "\n\n"
-                        + "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z"
-                        + " administratorem.");
+                Kliknij poniższy link, aby ustawić nowe hasło (ważny przez 1 godzinę):
+                %s?token=%s
+
+                Jeśli to nie Ty wysłałeś tę prośbę, zignoruj tę wiadomość.
+                """
+                        .formatted(resetBaseUrl, token));
         mailSender.send(message);
     }
 }

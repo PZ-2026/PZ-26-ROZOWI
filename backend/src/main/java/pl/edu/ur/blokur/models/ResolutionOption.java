@@ -11,6 +11,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 /** Encja reprezentująca konkretną opcję wyboru (np. "Za", "Przeciw") w ramach danej uchwały. */
@@ -18,6 +20,8 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(
         name = "resolution_options",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"id", "resolution_id"})})
+@Getter
+@Setter
 public class ResolutionOption {
 
     @Id
@@ -32,58 +36,4 @@ public class ResolutionOption {
 
     @Column(name = "option_text", nullable = false, length = 255)
     private String optionText;
-
-    /**
-     * Zwraca identyfikator opcji.
-     *
-     * @return identyfikator UUID opcji
-     */
-    public UUID getId() {
-        return id;
-    }
-
-    /**
-     * Ustawia identyfikator opcji.
-     *
-     * @param id identyfikator UUID
-     */
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    /**
-     * Zwraca uchwałę, z którą powiązana jest ta opcja.
-     *
-     * @return instancja Resolution
-     */
-    public Resolution getResolution() {
-        return resolution;
-    }
-
-    /**
-     * Ustawia powiązaną uchwałę dla opcji głosowania.
-     *
-     * @param resolution Uchwała do powiązania
-     */
-    public void setResolution(Resolution resolution) {
-        this.resolution = resolution;
-    }
-
-    /**
-     * Zwraca tekst/nazwę opcji dostepnej w ankiecie.
-     *
-     * @return String jako nazwa dająca wyraz i wybór.
-     */
-    public String getOptionText() {
-        return optionText;
-    }
-
-    /**
-     * Ustawia tekst określający opcję, w którą celuje ten rekord bazy danych.
-     *
-     * @param optionText String z tekskem wyboru, np "za", "wstrzymał się"
-     */
-    public void setOptionText(String optionText) {
-        this.optionText = optionText;
-    }
 }

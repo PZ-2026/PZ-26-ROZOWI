@@ -1,0 +1,1 @@
+ALTER TABLE user_devices ADD COLUMN IF NOT EXISTS platform VARCHAR(20);

@@ -11,10 +11,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import pl.edu.ur.blokur.dto.ApartmentTransactionsResponse;
+import pl.edu.ur.blokur.dto.CsvImportResultDto;
 import pl.edu.ur.blokur.dto.FinancialTransactionRequest;
 import pl.edu.ur.blokur.dto.FinancialTransactionResponse;
+import pl.edu.ur.blokur.service.FileTypeValidator;
 import pl.edu.ur.blokur.service.FinancialTransactionService;
 
 /**
@@ -26,9 +30,13 @@ import pl.edu.ur.blokur.service.FinancialTransactionService;
 public class FinancialTransactionController {
 
     private final FinancialTransactionService financialTransactionService;
+    private final FileTypeValidator fileTypeValidator;
 
-    public FinancialTransactionController(FinancialTransactionService financialTransactionService) {
+    public FinancialTransactionController(
+            FinancialTransactionService financialTransactionService,
+            FileTypeValidator fileTypeValidator) {
         this.financialTransactionService = financialTransactionService;
+        this.fileTypeValidator = fileTypeValidator;
     }
 
     /**
@@ -66,5 +74,23 @@ public class FinancialTransactionController {
                 financialTransactionService.createTransaction(
                         apartmentId, request, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Endpoint do masowego importu transakcji finansowych z pliku CSV. Odczytuje dane i zapisuje
+     * tylko poprawne wiersze, błędne ignoruje dodając o nich informacje. Dostęp: ZARZADCA.
+     *
+     * @param file plik CSV
+     * @param principal zalogowany użytkownik
+     * @return podsumowanie importu
+     */
+    @PostMapping("/finance/import")
+    @PreAuthorize("hasRole('ZARZADCA')")
+    public ResponseEntity<CsvImportResultDto> importTransactions(
+            @RequestParam("file") MultipartFile file, Principal principal) {
+        fileTypeValidator.validateCsv(file);
+        var result =
+                financialTransactionService.importTransactionsFromCsv(file, principal.getName());
+        return ResponseEntity.ok(result);
     }
 }

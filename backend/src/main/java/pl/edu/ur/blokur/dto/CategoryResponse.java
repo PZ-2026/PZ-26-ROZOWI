@@ -1,12 +1,15 @@
 package pl.edu.ur.blokur.dto;
 
 import java.util.UUID;
+import lombok.Data;
 
 /** DTO wyjściowe reprezentujące kategorię zgłoszenia zwracane klientom API. */
+@Data
 public class CategoryResponse {
 
     private UUID id;
     private String name;
+    private Integer slaHours;
 
     /**
      * Tworzy DTO kategorii.
@@ -17,6 +20,32 @@ public class CategoryResponse {
     public CategoryResponse(UUID id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    /**
+     * Tworzy DTO kategorii z informacją o SLA.
+     *
+     * @param id identyfikator kategorii
+     * @param name nazwa kategorii
+     * @param slaHours godziny SLA
+     */
+    public CategoryResponse(UUID id, String name, Integer slaHours) {
+        this.id = id;
+        this.name = name;
+        this.slaHours = slaHours;
+    }
+
+    public Integer getSlaHours() {
+        return slaHours;
+    }
+
+    /**
+     * Ustawia liczbę godzin SLA dla kategorii.
+     *
+     * @param slaHours liczba godzin SLA
+     */
+    public void setSlaHours(Integer slaHours) {
+        this.slaHours = slaHours;
     }
 
     /**

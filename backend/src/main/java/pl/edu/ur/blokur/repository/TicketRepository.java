@@ -1,5 +1,6 @@
 package pl.edu.ur.blokur.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -171,24 +172,183 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      */
     @Query(
             value =
-                    "SELECT t.id, t.ticket_number, t.title, t.status, "
-                            + "tc.name AS category_name, "
-                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
-                            + "CASE WHEN ass.id IS NOT NULL "
-                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
-                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
-                            + "t.created_at, t.closed_at "
-                            + "FROM tickets t "
-                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
-                            + "JOIN users a ON t.author_id = a.id "
-                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
-                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
-                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
-                            + "LEFT JOIN buildings b ON t.building_id = b.id "
-                            + "WHERE t.is_deleted = false "
-                            + "ORDER BY t.created_at DESC",
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at, tc.sla_hours FROM tickets t"
+                        + " JOIN ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.is_deleted = false ORDER BY t.created_at DESC",
             nativeQuery = true)
     List<Object[]> findAllSummariesRaw();
+
+    /**
+     * Sprawdza czy konserwator ma przypisane co najmniej jedno aktywne zgłoszenie dla danego lokalu.
+     *
+     * @param conservatorId identyfikator konserwatora
+     * @param apartmentId identyfikator lokalu
+     * @return {@code true} jeśli istnieje co najmniej jedno przypisane zgłoszenie
+     */
+    @Query(
+            "SELECT COUNT(t) > 0 FROM Ticket t "
+                    + "WHERE t.assignedTo.id = :conservatorId "
+                    + "AND t.apartment.id = :apartmentId")
+    boolean existsByAssignedToIdAndApartmentId(
+            @Param("conservatorId") UUID conservatorId,
+            @Param("apartmentId") UUID apartmentId);
+
+    /**
+     * Pobiera maksymalny numer sekwencyjny zgłoszeń dla danego roku. Używane przy inicjalizacji
+     * generatora numerów zgłoszeń po restarcie aplikacji.
+     *
+     * @param year rok (np. 2026)
+     * @return ostatni użyty numer sekwencyjny lub 0 jeśli brak zgłoszeń w tym roku
+     */
+    @Query(
+            value =
+                    "SELECT COALESCE(MAX(CAST(SPLIT_PART(ticket_number, '/', 3) AS INTEGER)), 0)"
+                            + " FROM tickets WHERE ticket_number LIKE CONCAT('ZGL/', :year, '/%')",
+            nativeQuery = true)
+    int findMaxSequenceForYear(@Param("year") int year);
+
+    /**
+     * Pobiera zgłoszenia z dynamicznym filtrowaniem po statusie, kategorii, budynku, klatce,
+     * konserwatorze, zakresie dat i frazie fulltext. Kwerenda natywna SQL z opcjonalnymi warunkami.
+     *
+     * @param status filtr statusu lub {@code null}
+     * @param categoryId filtr kategorii lub {@code null}
+     * @param buildingId filtr budynku (obejmuje zgłoszenia do budynku i jego klatek/lokali) lub
+     *     {@code null}
+     * @param staircaseId filtr klatki schodowej lub {@code null}
+     * @param assignedToId filtr konserwatora lub {@code null}
+     * @param dateFrom dolna granica daty utworzenia lub {@code null}
+     * @param dateTo górna granica daty utworzenia lub {@code null}
+     * @param search fraza fulltext przeszukiwana w numerze, tytule i opisie lub {@code null}
+     * @return lista zgłoszeń spełniających kryteria
+     */
+    @Query(
+            value =
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at, tc.sla_hours FROM tickets t"
+                        + " JOIN ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.is_deleted = false AND (:status IS NULL OR t.status ="
+                        + " :status) AND (:categoryId IS NULL OR t.category_id = :categoryId) AND"
+                        + " (:staircaseId IS NULL OR t.staircase_id = :staircaseId) AND"
+                        + " (:assignedToId IS NULL OR t.assigned_to_id = :assignedToId) AND"
+                        + " (:buildingId IS NULL OR t.building_id = :buildingId   OR t.staircase_id"
+                        + " IN (SELECT s.id FROM staircases s WHERE s.building_id = :buildingId)  "
+                        + " OR t.apartment_id IN (SELECT ap2.id FROM apartments ap2     JOIN"
+                        + " staircases s2 ON ap2.staircase_id = s2.id WHERE s2.building_id ="
+                        + " :buildingId)) AND (CAST(:dateFrom AS timestamp) IS NULL OR t.created_at"
+                        + " >= :dateFrom) AND (CAST(:dateTo AS timestamp) IS NULL OR t.created_at"
+                        + " <= :dateTo) AND (:search IS NULL OR LOWER(t.ticket_number) LIKE"
+                        + " LOWER(CONCAT('%', :search, '%'))   OR LOWER(t.title) LIKE"
+                        + " LOWER(CONCAT('%', :search, '%'))   OR LOWER(t.description) LIKE"
+                        + " LOWER(CONCAT('%', :search, '%'))) ORDER BY t.created_at DESC",
+            nativeQuery = true)
+    List<Object[]> findWithFilters(
+            @Param("status") String status,
+            @Param("categoryId") UUID categoryId,
+            @Param("buildingId") UUID buildingId,
+            @Param("staircaseId") UUID staircaseId,
+            @Param("assignedToId") UUID assignedToId,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            @Param("search") String search);
+
+    /**
+     * Pobiera zgłoszenia widoczne dla mieszkańca z dynamicznym filtrowaniem. Mieszkaniec widzi
+     * wyłącznie zgłoszenia powiązane z jego lokalem, klatką lub budynkiem.
+     *
+     * @param apartmentId identyfikator lokalu mieszkańca
+     * @param staircaseId identyfikator klatki mieszkańca
+     * @param buildingId identyfikator budynku mieszkańca
+     * @param status filtr statusu lub {@code null}
+     * @param categoryId filtr kategorii lub {@code null}
+     * @param dateFrom dolna granica daty lub {@code null}
+     * @param dateTo górna granica daty lub {@code null}
+     * @param search fraza fulltext lub {@code null}
+     * @return lista zgłoszeń widocznych dla mieszkańca spełniających filtry
+     */
+    @Query(
+            value =
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at, tc.sla_hours FROM tickets t"
+                        + " JOIN ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.is_deleted = false AND (t.apartment_id = :apartmentId OR"
+                        + " t.staircase_id = :staircaseId   OR t.building_id = :buildingId) AND"
+                        + " (:status IS NULL OR t.status = :status) AND (:categoryId IS NULL OR"
+                        + " t.category_id = :categoryId) AND (CAST(:dateFrom AS timestamp) IS NULL"
+                        + " OR t.created_at >= :dateFrom) AND (CAST(:dateTo AS timestamp) IS NULL"
+                        + " OR t.created_at <= :dateTo) AND (:search IS NULL OR"
+                        + " LOWER(t.ticket_number) LIKE LOWER(CONCAT('%', :search, '%'))   OR"
+                        + " LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))   OR"
+                        + " LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%'))) ORDER BY"
+                        + " t.created_at DESC",
+            nativeQuery = true)
+    List<Object[]> findForResidentWithFilters(
+            @Param("apartmentId") UUID apartmentId,
+            @Param("staircaseId") UUID staircaseId,
+            @Param("buildingId") UUID buildingId,
+            @Param("status") String status,
+            @Param("categoryId") UUID categoryId,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            @Param("search") String search);
+
+    /**
+     * Pobiera zgłoszenia przypisane do konserwatora z dynamicznym filtrowaniem.
+     *
+     * @param conservatorId identyfikator konserwatora
+     * @param status filtr statusu lub {@code null}
+     * @param categoryId filtr kategorii lub {@code null}
+     * @param dateFrom dolna granica daty lub {@code null}
+     * @param dateTo górna granica daty lub {@code null}
+     * @param search fraza fulltext lub {@code null}
+     * @return lista zgłoszeń przypisanych do konserwatora spełniających filtry
+     */
+    @Query(
+            value =
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name,"
+                        + " CONCAT(ass.first_name, ' ', ass.last_name) AS assigned_to_name,"
+                        + " COALESCE(ap.number, st.label, b.name) AS location_label, t.created_at,"
+                        + " t.closed_at, tc.sla_hours FROM tickets t JOIN ticket_categories tc ON"
+                        + " t.category_id = tc.id JOIN users a ON t.author_id = a.id JOIN users ass"
+                        + " ON t.assigned_to_id = ass.id LEFT JOIN apartments ap ON t.apartment_id"
+                        + " = ap.id LEFT JOIN staircases st ON t.staircase_id = st.id LEFT JOIN"
+                        + " buildings b ON t.building_id = b.id WHERE ass.id = :conservatorId AND"
+                        + " t.is_deleted = false AND (:status IS NULL OR t.status = :status) AND"
+                        + " (:categoryId IS NULL OR t.category_id = :categoryId) AND"
+                        + " (CAST(:dateFrom AS timestamp) IS NULL OR t.created_at >= :dateFrom) AND"
+                        + " (CAST(:dateTo AS timestamp) IS NULL OR t.created_at <= :dateTo) AND"
+                        + " (:search IS NULL OR LOWER(t.ticket_number) LIKE LOWER(CONCAT('%',"
+                        + " :search, '%'))   OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search,"
+                        + " '%'))   OR LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%')))"
+                        + " ORDER BY t.created_at DESC",
+            nativeQuery = true)
+    List<Object[]> findForConservatorWithFilters(
+            @Param("conservatorId") UUID conservatorId,
+            @Param("status") String status,
+            @Param("categoryId") UUID categoryId,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            @Param("search") String search);
 
     /**
      * Pobiera szczegóły pojedynczego zgłoszenia jako DTO ze złączenia tabel tickets, users (autor),
@@ -200,21 +360,16 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      */
     @Query(
             value =
-                    "SELECT t.id, t.ticket_number, t.title, t.status, "
-                            + "tc.name AS category_name, "
-                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
-                            + "CASE WHEN ass.id IS NOT NULL "
-                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
-                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
-                            + "t.created_at, t.closed_at "
-                            + "FROM tickets t "
-                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
-                            + "JOIN users a ON t.author_id = a.id "
-                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
-                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
-                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
-                            + "LEFT JOIN buildings b ON t.building_id = b.id "
-                            + "WHERE t.id = :ticketId AND t.is_deleted = false",
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at FROM tickets t JOIN"
+                        + " ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.id = :ticketId AND t.is_deleted = false",
             nativeQuery = true)
     Optional<Object[]> findSummaryByIdRaw(@Param("ticketId") UUID ticketId);
 
@@ -256,25 +411,18 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
      */
     @Query(
             value =
-                    "SELECT t.id, t.ticket_number, t.title, t.status, "
-                            + "tc.name AS category_name, "
-                            + "CONCAT(a.first_name, ' ', a.last_name) AS author_name, "
-                            + "CASE WHEN ass.id IS NOT NULL "
-                            + "THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL END AS assigned_to_name, "
-                            + "COALESCE(ap.number, st.label, b.name) AS location_label, "
-                            + "t.created_at, t.closed_at "
-                            + "FROM tickets t "
-                            + "JOIN ticket_categories tc ON t.category_id = tc.id "
-                            + "JOIN users a ON t.author_id = a.id "
-                            + "LEFT JOIN users ass ON t.assigned_to_id = ass.id "
-                            + "LEFT JOIN apartments ap ON t.apartment_id = ap.id "
-                            + "LEFT JOIN staircases st ON t.staircase_id = st.id "
-                            + "LEFT JOIN buildings b ON t.building_id = b.id "
-                            + "WHERE t.is_deleted = false "
-                            + "AND (t.apartment_id = :apartmentId "
-                            + "OR t.staircase_id = :staircaseId "
-                            + "OR t.building_id = :buildingId) "
-                            + "ORDER BY t.created_at DESC",
+                    "SELECT t.id, t.ticket_number, t.title, t.status, tc.name AS category_name,"
+                        + " CONCAT(a.first_name, ' ', a.last_name) AS author_name, CASE WHEN ass.id"
+                        + " IS NOT NULL THEN CONCAT(ass.first_name, ' ', ass.last_name) ELSE NULL"
+                        + " END AS assigned_to_name, COALESCE(ap.number, st.label, b.name) AS"
+                        + " location_label, t.created_at, t.closed_at FROM tickets t JOIN"
+                        + " ticket_categories tc ON t.category_id = tc.id JOIN users a ON"
+                        + " t.author_id = a.id LEFT JOIN users ass ON t.assigned_to_id = ass.id"
+                        + " LEFT JOIN apartments ap ON t.apartment_id = ap.id LEFT JOIN staircases"
+                        + " st ON t.staircase_id = st.id LEFT JOIN buildings b ON t.building_id ="
+                        + " b.id WHERE t.is_deleted = false AND (t.apartment_id = :apartmentId OR"
+                        + " t.staircase_id = :staircaseId OR t.building_id = :buildingId) ORDER BY"
+                        + " t.created_at DESC",
             nativeQuery = true)
     List<Object[]> findForResidentRaw(
             @Param("apartmentId") UUID apartmentId,

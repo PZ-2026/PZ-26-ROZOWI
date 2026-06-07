@@ -1,8 +1,11 @@
 package pl.edu.ur.blokur.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import pl.edu.ur.blokur.models.User;
 
 /**
@@ -18,4 +21,39 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return opcjonalny użytkownik
      */
     Optional<User> findByEmail(String email);
+
+    @Query(
+            "SELECT new pl.edu.ur.blokur.dto.UserWithTicketsDto(u.id, u.firstName, u.lastName,"
+                + " u.email, u.phone, COUNT(t)) FROM User u LEFT JOIN Ticket t ON t.assignedTo = u"
+                + " AND t.status NOT IN (pl.edu.ur.blokur.models.TicketStatus.ZAMKNIETE,"
+                + " pl.edu.ur.blokur.models.TicketStatus.ODRZUCONE) WHERE u.role = :role GROUP BY"
+                + " u.id")
+    List<pl.edu.ur.blokur.dto.UserWithTicketsDto> findUsersWithActiveTicketsByRole(
+            @Param("role") String role);
+
+    @Query("SELECT DISTINCT ua.user.id FROM UserApartment ua")
+    List<UUID> findAllResidentIds();
+
+    @Query(
+            "SELECT DISTINCT ua.user.id FROM UserApartment ua"
+                    + " WHERE ua.apartment.staircase.building.id = :buildingId")
+    List<UUID> findUserIdsByBuildingId(@Param("buildingId") UUID buildingId);
+
+    @Query(
+            "SELECT DISTINCT ua.user.id FROM UserApartment ua"
+                    + " WHERE ua.apartment.staircase.id = :staircaseId")
+    List<UUID> findUserIdsByStaircaseId(@Param("staircaseId") UUID staircaseId);
+
+    @Query(
+            "SELECT DISTINCT ua.user.id FROM UserApartment ua"
+                    + " WHERE ua.apartment.id = :apartmentId")
+    List<UUID> findUserIdsByApartmentId(@Param("apartmentId") UUID apartmentId);
+
+    @Query(
+            "SELECT DISTINCT ua.user.id FROM UserApartment ua"
+                    + " WHERE ua.apartment.staircase.building.property.id = :propertyId")
+    List<UUID> findUserIdsByPropertyId(@Param("propertyId") UUID propertyId);
+
+    @Query("SELECT u.id FROM User u WHERE u.role = 'ZARZADCA'")
+    List<UUID> findManagerIds();
 }

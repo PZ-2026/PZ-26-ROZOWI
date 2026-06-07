@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.CategoryRequest;
 import pl.edu.ur.blokur.dto.CategoryResponse;
+import pl.edu.ur.blokur.dto.SlaRequest;
 import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.TicketCategory;
 import pl.edu.ur.blokur.repository.TicketCategoryRepository;
@@ -33,7 +34,7 @@ public class TicketCategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> getActiveCategories() {
         return categoryRepository.findByIsActiveTrue().stream()
-                .map(c -> new CategoryResponse(c.getId(), c.getName()))
+                .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getSlaHours()))
                 .toList();
     }
 
@@ -45,9 +46,9 @@ public class TicketCategoryService {
      */
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
-        TicketCategory category = new TicketCategory();
+        var category = new TicketCategory();
         category.setName(request.getName());
-        TicketCategory saved = categoryRepository.save(category);
+        var saved = categoryRepository.save(category);
         return new CategoryResponse(saved.getId(), saved.getName());
     }
 
@@ -61,7 +62,7 @@ public class TicketCategoryService {
      */
     @Transactional
     public CategoryResponse updateCategory(UUID id, CategoryRequest request) {
-        TicketCategory category =
+        var category =
                 categoryRepository
                         .findById(id)
                         .orElseThrow(
@@ -73,6 +74,25 @@ public class TicketCategoryService {
     }
 
     /**
+     * Ustawia docelowy czas reakcji SLA (w godzinach roboczych) dla wskazanej kategorii.
+     *
+     * @param id identyfikator kategorii
+     * @param request żądanie zawierające liczbę godzin roboczych SLA
+     * @throws NotFoundException gdy kategoria o podanym id nie istnieje
+     */
+    @Transactional
+    public void setSlaHours(UUID id, SlaRequest request) {
+        var category =
+                categoryRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Kategoria o id " + id + " nie istnieje"));
+        category.setSlaHours(request.getSlaHours());
+    }
+
+    /**
      * Deaktywuje kategorię (soft delete — ustawia flagę {@code is_active} na {@code false}).
      *
      * @param id identyfikator kategorii
@@ -80,7 +100,7 @@ public class TicketCategoryService {
      */
     @Transactional
     public void deactivateCategory(UUID id) {
-        TicketCategory category =
+        var category =
                 categoryRepository
                         .findById(id)
                         .orElseThrow(

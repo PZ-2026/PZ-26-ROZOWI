@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +21,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import pl.edu.ur.blokur.dto.ApartmentTransactionsResponse;
+import pl.edu.ur.blokur.dto.CsvImportResultDto;
 import pl.edu.ur.blokur.dto.FinancialTransactionRequest;
 import pl.edu.ur.blokur.dto.FinancialTransactionResponse;
 import pl.edu.ur.blokur.exception.NotFoundException;
@@ -261,6 +265,115 @@ class FinancialTransactionServiceTest {
 
             assertThat(response.getCurrentBalance()).isEqualByComparingTo("200.00");
             assertThat(response.getTransactions()).isEmpty();
+        }
+    }
+
+    // =======================================================
+    // IMPORT TRANSACTIONS FROM CSV
+    // =======================================================
+
+    @Nested
+    @DisplayName("importTransactionsFromCsv()")
+    class ImportTransactionsFromCsvTests {
+
+        @Test
+        @DisplayName("Poprawny plik CSV - importuje wszystkie wiersze")
+        void shouldImportValidCsv() {
+            String csvContent =
+                    "apartment_id,date,type,amount,description\n"
+                            + apartmentId.toString()
+                            + ",2026-04-15,WPLATA,150.00,Czynsz za kwiecień\n"
+                            + apartmentId.toString()
+                            + ",2026-04-16,NALICZENIE,-50.00,Opłata dodatkowa\n";
+            MultipartFile file =
+                    new MockMultipartFile(
+                            "file",
+                            "test.csv",
+                            "text/csv",
+                            csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+
+            CsvImportResultDto result =
+                    financialTransactionService.importTransactionsFromCsv(file, user.getEmail());
+
+            assertThat(result.getImportedCount()).isEqualTo(2);
+            assertThat(result.getErrorCount()).isEqualTo(0);
+            assertThat(result.getErrors()).isEmpty();
+
+            // Saldo końcowe powinno wynosić 200.00 + 150.00 - 50.00 = 300.00
+            assertThat(apartment.getCurrentBalance()).isEqualByComparingTo("300.00");
+            // should be verified exactly 2 times
+            verify(financialTransactionRepository, org.mockito.Mockito.times(2))
+                    .save(any(FinancialTransaction.class));
+            verify(apartmentRepository, org.mockito.Mockito.times(2)).save(apartment);
+        }
+
+        @Test
+        @DisplayName("Częściowo błędny plik CSV - importuje tylko poprawne, zbiera błędy")
+        void shouldImportValidAndCollectErrors() {
+            String csvContent =
+                    "apartment_id,date,type,amount,description\n"
+                            + apartmentId.toString()
+                            + ",2026-04-15,WPLATA,150.00,Czynsz\n"
+                            + // line 2 - valid
+                            "invalid-uuid,2026-04-16,WPLATA,50.00,Błąd UUID\n"
+                            + // line 3 - invalid UUID
+                            apartmentId.toString()
+                            + ",invalid-date,WPLATA,50.00,Błąd daty\n"
+                            + // line 4 - invalid date
+                            apartmentId.toString()
+                            + ",2026-04-16,ZLY_TYP,50.00,Błąd typu\n"
+                            + // line 5 - invalid type
+                            apartmentId.toString()
+                            + ",2026-04-16,WPLATA,not-a-number,Błąd kwoty\n"; // line 6 - invalid
+            // amount
+
+            MultipartFile file =
+                    new MockMultipartFile(
+                            "file",
+                            "test.csv",
+                            "text/csv",
+                            csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+            when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
+
+            CsvImportResultDto result =
+                    financialTransactionService.importTransactionsFromCsv(file, user.getEmail());
+
+            assertThat(result.getImportedCount()).isEqualTo(1);
+            assertThat(result.getErrorCount()).isEqualTo(4);
+            assertThat(result.getErrors()).hasSize(4);
+
+            assertThat(result.getErrors().get(0).getLine()).isEqualTo(3);
+            assertThat(result.getErrors().get(1).getLine()).isEqualTo(4);
+            assertThat(result.getErrors().get(2).getLine()).isEqualTo(5);
+            assertThat(result.getErrors().get(3).getLine()).isEqualTo(6);
+
+            assertThat(apartment.getCurrentBalance()).isEqualByComparingTo("350.00");
+            verify(financialTransactionRepository, org.mockito.Mockito.times(1))
+                    .save(any(FinancialTransaction.class));
+        }
+
+        @Test
+        @DisplayName("Nieistniejący użytkownik rzuca wyjątek")
+        void shouldThrowExceptionWhenUserNotFound() {
+            MultipartFile file =
+                    new MockMultipartFile(
+                            "file",
+                            "test.csv",
+                            "text/csv",
+                            "content".getBytes(StandardCharsets.UTF_8));
+            when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(
+                            () ->
+                                    financialTransactionService.importTransactionsFromCsv(
+                                            file, "nonexistent@test.com"))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining("nie istnieje");
         }
     }
 }

@@ -1,9 +1,14 @@
 package pl.edu.ur.blokur.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,36 +25,49 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import pl.edu.ur.blokur.dto.AnnouncementDto;
+import pl.edu.ur.blokur.dto.AnnouncementRequest;
+import pl.edu.ur.blokur.exception.BusinessValidationException;
+import pl.edu.ur.blokur.exception.NotFoundException;
 import pl.edu.ur.blokur.models.Announcement;
+import pl.edu.ur.blokur.models.AnnouncementTargetType;
 import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.Building;
 import pl.edu.ur.blokur.models.Staircase;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.AnnouncementRepository;
+import pl.edu.ur.blokur.repository.ApartmentRepository;
+import pl.edu.ur.blokur.repository.BuildingRepository;
+import pl.edu.ur.blokur.repository.StaircaseRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
 /**
- * Testy jednostkowe dla {@link AnnouncementService}. Weryfikują logikę filtrowania ogłoszeń na
- * podstawie hierarchii lokalizacyjnej zalogowanego użytkownika (budynek → klatka → lokal).
+ * Testy jednostkowe dla {@link AnnouncementService}. Weryfikują operacje CRUD, walidację uprawnień
+ * i filtrowanie ogłoszeń.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AnnouncementService — serwis ogłoszeń")
 class AnnouncementServiceTest {
 
     @Mock private AnnouncementRepository announcementRepository;
-
     @Mock private UserRepository userRepository;
+    @Mock private BuildingRepository buildingRepository;
+    @Mock private StaircaseRepository staircaseRepository;
+    @Mock private ApartmentRepository apartmentRepository;
+    @Mock private PushNotificationService pushNotificationService;
 
     @InjectMocks private AnnouncementService announcementService;
 
     private static final String EMAIL = "mieszkaniec@blokur.pl";
+    private static final String ZARZADCA_EMAIL = "zarzadca@blokur.pl";
 
     private UUID buildingId;
     private UUID staircaseId;
     private UUID apartmentId;
     private User user;
+    private User zarzadca;
     private Building building;
     private Staircase staircase;
     private Apartment apartment;
@@ -86,6 +104,13 @@ class AnnouncementServiceTest {
         user.setLastName("Testowy");
         user.setRole("MIESZKANIEC");
         user.setUserApartments(new ArrayList<>(List.of(ua)));
+
+        zarzadca = new User();
+        zarzadca.setId(UUID.randomUUID());
+        zarzadca.setEmail(ZARZADCA_EMAIL);
+        zarzadca.setFirstName("Anna");
+        zarzadca.setLastName("Zarzadca");
+        zarzadca.setRole("ZARZADCA");
     }
 
     // =======================================================
@@ -103,6 +128,7 @@ class AnnouncementServiceTest {
         ann.setTitle(title);
         ann.setContent(content);
         ann.setAuthor(author);
+        ann.setTargetType(AnnouncementTargetType.WSZYSCY);
         ann.setCreatedAt(LocalDateTime.now());
         return ann;
     }
@@ -124,8 +150,8 @@ class AnnouncementServiceTest {
                             buildAnnouncement("Przerwa w wodzie", "Treść ogłoszenia 2"));
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(
-                            eq(buildingId), eq(staircaseId), eq(apartmentId)))
+            when(announcementRepository.findForUserAfterDate(
+                            eq(buildingId), eq(staircaseId), eq(apartmentId), any()))
                     .thenReturn(announcements);
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
@@ -139,20 +165,22 @@ class AnnouncementServiceTest {
         @DisplayName("Wywołuje repozytorium z poprawnymi ID budynku, klatki i lokalu")
         void shouldPassCorrectIdsToRepository() {
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(
-                            eq(buildingId), eq(staircaseId), eq(apartmentId)))
+            when(announcementRepository.findForUserAfterDate(
+                            eq(buildingId), eq(staircaseId), eq(apartmentId), any()))
                     .thenReturn(List.of());
 
             announcementService.getAnnouncementsForUser(EMAIL);
 
-            verify(announcementRepository).findForUser(buildingId, staircaseId, apartmentId);
+            verify(announcementRepository)
+                    .findForUserAfterDate(eq(buildingId), eq(staircaseId), eq(apartmentId), any());
         }
 
         @Test
         @DisplayName("Pusta lista ogłoszeń z repozytorium — zwraca pustą listę DTO")
         void shouldReturnEmptyListWhenNoAnnouncementsFound() {
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(any(), any(), any())).thenReturn(List.of());
+            when(announcementRepository.findForUserAfterDate(any(), any(), any(), any()))
+                    .thenReturn(List.of());
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -174,13 +202,14 @@ class AnnouncementServiceTest {
             user.setUserApartments(new ArrayList<>());
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(isNull(), isNull(), isNull()))
+            when(announcementRepository.findForUserAfterDate(isNull(), isNull(), isNull(), any()))
                     .thenReturn(List.of());
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
             assertThat(result).isEmpty();
-            verify(announcementRepository).findForUser(null, null, null);
+            verify(announcementRepository)
+                    .findForUserAfterDate(isNull(), isNull(), isNull(), any());
         }
     }
 
@@ -196,14 +225,15 @@ class AnnouncementServiceTest {
         @DisplayName("Brak użytkownika w bazie — wywołuje repozytorium z nullami")
         void shouldPassNullIdsWhenUserNotFound() {
             when(userRepository.findByEmail("nieznany@blokur.pl")).thenReturn(Optional.empty());
-            when(announcementRepository.findForUser(isNull(), isNull(), isNull()))
+            when(announcementRepository.findForUserAfterDate(isNull(), isNull(), isNull(), any()))
                     .thenReturn(List.of());
 
             List<AnnouncementDto> result =
                     announcementService.getAnnouncementsForUser("nieznany@blokur.pl");
 
             assertThat(result).isEmpty();
-            verify(announcementRepository).findForUser(null, null, null);
+            verify(announcementRepository)
+                    .findForUserAfterDate(isNull(), isNull(), isNull(), any());
         }
     }
 
@@ -222,7 +252,8 @@ class AnnouncementServiceTest {
             ann.setPlannedDate(LocalDateTime.of(2026, 4, 30, 18, 0));
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(any(), any(), any())).thenReturn(List.of(ann));
+            when(announcementRepository.findForUserAfterDate(any(), any(), any(), any()))
+                    .thenReturn(List.of(ann));
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -233,6 +264,7 @@ class AnnouncementServiceTest {
             assertThat(dto.getTitle()).isEqualTo("Zebranie wspólnoty");
             assertThat(dto.getContent()).isEqualTo("Zapraszamy 30.04.");
             assertThat(dto.getAuthorName()).isEqualTo("Admin Testowy");
+            assertThat(dto.getTargetType()).isEqualTo("WSZYSCY");
             assertThat(dto.getPlannedDate()).isEqualTo(LocalDateTime.of(2026, 4, 30, 18, 0));
         }
 
@@ -243,7 +275,8 @@ class AnnouncementServiceTest {
             ann.setAuthor(null);
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(any(), any(), any())).thenReturn(List.of(ann));
+            when(announcementRepository.findForUserAfterDate(any(), any(), any(), any()))
+                    .thenReturn(List.of(ann));
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
@@ -257,11 +290,341 @@ class AnnouncementServiceTest {
             ann.setPlannedDate(null);
 
             when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-            when(announcementRepository.findForUser(any(), any(), any())).thenReturn(List.of(ann));
+            when(announcementRepository.findForUserAfterDate(any(), any(), any(), any()))
+                    .thenReturn(List.of(ann));
 
             List<AnnouncementDto> result = announcementService.getAnnouncementsForUser(EMAIL);
 
             assertThat(result.get(0).getPlannedDate()).isNull();
+        }
+    }
+
+    // =======================================================
+    // Tworzenie ogłoszenia
+    // =======================================================
+
+    @Nested
+    @DisplayName("Tworzenie ogłoszenia")
+    class CreateAnnouncementTests {
+
+        @Test
+        @DisplayName("Zarządca tworzy ogłoszenie globalne")
+        void shouldCreateGlobalAnnouncement() {
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Nowe ogłoszenie");
+            request.setContent("<p>Treść ogłoszenia</p>");
+            request.setTargetType(AnnouncementTargetType.WSZYSCY);
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(announcementRepository.save(any(Announcement.class)))
+                    .thenAnswer(
+                            inv -> {
+                                Announcement a = inv.getArgument(0);
+                                a.setId(UUID.randomUUID());
+                                a.setCreatedAt(LocalDateTime.now());
+                                return a;
+                            });
+
+            AnnouncementDto result =
+                    announcementService.createAnnouncement(request, null, ZARZADCA_EMAIL);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getTitle()).isEqualTo("Nowe ogłoszenie");
+            assertThat(result.getTargetType()).isEqualTo("WSZYSCY");
+            verify(announcementRepository).save(any(Announcement.class));
+        }
+
+        @Test
+        @DisplayName("Zarządca tworzy ogłoszenie dla budynku")
+        void shouldCreateBuildingAnnouncement() {
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Ogłoszenie dla budynku");
+            request.setContent("Treść");
+            request.setTargetType(AnnouncementTargetType.BUDYNEK);
+            request.setTargetId(buildingId);
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(buildingRepository.findById(buildingId)).thenReturn(Optional.of(building));
+            when(announcementRepository.save(any(Announcement.class)))
+                    .thenAnswer(
+                            inv -> {
+                                Announcement a = inv.getArgument(0);
+                                a.setId(UUID.randomUUID());
+                                a.setCreatedAt(LocalDateTime.now());
+                                return a;
+                            });
+
+            AnnouncementDto result =
+                    announcementService.createAnnouncement(request, null, ZARZADCA_EMAIL);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getTargetType()).isEqualTo("BUDYNEK");
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec nie może tworzyć ogłoszeń")
+        void shouldThrowWhenResidentTriesToCreate() {
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Test");
+            request.setContent("Treść");
+            request.setTargetType(AnnouncementTargetType.WSZYSCY);
+
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> announcementService.createAnnouncement(request, null, EMAIL))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Tylko zarządca może tworzyć ogłoszenia");
+        }
+
+        @Test
+        @DisplayName("Typ BUDYNEK bez targetId — rzuca wyjątek")
+        void shouldThrowWhenBuildingTargetIdMissing() {
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Test");
+            request.setContent("Treść");
+            request.setTargetType(AnnouncementTargetType.BUDYNEK);
+            request.setTargetId(null);
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+
+            assertThatThrownBy(
+                            () ->
+                                    announcementService.createAnnouncement(
+                                            request, null, ZARZADCA_EMAIL))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Wymagany identyfikator budynku");
+        }
+
+        @Test
+        @DisplayName("Załącznik nie-PDF — rzuca wyjątek")
+        void shouldThrowWhenAttachmentIsNotPdf() {
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Test");
+            request.setContent("Treść");
+            request.setTargetType(AnnouncementTargetType.WSZYSCY);
+
+            MockMultipartFile file =
+                    new MockMultipartFile(
+                            "attachment", "test.jpg", "image/jpeg", new byte[] {1, 2, 3});
+
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+
+            assertThatThrownBy(
+                            () ->
+                                    announcementService.createAnnouncement(
+                                            request, file, ZARZADCA_EMAIL))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Załącznik musi być plikiem PDF");
+        }
+    }
+
+    // =======================================================
+    // Usuwanie ogłoszenia
+    // =======================================================
+
+    @Nested
+    @DisplayName("Usuwanie ogłoszenia")
+    class DeleteAnnouncementTests {
+
+        @Test
+        @DisplayName("Zarządca usuwa ogłoszenie")
+        void shouldDeleteAnnouncement() {
+            Announcement ann = buildAnnouncement("Do usunięcia", "Treść");
+
+            when(announcementRepository.findById(ann.getId())).thenReturn(Optional.of(ann));
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+
+            announcementService.deleteAnnouncement(ann.getId(), ZARZADCA_EMAIL);
+
+            verify(announcementRepository).delete(ann);
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec nie może usuwać ogłoszeń")
+        void shouldThrowWhenResidentTriesToDelete() {
+            Announcement ann = buildAnnouncement("Test", "Treść");
+
+            when(announcementRepository.findById(ann.getId())).thenReturn(Optional.of(ann));
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> announcementService.deleteAnnouncement(ann.getId(), EMAIL))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Tylko zarządca może usuwać ogłoszenia");
+        }
+
+        @Test
+        @DisplayName("Nieistniejące ogłoszenie — rzuca NotFoundException")
+        void shouldThrowWhenAnnouncementNotFound() {
+            UUID fakeId = UUID.randomUUID();
+            when(announcementRepository.findById(fakeId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> announcementService.deleteAnnouncement(fakeId, ZARZADCA_EMAIL))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining("Ogłoszenie nie istnieje");
+        }
+    }
+
+    // =======================================================
+    // Edycja ogłoszenia
+    // =======================================================
+
+    @Nested
+    @DisplayName("Edycja ogłoszenia")
+    class UpdateAnnouncementTests {
+
+        @Test
+        @DisplayName("Zarządca edytuje ogłoszenie")
+        void shouldUpdateAnnouncement() {
+            Announcement ann = buildAnnouncement("Stary tytuł", "Stara treść");
+
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Nowy tytuł");
+            request.setContent("Nowa treść");
+            request.setTargetType(AnnouncementTargetType.WSZYSCY);
+
+            when(announcementRepository.findById(ann.getId())).thenReturn(Optional.of(ann));
+            when(userRepository.findByEmail(ZARZADCA_EMAIL)).thenReturn(Optional.of(zarzadca));
+            when(announcementRepository.save(any(Announcement.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            AnnouncementDto result =
+                    announcementService.updateAnnouncement(
+                            ann.getId(), request, null, ZARZADCA_EMAIL);
+
+            assertThat(result.getTitle()).isEqualTo("Nowy tytuł");
+            assertThat(result.getContent()).isEqualTo("Nowa treść");
+        }
+
+        @Test
+        @DisplayName("Mieszkaniec nie może edytować ogłoszeń")
+        void shouldThrowWhenResidentTriesToUpdate() {
+            Announcement ann = buildAnnouncement("Test", "Treść");
+
+            AnnouncementRequest request = new AnnouncementRequest();
+            request.setTitle("Nowy tytuł");
+            request.setContent("Nowa treść");
+            request.setTargetType(AnnouncementTargetType.WSZYSCY);
+
+            when(announcementRepository.findById(ann.getId())).thenReturn(Optional.of(ann));
+            when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(
+                            () ->
+                                    announcementService.updateAnnouncement(
+                                            ann.getId(), request, null, EMAIL))
+                    .isInstanceOf(BusinessValidationException.class)
+                    .hasMessageContaining("Tylko zarządca może edytować ogłoszenia");
+        }
+    }
+
+    // =======================================================
+    // Wysyłka powiadomień PUSH — resolveRecipientIds
+    // =======================================================
+
+    @Nested
+    @DisplayName("Wysyłka powiadomień PUSH")
+    class SendPushNotificationsTests {
+
+        private Announcement buildSavedAnnouncement(AnnouncementTargetType type) {
+            Announcement ann = new Announcement();
+            ann.setId(UUID.randomUUID());
+            ann.setTitle("Test");
+            ann.setContent("Treść");
+            ann.setTargetType(type);
+            ann.setCreatedAt(LocalDateTime.now());
+            return ann;
+        }
+
+        @Test
+        @DisplayName("WSZYSCY — wywołuje findAllResidentIds i wysyła PUSH")
+        void shouldSendToAllResidentsForWszyscy() {
+            List<UUID> residents = List.of(UUID.randomUUID(), UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.WSZYSCY);
+
+            when(userRepository.findAllResidentIds()).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findAllResidentIds();
+            verify(pushNotificationService)
+                    .sendToUsers(
+                            eq(residents),
+                            eq(PushNotificationService.EVENT_OGLOSZENIE),
+                            eq("Test"),
+                            eq("Treść"),
+                            anyMap());
+        }
+
+        @Test
+        @DisplayName("BUDYNEK — wywołuje findUserIdsByBuildingId z ID budynku ogłoszenia")
+        void shouldSendToBuildingResidentsForBudynek() {
+            List<UUID> residents = List.of(UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.BUDYNEK);
+            ann.setTargetBuilding(building);
+
+            when(userRepository.findUserIdsByBuildingId(buildingId)).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findUserIdsByBuildingId(buildingId);
+            verify(pushNotificationService)
+                    .sendToUsers(eq(residents), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("KLATKA — wywołuje findUserIdsByStaircaseId z ID klatki ogłoszenia")
+        void shouldSendToStaircaseResidentsForKlatka() {
+            List<UUID> residents = List.of(UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.KLATKA);
+            ann.setTargetStaircase(staircase);
+
+            when(userRepository.findUserIdsByStaircaseId(staircaseId)).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findUserIdsByStaircaseId(staircaseId);
+            verify(pushNotificationService)
+                    .sendToUsers(eq(residents), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("NIERUCHOMOSC — wywołuje findUserIdsByApartmentId z ID lokalu ogłoszenia")
+        void shouldSendToApartmentResidentsForNieruchomosc() {
+            List<UUID> residents = List.of(UUID.randomUUID());
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.NIERUCHOMOSC);
+            ann.setTargetApartment(apartment);
+
+            when(userRepository.findUserIdsByApartmentId(apartmentId)).thenReturn(residents);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(userRepository).findUserIdsByApartmentId(apartmentId);
+            verify(pushNotificationService)
+                    .sendToUsers(eq(residents), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("Pusta lista odbiorców — nie wywołuje pushNotificationService")
+        void shouldNotSendWhenNoRecipients() {
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.WSZYSCY);
+            when(userRepository.findAllResidentIds()).thenReturn(List.of());
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(pushNotificationService, never())
+                    .sendToUsers(anyList(), anyString(), anyString(), anyString(), anyMap());
+        }
+
+        @Test
+        @DisplayName("BUDYNEK bez targetBuilding — nie wysyła PUSH")
+        void shouldNotSendWhenBuildingIsNull() {
+            Announcement ann = buildSavedAnnouncement(AnnouncementTargetType.BUDYNEK);
+            ann.setTargetBuilding(null);
+
+            announcementService.sendPushNotificationsAsync(ann);
+
+            verify(pushNotificationService, never())
+                    .sendToUsers(anyList(), anyString(), anyString(), anyString(), anyMap());
         }
     }
 }

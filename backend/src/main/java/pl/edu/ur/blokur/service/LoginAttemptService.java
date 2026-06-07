@@ -22,7 +22,7 @@ public class LoginAttemptService {
      * @param email adres e-mail, którym próbowano się zalogować
      */
     public void registerFailedAttempt(String email) {
-        AttemptInfo info = attemptsCache.getOrDefault(email, new AttemptInfo());
+        var info = attemptsCache.getOrDefault(email, new AttemptInfo());
 
         info.incrementAttempts();
 
@@ -50,7 +50,7 @@ public class LoginAttemptService {
      * @return {@code true} jeśli konto jest zablokowane
      */
     public boolean isAccountLocked(String email) {
-        AttemptInfo info = attemptsCache.get(email);
+        var info = attemptsCache.get(email);
 
         if (info == null || info.getLockedUntil() == null) {
             return false;
@@ -71,7 +71,7 @@ public class LoginAttemptService {
      * @return moment wygaśnięcia blokady lub {@code null}, jeśli konto nie jest zablokowane
      */
     public LocalDateTime getLockedUntil(String email) {
-        AttemptInfo info = attemptsCache.get(email);
+        var info = attemptsCache.get(email);
         return info != null ? info.getLockedUntil() : null;
     }
 
@@ -83,14 +83,29 @@ public class LoginAttemptService {
             this.attempts++;
         }
 
+        /**
+         * Zwraca bieżącą liczbę nieudanych prób logowania.
+         *
+         * @return liczba prób
+         */
         public int getAttempts() {
             return attempts;
         }
 
+        /**
+         * Zwraca czas, do którego konto jest zablokowane.
+         *
+         * @return czas wygaśnięcia blokady lub {@code null}, gdy brak blokady
+         */
         public LocalDateTime getLockedUntil() {
             return lockedUntil;
         }
 
+        /**
+         * Ustawia czas wygaśnięcia blokady konta.
+         *
+         * @param lockedUntil czas wygaśnięcia blokady
+         */
         public void setLockedUntil(LocalDateTime lockedUntil) {
             this.lockedUntil = lockedUntil;
         }

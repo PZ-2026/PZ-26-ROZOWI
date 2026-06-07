@@ -33,9 +33,12 @@ import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.MediumType;
 import pl.edu.ur.blokur.models.Meter;
 import pl.edu.ur.blokur.models.MeterReading;
+import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
 import pl.edu.ur.blokur.repository.MeterReadingRepository;
 import pl.edu.ur.blokur.repository.MeterRepository;
+import pl.edu.ur.blokur.repository.TicketRepository;
+import pl.edu.ur.blokur.repository.UserRepository;
 
 /**
  * Testy jednostkowe dla {@link MeterReadingService}. Weryfikują logikę biznesową odczytów
@@ -52,7 +55,13 @@ class MeterReadingServiceTest {
 
     @Mock private MeterRepository meterRepository;
 
+    @Mock private UserRepository userRepository;
+
+    @Mock private TicketRepository ticketRepository;
+
     @InjectMocks private MeterReadingService meterReadingService;
+
+    private static final String MANAGER_EMAIL = "zarzadca@test.com";
 
     private UUID apartmentId;
     private UUID meterId;
@@ -61,6 +70,7 @@ class MeterReadingServiceTest {
     private Meter meter;
     private MeterReading existingReading;
     private MeterReadingRequest validRequest;
+    private User manager;
 
     @BeforeEach
     void setUp() {
@@ -92,6 +102,11 @@ class MeterReadingServiceTest {
         validRequest =
                 new MeterReadingRequest(
                         meterId, new BigDecimal("150.0000"), LocalDate.of(2026, 4, 1));
+
+        manager = new User();
+        manager.setId(UUID.randomUUID());
+        manager.setEmail(MANAGER_EMAIL);
+        manager.setRole("ZARZADCA");
     }
 
     // =======================================================
@@ -114,6 +129,7 @@ class MeterReadingServiceTest {
             saved.setCreatedAt(LocalDateTime.now());
             saved.setUpdatedAt(LocalDateTime.now());
 
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
@@ -124,7 +140,7 @@ class MeterReadingServiceTest {
                     .thenReturn(null);
             when(meterReadingRepository.save(any(MeterReading.class))).thenReturn(saved);
 
-            MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest);
+            MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest, MANAGER_EMAIL);
 
             assertThat(response).isNotNull();
             assertThat(response.getMeterId()).isEqualTo(meterId);
@@ -138,9 +154,10 @@ class MeterReadingServiceTest {
         @Test
         @DisplayName("Nieistniejący lokal — rzuca NotFoundException")
         void shouldThrowNotFoundWhenApartmentDoesNotExist() {
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest, MANAGER_EMAIL))
                     .isInstanceOf(NotFoundException.class)
                     .hasMessageContaining(apartmentId.toString());
 
@@ -150,10 +167,11 @@ class MeterReadingServiceTest {
         @Test
         @DisplayName("Nieistniejący licznik — rzuca NotFoundException")
         void shouldThrowNotFoundWhenMeterDoesNotExist() {
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest, MANAGER_EMAIL))
                     .isInstanceOf(NotFoundException.class)
                     .hasMessageContaining(meterId.toString());
 
@@ -167,10 +185,11 @@ class MeterReadingServiceTest {
             otherApartment.setId(UUID.randomUUID());
             meter.setApartment(otherApartment);
 
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
 
-            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest, MANAGER_EMAIL))
                     .isInstanceOf(BusinessValidationException.class)
                     .hasMessageContaining("nie jest przypisany");
 
@@ -182,10 +201,11 @@ class MeterReadingServiceTest {
         void shouldThrowWhenMeterIsInactive() {
             meter.setActive(false);
 
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
 
-            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest, MANAGER_EMAIL))
                     .isInstanceOf(BusinessValidationException.class)
                     .hasMessageContaining("nieaktywny");
 
@@ -195,13 +215,14 @@ class MeterReadingServiceTest {
         @Test
         @DisplayName("Duplikat (ten sam licznik i data) — rzuca BusinessValidationException")
         void shouldThrowWhenDuplicateReadingOnCreate() {
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(
                             eq(meterId), eq(LocalDate.of(2026, 4, 1))))
                     .thenReturn(true);
 
-            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest))
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, validRequest, MANAGER_EMAIL))
                     .isInstanceOf(BusinessValidationException.class)
                     .hasMessageContaining(meterId.toString());
 
@@ -215,6 +236,7 @@ class MeterReadingServiceTest {
                     new MeterReadingRequest(
                             meterId, new BigDecimal("50.0000"), LocalDate.of(2026, 4, 1));
 
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(any(), any()))
@@ -223,7 +245,7 @@ class MeterReadingServiceTest {
                             eq(meterId)))
                     .thenReturn(existingReading);
 
-            assertThatThrownBy(() -> meterReadingService.create(apartmentId, regression))
+            assertThatThrownBy(() -> meterReadingService.create(apartmentId, regression, MANAGER_EMAIL))
                     .isInstanceOf(BusinessValidationException.class)
                     .hasMessageContaining("50");
 
@@ -242,6 +264,7 @@ class MeterReadingServiceTest {
             saved.setCreatedAt(LocalDateTime.now());
             saved.setUpdatedAt(LocalDateTime.now());
 
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(apartmentRepository.findById(apartmentId)).thenReturn(Optional.of(apartment));
             when(meterRepository.findById(meterId)).thenReturn(Optional.of(meter));
             when(meterReadingRepository.existsByMeterIdAndReadingDateAndDeletedFalse(any(), any()))
@@ -251,7 +274,7 @@ class MeterReadingServiceTest {
                     .thenReturn(null);
             when(meterReadingRepository.save(any())).thenReturn(saved);
 
-            MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest);
+            MeterReadingResponse response = meterReadingService.create(apartmentId, validRequest, MANAGER_EMAIL);
 
             assertThat(response).isNotNull();
         }
@@ -266,12 +289,13 @@ class MeterReadingServiceTest {
     class GetByIdTests {
 
         @Test
-        @DisplayName("Istniejący odczyt — zwraca poprawne DTO")
+        @DisplayName("Istniejący odczyt — zarządca widzi bez ograniczeń")
         void shouldReturnReadingById() {
             when(meterReadingRepository.findByIdAndDeletedFalse(readingId))
                     .thenReturn(Optional.of(existingReading));
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
 
-            MeterReadingResponse response = meterReadingService.getById(readingId);
+            MeterReadingResponse response = meterReadingService.getById(readingId, MANAGER_EMAIL);
 
             assertThat(response.getId()).isEqualTo(readingId);
             assertThat(response.getMeterId()).isEqualTo(meterId);
@@ -284,7 +308,7 @@ class MeterReadingServiceTest {
             when(meterReadingRepository.findByIdAndDeletedFalse(readingId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> meterReadingService.getById(readingId))
+            assertThatThrownBy(() -> meterReadingService.getById(readingId, MANAGER_EMAIL))
                     .isInstanceOf(NotFoundException.class)
                     .hasMessageContaining(readingId.toString());
         }
@@ -303,12 +327,13 @@ class MeterReadingServiceTest {
         void shouldReturnPagedReadings() {
             Page<MeterReading> page = new PageImpl<>(List.of(existingReading));
             when(apartmentRepository.existsById(apartmentId)).thenReturn(true);
+            when(userRepository.findByEmail(MANAGER_EMAIL)).thenReturn(Optional.of(manager));
             when(meterReadingRepository.findByApartmentIdAndDeletedFalse(
                             eq(apartmentId), any(Pageable.class)))
                     .thenReturn(page);
 
             Page<MeterReadingResponse> result =
-                    meterReadingService.getAllByApartment(apartmentId, 0, 10);
+                    meterReadingService.getAllByApartment(apartmentId, 0, 10, MANAGER_EMAIL);
 
             assertThat(result.getTotalElements()).isEqualTo(1);
             assertThat(result.getContent().get(0).getMediumType())
@@ -321,7 +346,7 @@ class MeterReadingServiceTest {
         void shouldThrowNotFoundForNonExistentApartment() {
             when(apartmentRepository.existsById(apartmentId)).thenReturn(false);
 
-            assertThatThrownBy(() -> meterReadingService.getAllByApartment(apartmentId, 0, 10))
+            assertThatThrownBy(() -> meterReadingService.getAllByApartment(apartmentId, 0, 10, MANAGER_EMAIL))
                     .isInstanceOf(NotFoundException.class)
                     .hasMessageContaining(apartmentId.toString());
         }

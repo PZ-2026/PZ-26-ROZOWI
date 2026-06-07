@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import pl.edu.ur.blokur.dto.PropertyRequest;
 import pl.edu.ur.blokur.dto.PropertyResponse;
+import pl.edu.ur.blokur.service.FileTypeValidator;
 import pl.edu.ur.blokur.service.PropertyService;
 
 /**
@@ -31,14 +32,18 @@ import pl.edu.ur.blokur.service.PropertyService;
 public class PropertyController {
 
     private final PropertyService propertyService;
+    private final FileTypeValidator fileTypeValidator;
 
     /**
      * Konstruktor z wstrzyknięciem serwisu nieruchomości.
      *
      * @param propertyService serwis zarządzający nieruchomościami
+     * @param fileTypeValidator walidator typów plików
      */
-    public PropertyController(PropertyService propertyService) {
+    public PropertyController(
+            PropertyService propertyService, FileTypeValidator fileTypeValidator) {
         this.propertyService = propertyService;
+        this.fileTypeValidator = fileTypeValidator;
     }
 
     /**
@@ -101,6 +106,7 @@ public class PropertyController {
     @PatchMapping(value = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PropertyResponse> uploadLogo(
             @PathVariable UUID id, @RequestParam("file") MultipartFile file) {
+        fileTypeValidator.validateImage(file);
         PropertyResponse response = propertyService.uploadLogo(id, file);
         return ResponseEntity.ok(response);
     }

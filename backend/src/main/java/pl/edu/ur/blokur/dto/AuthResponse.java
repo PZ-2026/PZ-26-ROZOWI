@@ -1,6 +1,9 @@
 package pl.edu.ur.blokur.dto;
 
+import lombok.Data;
+
 /** DTO z odpowiedzią po pomyślnym logowaniu — zawiera token JWT i rolę użytkownika. */
+@Data
 public class AuthResponse {
 
     private String token;
@@ -17,60 +20,6 @@ public class AuthResponse {
     public AuthResponse(String token, String refreshToken, String role) {
         this.token = token;
         this.refreshToken = refreshToken;
-        this.role = role;
-    }
-
-    /**
-     * Zwraca access token JWT.
-     *
-     * @return access token JWT
-     */
-    public String getToken() {
-        return token;
-    }
-
-    /**
-     * Ustawia access token JWT.
-     *
-     * @param token access token JWT
-     */
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    /**
-     * Zwraca refresh token służący do odnawiania sesji.
-     *
-     * @return refresh token
-     */
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    /**
-     * Ustawia refresh token.
-     *
-     * @param refreshToken refresh token
-     */
-    public void setRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
-
-    /**
-     * Zwraca rolę zalogowanego użytkownika.
-     *
-     * @return rola użytkownika (np. MIESZKANIEC, ZARZADCA)
-     */
-    public String getRole() {
-        return role;
-    }
-
-    /**
-     * Ustawia rolę użytkownika.
-     *
-     * @param role rola użytkownika
-     */
-    public void setRole(String role) {
         this.role = role;
     }
 }

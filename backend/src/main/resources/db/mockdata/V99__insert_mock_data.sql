@@ -177,7 +177,7 @@ WHERE u.email = 'mock.mieszkaniec8@test.pl'
 
 -- ==========================================
 -- ZGŁOSZENIA (TICKETS)
--- Status: NOWE, W_REALIZACJI, ZAKONCZONE
+-- Status: NOWE, W_REALIZACJI, ZAKONCZONE_DO_WERYFIKACJI
 -- ==========================================
 
 -- --- NOWE ---
@@ -257,10 +257,10 @@ SELECT 'ZGL/TEST/010', 'Malowanie klatki schodowej', 'Ściany klatki wymagają o
   (SELECT s.id FROM staircases s JOIN buildings b ON s.building_id = b.id
    WHERE s.label = 'Klatka Prawa' AND b.name = 'Blok 2 (Kryształowy)');
 
--- --- ZAKONCZONE ---
+-- --- ZAKONCZONE_DO_WERYFIKACJI ---
 
 INSERT INTO tickets (ticket_number, title, description, status, category_id, author_id, assigned_to_id, apartment_id, closed_at)
-SELECT 'ZGL/TEST/011', 'Wymiana uszczelki pod zlewem', 'Kapanie wody pod zlewem w kuchni — wymieniono uszczelkę.', 'ZAKONCZONE',
+SELECT 'ZGL/TEST/011', 'Wymiana uszczelki pod zlewem', 'Kapanie wody pod zlewem w kuchni — wymieniono uszczelkę.', 'ZAKONCZONE_DO_WERYFIKACJI',
   (SELECT id FROM ticket_categories WHERE name = 'Hydraulika'),
   (SELECT id FROM users WHERE email = 'mock.mieszkaniec1@test.pl'),
   (SELECT id FROM users WHERE email = 'mock.hydraulik@blokur.pl'),
@@ -269,7 +269,7 @@ SELECT 'ZGL/TEST/011', 'Wymiana uszczelki pod zlewem', 'Kapanie wody pod zlewem 
   CURRENT_TIMESTAMP - INTERVAL '10 days';
 
 INSERT INTO tickets (ticket_number, title, description, status, category_id, author_id, assigned_to_id, building_id, closed_at)
-SELECT 'ZGL/TEST/012', 'Przegląd instalacji gazowej', 'Roczny przegląd instalacji gazowej — bez uwag.', 'ZAKONCZONE',
+SELECT 'ZGL/TEST/012', 'Przegląd instalacji gazowej', 'Roczny przegląd instalacji gazowej — bez uwag.', 'ZAKONCZONE_DO_WERYFIKACJI',
   (SELECT id FROM ticket_categories WHERE name = 'Administracja'),
   (SELECT id FROM users WHERE email = 'mock.zarzadca1@blokur.pl'),
   (SELECT id FROM users WHERE email = 'mock.hydraulik@blokur.pl'),
@@ -277,7 +277,7 @@ SELECT 'ZGL/TEST/012', 'Przegląd instalacji gazowej', 'Roczny przegląd instala
   CURRENT_TIMESTAMP - INTERVAL '30 days';
 
 INSERT INTO tickets (ticket_number, title, description, status, category_id, author_id, assigned_to_id, staircase_id, closed_at)
-SELECT 'ZGL/TEST/013', 'Naprawiono oświetlenie awaryjne', 'Lampa awaryjna na 2. piętrze nie działała — wymieniono akumulator.', 'ZAKONCZONE',
+SELECT 'ZGL/TEST/013', 'Naprawiono oświetlenie awaryjne', 'Lampa awaryjna na 2. piętrze nie działała — wymieniono akumulator.', 'ZAKONCZONE_DO_WERYFIKACJI',
   (SELECT id FROM ticket_categories WHERE name = 'Elektryka'),
   (SELECT id FROM users WHERE email = 'mock.mieszkaniec4@test.pl'),
   (SELECT id FROM users WHERE email = 'mock.elektryk@blokur.pl'),
@@ -286,14 +286,14 @@ SELECT 'ZGL/TEST/013', 'Naprawiono oświetlenie awaryjne', 'Lampa awaryjna na 2.
   CURRENT_TIMESTAMP - INTERVAL '7 days';
 
 INSERT INTO tickets (ticket_number, title, description, status, category_id, author_id, building_id, closed_at)
-SELECT 'ZGL/TEST/014', 'Czyszczenie rynien', 'Sezonowe czyszczenie rynien i spustów dachowych — wykonano.', 'ZAKONCZONE',
+SELECT 'ZGL/TEST/014', 'Czyszczenie rynien', 'Sezonowe czyszczenie rynien i spustów dachowych — wykonano.', 'ZAKONCZONE_DO_WERYFIKACJI',
   (SELECT id FROM ticket_categories WHERE name = 'Czystość i Porządek'),
   (SELECT id FROM users WHERE email = 'mock.zarzadca2@blokur.pl'),
   (SELECT id FROM buildings WHERE name = 'Blok 1 (Tęczowy)'),
   CURRENT_TIMESTAMP - INTERVAL '14 days';
 
 INSERT INTO tickets (ticket_number, title, description, status, category_id, author_id, assigned_to_id, apartment_id, closed_at)
-SELECT 'ZGL/TEST/015', 'Naprawa klamki drzwi wejściowych', 'Klamka drzwi do lokalu była obluzowana — dokręcono i wymieniono śruby.', 'ZAKONCZONE',
+SELECT 'ZGL/TEST/015', 'Naprawa klamki drzwi wejściowych', 'Klamka drzwi do lokalu była obluzowana — dokręcono i wymieniono śruby.', 'ZAKONCZONE_DO_WERYFIKACJI',
   (SELECT id FROM ticket_categories WHERE name = 'Remonty i Modernizacje'),
   (SELECT id FROM users WHERE email = 'mock.mieszkaniec6@test.pl'),
   (SELECT id FROM users WHERE email = 'mock.serwisant@blokur.pl'),
@@ -314,7 +314,7 @@ INSERT INTO ticket_history (ticket_id, status, changed_by, comment)
 SELECT t.id, 'W_REALIZACJI', (SELECT id FROM users WHERE email = 'mock.zarzadca1@blokur.pl'), 'Przydzielono serwisanta. Planowane oględziny w ciągu 48h.'
 FROM tickets t WHERE t.ticket_number = 'ZGL/TEST/006';
 
--- Historia dla ZGL/TEST/011 (ZAKONCZONE)
+-- Historia dla ZGL/TEST/011 (ZAKONCZONE_DO_WERYFIKACJI)
 INSERT INTO ticket_history (ticket_id, status, changed_by, comment)
 SELECT t.id, 'NOWE', (SELECT id FROM users WHERE email = 'mock.mieszkaniec1@test.pl'), 'Zgłoszono problem z przeciekiem.'
 FROM tickets t WHERE t.ticket_number = 'ZGL/TEST/011';
@@ -324,16 +324,16 @@ SELECT t.id, 'W_REALIZACJI', (SELECT id FROM users WHERE email = 'mock.zarzadca1
 FROM tickets t WHERE t.ticket_number = 'ZGL/TEST/011';
 
 INSERT INTO ticket_history (ticket_id, status, changed_by, comment)
-SELECT t.id, 'ZAKONCZONE', (SELECT id FROM users WHERE email = 'mock.hydraulik@blokur.pl'), 'Uszczelka wymieniona. Problem rozwiązany.'
+SELECT t.id, 'ZAKONCZONE_DO_WERYFIKACJI', (SELECT id FROM users WHERE email = 'mock.hydraulik@blokur.pl'), 'Uszczelka wymieniona. Problem rozwiązany.'
 FROM tickets t WHERE t.ticket_number = 'ZGL/TEST/011';
 
--- Historia dla ZGL/TEST/012 (ZAKONCZONE)
+-- Historia dla ZGL/TEST/012 (ZAKONCZONE_DO_WERYFIKACJI)
 INSERT INTO ticket_history (ticket_id, status, changed_by, comment)
 SELECT t.id, 'NOWE', (SELECT id FROM users WHERE email = 'mock.zarzadca1@blokur.pl'), 'Zlecono coroczny przegląd instalacji.'
 FROM tickets t WHERE t.ticket_number = 'ZGL/TEST/012';
 
 INSERT INTO ticket_history (ticket_id, status, changed_by, comment)
-SELECT t.id, 'ZAKONCZONE', (SELECT id FROM users WHERE email = 'mock.hydraulik@blokur.pl'), 'Przegląd zakończony. Protokół podpisany. Instalacja sprawna.'
+SELECT t.id, 'ZAKONCZONE_DO_WERYFIKACJI', (SELECT id FROM users WHERE email = 'mock.hydraulik@blokur.pl'), 'Przegląd zakończony. Protokół podpisany. Instalacja sprawna.'
 FROM tickets t WHERE t.ticket_number = 'ZGL/TEST/012';
 
 -- ==========================================

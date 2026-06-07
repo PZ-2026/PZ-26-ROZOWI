@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.edu.ur.blokur.dto.CreateUserRequest;
 import pl.edu.ur.blokur.dto.UpdateUserRequest;
 import pl.edu.ur.blokur.dto.UserResponse;
-import pl.edu.ur.blokur.models.Apartment;
 import pl.edu.ur.blokur.models.User;
 import pl.edu.ur.blokur.models.UserApartment;
 import pl.edu.ur.blokur.repository.ApartmentRepository;
@@ -23,22 +22,22 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final ApartmentRepository apartmentRepository;
-    private final PasswordResetService passwordResetService;
+    private final InvitationService invitationService;
 
     /**
      * Tworzy serwis z wymaganymi zależnościami.
      *
      * @param userRepository repozytorium użytkowników
      * @param apartmentRepository repozytorium mieszkań
-     * @param passwordResetService serwis do wysyłki zaproszeń z linkiem do ustawienia hasła
+     * @param invitationService serwis do wysyłki zaproszeń z linkiem do ustawienia hasła (72 h)
      */
     public AdminUserService(
             UserRepository userRepository,
             ApartmentRepository apartmentRepository,
-            PasswordResetService passwordResetService) {
+            InvitationService invitationService) {
         this.userRepository = userRepository;
         this.apartmentRepository = apartmentRepository;
-        this.passwordResetService = passwordResetService;
+        this.invitationService = invitationService;
     }
 
     /**
@@ -86,15 +85,7 @@ public class AdminUserService {
             throw new IllegalArgumentException("Podany adres email jest już zajęty.");
         }
 
-        Apartment apartment =
-                apartmentRepository
-                        .findById(request.getApartmentId())
-                        .orElseThrow(
-                                () ->
-                                        new IllegalArgumentException(
-                                                "Lokal o podanym ID nie istnieje."));
-
-        User user = new User();
+        var user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
@@ -103,16 +94,28 @@ public class AdminUserService {
         user.setActive(true);
         user.setCreatedAt(LocalDateTime.now());
 
-        User savedUser = userRepository.save(user);
+        if (request.getApartmentId() != null) {
+            var apartment =
+                    apartmentRepository
+                            .findById(request.getApartmentId())
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "Lokal o podanym ID nie istnieje."));
 
-        UserApartment userApartment = new UserApartment();
-        userApartment.setUser(savedUser);
-        userApartment.setApartment(apartment);
-        savedUser.getUserApartments().add(userApartment);
+            var savedUser = userRepository.save(user);
+            UserApartment userApartment = new UserApartment();
+            userApartment.setUser(savedUser);
+            userApartment.setApartment(apartment);
+            savedUser.getUserApartments().add(userApartment);
+            savedUser = userRepository.save(savedUser);
+            invitationService.inviteUser(savedUser);
+            return savedUser;
+        }
 
-        User finalUser = userRepository.save(savedUser);
-        passwordResetService.inviteUser(finalUser);
-        return finalUser;
+        var savedUser = userRepository.save(user);
+        invitationService.inviteUser(savedUser);
+        return savedUser;
     }
 
     /**
@@ -128,7 +131,7 @@ public class AdminUserService {
      */
     @Transactional
     public User updateUser(UUID id, UpdateUserRequest request) {
-        User user =
+        var user =
                 userRepository
                         .findById(id)
                         .orElseThrow(
@@ -142,18 +145,22 @@ public class AdminUserService {
         user.setRole(request.getRole());
 
         if (request.getApartmentId() != null) {
-            Apartment apartment =
-                    apartmentRepository
-                            .findById(request.getApartmentId())
-                            .orElseThrow(
-                                    () ->
-                                            new IllegalArgumentException(
-                                                    "Lokal o podanym ID nie istnieje."));
-            user.getUserApartments().clear();
-            UserApartment userApartment = new UserApartment();
-            userApartment.setUser(user);
-            userApartment.setApartment(apartment);
-            user.getUserApartments().add(userApartment);
+            boolean alreadyAssigned = user.getUserApartments().stream()
+                    .anyMatch(ua -> ua.getApartment().getId().equals(request.getApartmentId()));
+            if (!alreadyAssigned) {
+                var apartment =
+                        apartmentRepository
+                                .findById(request.getApartmentId())
+                                .orElseThrow(
+                                        () ->
+                                                new IllegalArgumentException(
+                                                        "Lokal o podanym ID nie istnieje."));
+                user.getUserApartments().clear();
+                UserApartment userApartment = new UserApartment();
+                userApartment.setUser(user);
+                userApartment.setApartment(apartment);
+                user.getUserApartments().add(userApartment);
+            }
         }
 
         return userRepository.save(user);
@@ -168,7 +175,7 @@ public class AdminUserService {
      */
     @Transactional
     public void deactivateUser(UUID id) {
-        User user =
+        var user =
                 userRepository
                         .findById(id)
                         .orElseThrow(
@@ -188,7 +195,7 @@ public class AdminUserService {
      */
     @Transactional
     public void deleteUser(UUID id) {
-        User user =
+        var user =
                 userRepository
                         .findById(id)
                         .orElseThrow(

@@ -51,25 +51,30 @@ public class AdminUserController {
      *     lokal nie istnieje
      */
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserRequest request) {
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         try {
             User user = adminUserService.createUser(request);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(
-                            Map.of(
-                                    "id", user.getId(),
-                                    "firstName", user.getFirstName(),
-                                    "lastName", user.getLastName(),
-                                    "email", user.getEmail(),
-                                    "role", user.getRole(),
-                                    "active", user.isActive(),
-                                    "createdAt", user.getCreatedAt()));
+            UUID apartmentId = user.getUserApartments().isEmpty()
+                    ? null
+                    : user.getUserApartments().get(0).getApartment().getId();
+            UserResponse response = new UserResponse(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getPhone(),
+                    user.getRole(),
+                    user.isActive(),
+                    user.getCreatedAt(),
+                    apartmentId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
             if (message.contains("email")) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", message));
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(null);
             }
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", message));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
@@ -81,22 +86,26 @@ public class AdminUserController {
      * @return zaktualizowany użytkownik z kodem 200, lub 404 jeśli użytkownik/lokal nie istnieje
      */
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateUser(
+    public ResponseEntity<UserResponse> updateUser(
             @PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         try {
             User user = adminUserService.updateUser(id, request);
-            return ResponseEntity.ok(
-                    Map.of(
-                            "id", user.getId(),
-                            "firstName", user.getFirstName(),
-                            "lastName", user.getLastName(),
-                            "email", user.getEmail(),
-                            "phone", user.getPhone() != null ? user.getPhone() : "",
-                            "role", user.getRole(),
-                            "active", user.isActive()));
+            UUID apartmentId = user.getUserApartments().isEmpty()
+                    ? null
+                    : user.getUserApartments().get(0).getApartment().getId();
+            UserResponse response = new UserResponse(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getPhone(),
+                    user.getRole(),
+                    user.isActive(),
+                    user.getCreatedAt(),
+                    apartmentId);
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 

@@ -1,0 +1,269 @@
+package pl.edu.ur.blokur.ui.views.meters.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ShowChart
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import pl.edu.ur.blokur.dtos.MeterReadingResponseDto
+import pl.edu.ur.blokur.ui.components.EmptyState
+import pl.edu.ur.blokur.ui.components.LoadingIndicator
+import pl.edu.ur.blokur.ui.components.TopBar
+import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailState
+import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailViewModel
+import pl.edu.ur.blokur.ui.utils.PolishFormat
+import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterEvent
+
+@Composable
+fun MeterDetailScreen(
+    viewModel: MeterDetailViewModel,
+    onNavigateBack: () -> Unit
+) {
+    val state by viewModel.state.collectAsState()
+    val showDialog by viewModel.showCreateDialog.collectAsState()
+    val formState by viewModel.formState.collectAsState()
+    val editingReading by viewModel.editingReading.collectAsState()
+    val editFormState by viewModel.editFormState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var readingToDelete by remember { mutableStateOf<String?>(null) }
+
+    readingToDelete?.let { readingId ->
+        AlertDialog(
+            onDismissRequest = { readingToDelete = null },
+            title = { Text("Usunąć odczyt?") },
+            text = { Text("Tej operacji nie można cofnąć.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteReading(readingId)
+                    readingToDelete = null
+                }) {
+                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { readingToDelete = null }) { Text("Anuluj") }
+            }
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is MeterEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
+    if (showDialog) {
+        CreateMeterReadingDialog(
+            formState = formState,
+            onDismiss = viewModel::closeCreateDialog,
+            onValueChanged = viewModel::onValueChanged,
+            onReadingDateChanged = viewModel::onReadingDateChanged,
+            onConfirm = viewModel::submitCreate
+        )
+    }
+
+    // Dialog edycji odczytu
+    if (editingReading != null) {
+        CreateMeterReadingDialog(
+            formState = editFormState,
+            onDismiss = viewModel::closeEditDialog,
+            onValueChanged = viewModel::onEditValueChanged,
+            onReadingDateChanged = viewModel::onEditReadingDateChanged,
+            onConfirm = viewModel::submitUpdate,
+            confirmLabel = "Zaktualizuj"
+        )
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopBar(
+                title = "Szczegóły licznika",
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Powrót")
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            if (viewModel.isActive) {
+                ExtendedFloatingActionButton(
+                    onClick = viewModel::openCreateDialog,
+                    icon = { Icon(Icons.Rounded.Add, null) },
+                    text = { Text("Wprowadź stan") },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            // Nagłówek informacyjny
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Licznik: ${viewModel.serialNumber}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Medium: ${viewModel.mediumType}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            when (val s = state) {
+                is MeterDetailState.Loading -> LoadingIndicator()
+                is MeterDetailState.Error -> EmptyState(
+                    title = "Błąd",
+                    description = s.message,
+                    onRetry = viewModel::load
+                )
+                is MeterDetailState.Success -> {
+                    if (s.readings.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+                            EmptyState(
+                                title = "Brak odczytów",
+                                description = "Ten licznik nie posiada jeszcze żadnych zarejestrowanych odczytów."
+                            )
+                        }
+                    } else {
+                        Text(
+                            "Historia odczytów",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            contentPadding = PaddingValues(bottom = 100.dp)
+                        ) {
+                            items(s.readings, key = { it.id }) { reading ->
+                                ReadingCard(
+                                    reading = reading,
+                                    isActive = viewModel.isActive,
+                                    onEdit = { viewModel.openEditDialog(reading) },
+                                    onDelete = { readingToDelete = reading.id }
+                                )
+                            }
+
+                            if (s.isFetchingNextPage) {
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            } else if (!s.isLastPage && s.readings.isNotEmpty()) {
+                                item {
+                                    LaunchedEffect(Unit) {
+                                        viewModel.loadNextPage()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReadingCard(
+    reading: MeterReadingResponseDto,
+    isActive: Boolean,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(12.dp), ambientColor = Color(0x10000000))
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.ShowChart, null, tint = MaterialTheme.colorScheme.primary)
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "Wartość: ${reading.value}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "Data: ${PolishFormat.formatDate(reading.readingDate)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            reading.recordedBy?.let {
+                Text(
+                    "Osoba spisująca: $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        if (isActive) {
+            Row {
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Rounded.Edit,
+                        contentDescription = "Edytuj odczyt",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "Usuń odczyt",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}

@@ -1,131 +1,93 @@
 package pl.edu.ur.blokur.service;
 
-import com.itextpdf.io.font.PdfEncodings;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.properties.UnitValue;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import org.springframework.core.io.ClassPathResource;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import pl.edu.ur.blokur.dto.ApartmentBalanceResponse;
 import pl.edu.ur.blokur.dto.WorkAcceptanceProtocolRequest;
+import pl.edu.ur.blokur.pdflib.PdfGenerator;
+import pl.edu.ur.blokur.pdflib.template.AnnualSettlementTemplate;
+import pl.edu.ur.blokur.pdflib.template.BalancesReportTemplate;
+import pl.edu.ur.blokur.pdflib.template.RateChangeNotificationTemplate;
+import pl.edu.ur.blokur.pdflib.template.WorkAcceptanceProtocolTemplate;
+import pl.edu.ur.blokur.pdflib.template.data.AnnualSettlementData;
+import pl.edu.ur.blokur.pdflib.template.data.BalanceRow;
+import pl.edu.ur.blokur.pdflib.template.data.BalancesReportData;
+import pl.edu.ur.blokur.pdflib.template.data.RateChangeNotificationData;
+import pl.edu.ur.blokur.pdflib.template.data.WorkAcceptanceProtocolData;
 
 /**
- * Serwis do generowania dokumentów PDF przy użyciu biblioteki iText7. Używa czcionki NotoSans dla
- * poprawnej obsługi polskich znaków (Unicode).
+ * Adapter Springa nad biblioteką {@code pdf-lib}. Mapuje DTO z warstwy aplikacji na POJO
+ * biblioteczne i deleguje generowanie do {@link PdfGenerator}.
+ *
+ * <p>Cała mechanika iText, czcionek i layoutu znajduje się w bibliotece — ta klasa jest
+ * intencjonalnie cienka.
  */
 @Service
 public class PdfGeneratorService {
+
+    private final PdfGenerator pdfGenerator = new PdfGenerator();
 
     /**
      * Generuje protokół odbioru prac w formacie PDF.
      *
      * @param request dane do wypełnienia protokołu
      * @return wygenerowany plik PDF jako tablica bajtów
-     * @throws RuntimeException w przypadku błędu generowania PDF
      */
     public byte[] generateWorkAcceptanceProtocol(WorkAcceptanceProtocolRequest request) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        PdfWriter writer = new PdfWriter(outputStream);
-        PdfDocument pdfDocument = new PdfDocument(writer);
-        Document document = new Document(pdfDocument);
-
-        PdfFont font = loadUnicodeFont();
-        document.setFont(font);
-
-        document.add(
-                new Paragraph("BLOKUR")
-                        .setBold()
-                        .setFontSize(18f)
-                        .setTextAlignment(TextAlignment.CENTER));
-
-        document.add(
-                new Paragraph("Dane wspólnoty / zarządcy")
-                        .setFontSize(11f)
-                        .setTextAlignment(TextAlignment.CENTER));
-
-        document.add(
-                new Paragraph("Miejsce na logo wspólnoty")
-                        .setItalic()
-                        .setFontSize(10f)
-                        .setTextAlignment(TextAlignment.CENTER));
-
-        document.add(new Paragraph("\n"));
-
-        document.add(
-                new Paragraph("PROTOKÓŁ ODBIORU PRAC")
-                        .setBold()
-                        .setFontSize(16f)
-                        .setTextAlignment(TextAlignment.CENTER));
-
-        document.add(new Paragraph("\n"));
-
-        String currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-        document.add(
-                new Paragraph("Data wygenerowania dokumentu: " + currentDate).setFontSize(11f));
-
-        document.add(new Paragraph("\n"));
-
-        Table table =
-                new Table(UnitValue.createPercentArray(new float[] {30f, 70f}))
-                        .useAllAvailableWidth();
-
-        table.addCell(new Cell().add(new Paragraph("Numer zgłoszenia")));
-        table.addCell(new Cell().add(new Paragraph(request.getTicketNumber())));
-
-        table.addCell(new Cell().add(new Paragraph("Imię konserwatora")));
-        table.addCell(new Cell().add(new Paragraph(request.getMaintenanceWorkerName())));
-
-        table.addCell(new Cell().add(new Paragraph("Opis wykonanych prac")));
-        table.addCell(new Cell().add(new Paragraph(request.getWorkDescription())));
-
-        document.add(table);
-
-        document.add(new Paragraph("\n\n"));
-
-        document.add(new Paragraph("Podpis konserwatora: ______________________________"));
-        document.add(new Paragraph("\n"));
-        document.add(
-                new Paragraph(
-                        "Podpis zarządcy / osoby odbierającej: ______________________________"));
-
-        document.close();
-
-        return outputStream.toByteArray();
+        WorkAcceptanceProtocolData data =
+                new WorkAcceptanceProtocolData(
+                        request.getTicketNumber(),
+                        request.getWorkDescription(),
+                        request.getMaintenanceWorkerName(),
+                        request.getBeforeImagesPaths(),
+                        request.getAfterImagesPaths());
+        return pdfGenerator.generate(new WorkAcceptanceProtocolTemplate(data));
     }
 
     /**
-     * Wczytuje czcionkę NotoSans z zasobów aplikacji. Czcionka obsługuje pełen zakres Unicode (w
-     * tym polskie znaki).
+     * Generuje zawiadomienie o zmianie stawek opłat w formacie PDF.
      *
-     * @return obiekt {@link PdfFont} z wbudowaną czcionką
-     * @throws RuntimeException jeśli plik czcionki nie zostanie znaleziony lub nie da się go
-     *     wczytać
+     * @param subject tytuł zawiadomienia
+     * @param body treść zawiadomienia
+     * @param effectiveDate data wejścia w życie zmian
+     * @param communityName nazwa wspólnoty
+     * @return wygenerowany plik PDF jako tablica bajtów
      */
-    private PdfFont loadUnicodeFont() {
-        try {
-            ClassPathResource resource = new ClassPathResource("fonts/NotoSans-Regular.ttf");
-            InputStream inputStream = resource.getInputStream();
-            byte[] fontBytes = inputStream.readAllBytes();
-            inputStream.close();
+    public byte[] generateRateChangeNotification(
+            String subject, String body, String effectiveDate, String communityName) {
+        RateChangeNotificationData data =
+                new RateChangeNotificationData(subject, body, effectiveDate, communityName);
+        return pdfGenerator.generate(new RateChangeNotificationTemplate(data));
+    }
 
-            return PdfFontFactory.createFont(
-                    fontBytes,
-                    PdfEncodings.IDENTITY_H,
-                    PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
-        } catch (IOException e) {
-            throw new RuntimeException("Nie można wczytać czcionki NotoSans", e);
-        }
+    /**
+     * Generuje roczne rozliczenie kosztów lokalu w formacie PDF.
+     *
+     * @param data dane rozliczenia (adres, rok, saldo, transakcje, uwagi)
+     * @return wygenerowany plik PDF jako tablica bajtów
+     */
+    public byte[] generateAnnualSettlement(AnnualSettlementData data) {
+        return pdfGenerator.generate(new AnnualSettlementTemplate(data));
+    }
+
+    /**
+     * Generuje zestawienie sald i zaległości lokali w formacie PDF.
+     *
+     * @param rows przefiltrowane i posortowane salda lokali
+     * @return wygenerowany plik PDF jako tablica bajtów
+     */
+    public byte[] generateBalancesReport(List<ApartmentBalanceResponse> rows) {
+        List<BalanceRow> libRows =
+                rows.stream()
+                        .map(
+                                r ->
+                                        new BalanceRow(
+                                                r.getAddress(),
+                                                r.getBalance(),
+                                                r.getLastPaymentDate(),
+                                                r.getDaysOverdue()))
+                        .collect(Collectors.toList());
+        return pdfGenerator.generate(new BalancesReportTemplate(new BalancesReportData(libRows)));
     }
 }
