@@ -12,9 +12,7 @@ class FinancialLedgerService @Inject constructor(
 ) {
     suspend fun getTransactions(apartmentId: String): ApartmentTransactionsDto {
         return runCatching {
-            val resp = api.getTransactions(apartmentId)
-            if (!resp.isSuccessful) throw Exception("Błąd pobierania transakcji (${resp.code()})")
-            resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            ApiResponseHandler.requireSuccess(api.getTransactions(apartmentId), "Błąd pobierania transakcji")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
@@ -23,16 +21,7 @@ class FinancialLedgerService @Inject constructor(
         request: CreateTransactionRequest
     ): FinancialTransactionDto {
         return runCatching {
-            val resp = api.createTransaction(apartmentId, request)
-            if (!resp.isSuccessful) throw Exception(
-                when (resp.code()) {
-                    400 -> "Nieprawidłowe dane transakcji."
-                    403 -> "Brak uprawnień do dodawania transakcji."
-                    404 -> "Nie znaleziono lokalu."
-                    else -> "Błąd tworzenia transakcji (${resp.code()})"
-                }
-            )
-            resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            ApiResponseHandler.requireSuccess(api.createTransaction(apartmentId, request), "Błąd tworzenia transakcji")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 }

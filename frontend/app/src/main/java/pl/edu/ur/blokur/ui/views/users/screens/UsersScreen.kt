@@ -146,7 +146,11 @@ fun UsersScreen(
     ) { innerPadding ->
         when (val s = state) {
             is UsersUiState.Loading -> LoadingIndicator()
-            is UsersUiState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is UsersUiState.Error -> EmptyState(
+                title = "Błąd",
+                description = s.message,
+                onRetry = viewModel::reload
+            )
             is UsersUiState.Success -> {
                 Column(
                     modifier = Modifier

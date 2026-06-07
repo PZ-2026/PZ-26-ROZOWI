@@ -1,6 +1,10 @@
 package pl.edu.ur.blokur.ui.views.tickets.contents
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,18 +14,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -29,9 +35,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import pl.edu.ur.blokur.dtos.CategoryDto
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
 import pl.edu.ur.blokur.ui.views.tickets.utils.CreateTicketFormState
@@ -49,6 +57,15 @@ fun CreateTicketFormContent(
     modifier: Modifier = Modifier
 ) {
     val isSubmitting = submitState is CreateTicketSubmitState.Submitting
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val combined = (formState.imageUris + uris).distinct()
+            onFormChanged(formState.copy(imageUris = combined))
+        }
+    }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Spacer(modifier = Modifier.height(4.dp))
@@ -132,7 +149,13 @@ fun CreateTicketFormContent(
         )
 
         FormLabel("Zdjęcia (opcjonalnie)")
-        PhotoPlaceholderRow()
+        PhotoPlaceholderRow(
+            imageUris = formState.imageUris,
+            onAddPhotoClick = { photoPickerLauncher.launch("image/*") },
+            onRemovePhoto = { uri ->
+                onFormChanged(formState.copy(imageUris = formState.imageUris - uri))
+            }
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -171,7 +194,11 @@ private fun FormLabel(text: String) {
 }
 
 @Composable
-private fun PhotoPlaceholderRow() {
+private fun PhotoPlaceholderRow(
+    imageUris: List<Uri>,
+    onAddPhotoClick: () -> Unit,
+    onRemovePhoto: (Uri) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -180,12 +207,38 @@ private fun PhotoPlaceholderRow() {
             modifier = Modifier
                 .size(90.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .clickable { onAddPhotoClick() },
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text("Dodaj", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+
+        imageUris.forEach { uri ->
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            ) {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = "Wybrane zdjęcie",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                IconButton(
+                    onClick = { onRemovePhoto(uri) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(24.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), RoundedCornerShape(50))
+                ) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Usuń zdjęcie", modifier = Modifier.size(16.dp))
+                }
             }
         }
     }

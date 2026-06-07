@@ -37,6 +37,10 @@ class ProfileViewModel @Inject constructor(
         loadUserProfile()
     }
 
+    fun reload() {
+        loadUserProfile()
+    }
+
     private fun loadUserProfile() {
         viewModelScope.launch {
             try {
@@ -50,13 +54,7 @@ class ProfileViewModel @Inject constructor(
                     phone = ""
                 )
             } catch (e: Exception) {
-                _events.send(ProfileEvent.ShowSnackbar(e.message ?: "Błąd ładowania profilu"))
-                _state.value = ProfileState.Data(
-                    role = "Błąd",
-                    email = "",
-                    name = "",
-                    phone = ""
-                )
+                _state.value = ProfileState.Error(e.message ?: "Błąd ładowania profilu")
             }
         }
     }

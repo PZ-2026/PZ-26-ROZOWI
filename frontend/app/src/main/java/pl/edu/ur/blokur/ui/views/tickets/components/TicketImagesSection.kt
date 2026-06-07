@@ -17,6 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +43,15 @@ fun TicketImagesSection(
 ) {
     val before = images.filter { it.imageType == "BEFORE" }
     val after = images.filter { it.imageType == "AFTER" }
+    var galleryIndex by remember { mutableStateOf<Int?>(null) }
+
+    galleryIndex?.let { index ->
+        TicketImageGalleryDialog(
+            images = images,
+            initialIndex = index,
+            onDismiss = { galleryIndex = null }
+        )
+    }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
@@ -67,10 +80,20 @@ fun TicketImagesSection(
             }
             else -> {
                 if (before.isNotEmpty()) {
-                    ImageGroupSection("Przed pracami", before, Color(0xFF1565C0))
+                    ImageGroupSection(
+                        label = "Przed pracami",
+                        images = before,
+                        labelColor = Color(0xFF1565C0),
+                        onImageClick = { galleryIndex = images.indexOf(it) }
+                    )
                 }
                 if (after.isNotEmpty()) {
-                    ImageGroupSection("Po pracach", after, Color(0xFF2E7D32))
+                    ImageGroupSection(
+                        label = "Po pracach",
+                        images = after,
+                        labelColor = Color(0xFF2E7D32),
+                        onImageClick = { galleryIndex = images.indexOf(it) }
+                    )
                 }
                 if (images.isEmpty() && showUploadAfter) {
                     Text(
@@ -109,7 +132,8 @@ fun TicketImagesSection(
 private fun ImageGroupSection(
     label: String,
     images: List<TicketImageDto>,
-    labelColor: Color
+    labelColor: Color,
+    onImageClick: (TicketImageDto) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -128,7 +152,10 @@ private fun ImageGroupSection(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                TicketImageThumbnail(imageId = img.id)
+                TicketImageThumbnail(
+                    imageId = img.id,
+                    onClick = { onImageClick(img) }
+                )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         img.originalFilename ?: "Zdjęcie",

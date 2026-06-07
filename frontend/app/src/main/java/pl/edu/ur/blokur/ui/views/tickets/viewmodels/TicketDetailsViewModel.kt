@@ -59,6 +59,10 @@ class TicketDetailsViewModel @Inject constructor(
         loadTicket()
     }
 
+    fun reload() {
+        loadTicket()
+    }
+
     private fun loadTicket() {
         viewModelScope.launch {
             runCatching {
@@ -85,20 +89,11 @@ class TicketDetailsViewModel @Inject constructor(
         val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
             _state.value = current.copy(isLoadingComments = true)
-            runCatching { commentApi.getComments(ticketId) }
-                .onSuccess { response ->
+            runCatching { ApiResponseHandler.requireSuccess(commentApi.getComments(ticketId), "Nie udało się załadować komentarzy") }
+                .onSuccess { comments ->
                     val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
-                    if (!response.isSuccessful) {
-                        _state.value = s.copy(isLoadingComments = false)
-                        _events.send(
-                            TicketDetailsScreenEvent.ShowError(
-                                ApiResponseHandler.mapHttpError(response, "Nie udało się załadować komentarzy")
-                            )
-                        )
-                        return@onSuccess
-                    }
                     _state.value = s.copy(
-                        comments = response.body() ?: emptyList(),
+                        comments = comments,
                         isLoadingComments = false
                     )
                 }
@@ -114,20 +109,11 @@ class TicketDetailsViewModel @Inject constructor(
         val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
             _state.value = current.copy(isLoadingImages = true)
-            runCatching { imageApi.getImagesForTicket(ticketId) }
-                .onSuccess { response ->
+            runCatching { ApiResponseHandler.requireSuccess(imageApi.getImagesForTicket(ticketId), "Nie udało się załadować zdjęć") }
+                .onSuccess { images ->
                     val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
-                    if (!response.isSuccessful) {
-                        _state.value = s.copy(isLoadingImages = false)
-                        _events.send(
-                            TicketDetailsScreenEvent.ShowError(
-                                ApiResponseHandler.mapHttpError(response, "Nie udało się załadować zdjęć")
-                            )
-                        )
-                        return@onSuccess
-                    }
                     _state.value = s.copy(
-                        images = response.body() ?: emptyList(),
+                        images = images,
                         isLoadingImages = false
                     )
                 }
@@ -144,21 +130,16 @@ class TicketDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = current.copy(isSendingComment = true)
             runCatching {
-                commentApi.addComment(
-                    current.ticket.id,
-                    TicketCommentRequestDto(content = content, commentType = commentType)
+                ApiResponseHandler.requireSuccess(
+                    commentApi.addComment(
+                        current.ticket.id,
+                        TicketCommentRequestDto(content = content, commentType = commentType)
+                    ),
+                    "Nie udało się dodać komentarza"
                 )
-            }.onSuccess { response ->
+            }.onSuccess {
                 val s = _state.value as? TicketDetailsListState.Success ?: return@onSuccess
                 _state.value = s.copy(isSendingComment = false)
-                if (!response.isSuccessful) {
-                    _events.send(
-                        TicketDetailsScreenEvent.ShowError(
-                            ApiResponseHandler.mapHttpError(response, "Nie udało się dodać komentarza")
-                        )
-                    )
-                    return@onSuccess
-                }
                 loadComments(current.ticket.id)
                 val updated = _state.value as? TicketDetailsListState.Success
                 if (updated != null) {
@@ -210,6 +191,7 @@ class TicketDetailsViewModel @Inject constructor(
     fun onResumeTicket() {
         val current = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            _state.value = current.copy(isActionInProgress = true)
             runCatching {
                 ticketService.changeStatus(
                     ticketId = current.ticket.id,
@@ -220,6 +202,8 @@ class TicketDetailsViewModel @Inject constructor(
                 loadTicket()
                 _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zgłoszenie zostało wznowione"))
             }.onFailure { e ->
+                val s = _state.value as? TicketDetailsListState.Success
+                if (s != null) _state.value = s.copy(isActionInProgress = false)
                 val msg = when (e) {
                     is ApiException -> e.message
                     else -> e.message ?: "Błąd wznawiania zgłoszenia"
@@ -236,6 +220,7 @@ class TicketDetailsViewModel @Inject constructor(
     fun onAssignConservator(conservatorId: String, plannedVisitAt: String) {
         val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            _state.value = currentState.copy(isActionInProgress = true)
             runCatching {
                 ticketService.assignTicket(
                     ticketId = currentState.ticket.id,
@@ -246,6 +231,8 @@ class TicketDetailsViewModel @Inject constructor(
                 loadTicket()
                 _events.send(TicketDetailsScreenEvent.ShowSnackbar("Konserwator został przypisany pomyślnie"))
             }.onFailure { e ->
+                val s = _state.value as? TicketDetailsListState.Success
+                if (s != null) _state.value = s.copy(isActionInProgress = false)
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd przypisywania"))
             }
         }
@@ -254,12 +241,15 @@ class TicketDetailsViewModel @Inject constructor(
     fun onRejectTicket(reason: String) {
         val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            _state.value = currentState.copy(isActionInProgress = true)
             runCatching {
                 ticketService.rejectTicket(ticketId = currentState.ticket.id, reason = reason)
             }.onSuccess {
                 loadTicket()
                 _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zgłoszenie odrzucone"))
             }.onFailure { e ->
+                val s = _state.value as? TicketDetailsListState.Success
+                if (s != null) _state.value = s.copy(isActionInProgress = false)
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd odrzucania zgłoszenia"))
             }
         }
@@ -268,12 +258,15 @@ class TicketDetailsViewModel @Inject constructor(
     fun onCloseTicket() {
         val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            _state.value = currentState.copy(isActionInProgress = true)
             runCatching {
                 ticketService.closeTicket(ticketId = currentState.ticket.id)
             }.onSuccess {
                 loadTicket()
                 _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zgłoszenie zostało zamknięte"))
             }.onFailure { e ->
+                val s = _state.value as? TicketDetailsListState.Success
+                if (s != null) _state.value = s.copy(isActionInProgress = false)
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd zamykania zgłoszenia"))
             }
         }
@@ -282,6 +275,7 @@ class TicketDetailsViewModel @Inject constructor(
     fun onConservatorAction(type: ConservatorActionType, comment: String, pause: Boolean = false) {
         val currentState = _state.value as? TicketDetailsListState.Success ?: return
         viewModelScope.launch {
+            _state.value = currentState.copy(isActionInProgress = true)
             runCatching {
                 when (type) {
                     ConservatorActionType.START -> ticketService.startWork(currentState.ticket.id)
@@ -301,6 +295,8 @@ class TicketDetailsViewModel @Inject constructor(
                 loadTicket()
                 _events.send(TicketDetailsScreenEvent.ShowSnackbar("Zaktualizowano status zgłoszenia"))
             }.onFailure { e ->
+                val s = _state.value as? TicketDetailsListState.Success
+                if (s != null) _state.value = s.copy(isActionInProgress = false)
                 _events.send(TicketDetailsScreenEvent.ShowError(e.message ?: "Błąd wykonywania akcji"))
             }
         }
@@ -318,9 +314,7 @@ class TicketDetailsViewModel @Inject constructor(
                     workDescription = ticket.internalNote ?: "Prace zakończone.",
                     maintenanceWorkerName = ticket.assignedToName ?: "Nieznany"
                 )
-                val response = pdfApi.getWorkAcceptanceProtocol(request)
-                if (!response.isSuccessful) error("Błąd generowania protokołu (${response.code()})")
-                val responseBody = response.body() ?: error("Pusta odpowiedź serwera")
+                val responseBody = ApiResponseHandler.requireSuccess(pdfApi.getWorkAcceptanceProtocol(request), "Błąd generowania protokołu")
                 withContext(Dispatchers.IO) {
                     val dir = File(context.cacheDir, "protocols").also { it.mkdirs() }
                     val file = File(dir, "protokol_${ticket.ticketNumber}.pdf")

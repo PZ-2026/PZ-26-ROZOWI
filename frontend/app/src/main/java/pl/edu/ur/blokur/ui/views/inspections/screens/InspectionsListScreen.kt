@@ -18,6 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,13 +35,14 @@ import pl.edu.ur.blokur.ui.theme.InfoBlue
 import pl.edu.ur.blokur.ui.theme.InfoBlueBg
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionEvent
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListState
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.inspections.viewmodels.InspectionsListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionsListScreen(
     viewModel: InspectionsListViewModel,
-    isManager: Boolean = true,
+    isManager: Boolean = false,
     onNavigateBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
@@ -46,7 +50,27 @@ fun InspectionsListScreen(
     val formState by viewModel.formState.collectAsState()
     val editingInspection by viewModel.editingInspection.collectAsState()
     val editFormState by viewModel.editFormState.collectAsState()
-    val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var inspectionToDelete by remember { mutableStateOf<String?>(null) }
+
+    inspectionToDelete?.let { inspectionId ->
+        AlertDialog(
+            onDismissRequest = { inspectionToDelete = null },
+            title = { Text("Usunąć przegląd?") },
+            text = { Text("Tej operacji nie można cofnąć.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteInspection(inspectionId)
+                    inspectionToDelete = null
+                }) {
+                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { inspectionToDelete = null }) { Text("Anuluj") }
+            }
+        )
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -125,7 +149,11 @@ fun InspectionsListScreen(
     ) { innerPadding ->
         when (val s = state) {
             is InspectionsListState.Loading -> LoadingIndicator()
-            is InspectionsListState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is InspectionsListState.Error -> EmptyState(
+                title = "Błąd",
+                description = s.message,
+                onRetry = viewModel::load
+            )
             is InspectionsListState.Success -> {
                 if (s.inspections.isEmpty()) {
                     Box(
@@ -157,7 +185,7 @@ fun InspectionsListScreen(
                                 inspection = inspection,
                                 isManager = isManager,
                                 onEdit = { viewModel.openEditDialog(inspection) },
-                                onDelete = { viewModel.deleteInspection(inspection.id) }
+                                onDelete = { inspectionToDelete = inspection.id }
                             )
                         }
                     }
@@ -210,10 +238,7 @@ private fun InspectionCard(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2
             )
-            val dateLabel = try {
-                val ldt = java.time.LocalDateTime.parse(inspection.scheduledAt)
-                "${ldt.toLocalDate()} ${ldt.toLocalTime().withSecond(0)}"
-            } catch (_: Exception) { inspection.scheduledAt }
+            val dateLabel = PolishFormat.formatDate(inspection.scheduledAt)
             Text(
                 "Termin: $dateLabel",
                 style = MaterialTheme.typography.bodySmall,

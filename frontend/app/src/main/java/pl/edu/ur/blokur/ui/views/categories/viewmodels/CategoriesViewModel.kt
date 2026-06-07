@@ -27,6 +27,7 @@ sealed interface CategoriesUiState {
 
 sealed interface CategoriesEvent {
     data class ShowSnackbar(val message: String) : CategoriesEvent
+    data object ActionCompleted : CategoriesEvent
 }
 
 // ── ViewModel ────────────────────────────────────────────────────────────────
@@ -66,10 +67,12 @@ class CategoriesViewModel @Inject constructor(
                     _state.value = CategoriesUiState.Success(
                         categories = listOf(CategoryDto(created.id, created.name)) + current.categories
                     )
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar("Kategoria \"${created.name}\" została dodana"))
                 }
                 .onFailure { e ->
                     _state.value = current.copy(isSubmitting = false)
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar(e.message ?: "Błąd tworzenia kategorii"))
                 }
         }
@@ -87,10 +90,12 @@ class CategoriesViewModel @Inject constructor(
                             if (it.id == id) CategoryDto(updated.id, updated.name) else it
                         }
                     )
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar("Kategoria \"${updated.name}\" została zaktualizowana"))
                 }
                 .onFailure { e ->
                     _state.value = current.copy(isSubmitting = false)
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar(e.message ?: "Błąd aktualizacji"))
                 }
         }
@@ -99,15 +104,19 @@ class CategoriesViewModel @Inject constructor(
     fun deactivateCategory(id: String, name: String) {
         val current = _state.value as? CategoriesUiState.Success ?: return
         viewModelScope.launch {
+            _state.value = current.copy(isSubmitting = true)
             runCatching { categoryService.deactivateCategory(id) }
                 .onSuccess {
                     // Usuń z listy (backend zwraca tylko aktywne)
                     _state.value = CategoriesUiState.Success(
                         categories = current.categories.filter { it.id != id }
                     )
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar("Kategoria \"$name\" została deaktywowana"))
                 }
                 .onFailure { e ->
+                    _state.value = current.copy(isSubmitting = false)
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar(e.message ?: "Błąd deaktywacji"))
                 }
         }
@@ -124,10 +133,12 @@ class CategoriesViewModel @Inject constructor(
                             if (it.id == id) it.copy(slaHours = hours) else it
                         }
                     )
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar("SLA ustawione na $hours godz."))
                 }
                 .onFailure { e ->
                     _state.value = current.copy(isSubmitting = false)
+                    _events.send(CategoriesEvent.ActionCompleted)
                     _events.send(CategoriesEvent.ShowSnackbar(e.message ?: "Błąd ustawiania SLA"))
                 }
         }

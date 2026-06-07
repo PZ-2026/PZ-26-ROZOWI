@@ -55,6 +55,7 @@ import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.FinancialLedgerViewModel
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.LedgerEvent
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.LedgerUiState
 import java.math.BigDecimal
 
@@ -131,7 +132,11 @@ fun FinancialLedgerScreen(
     ) { innerPadding ->
         when (val s = state) {
             is LedgerUiState.Loading -> LoadingIndicator()
-            is LedgerUiState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is LedgerUiState.Error -> EmptyState(
+                title = "Błąd",
+                description = s.message,
+                onRetry = viewModel::load
+            )
             is LedgerUiState.Success -> {
                 Column(
                     modifier = Modifier
@@ -215,7 +220,7 @@ private fun BalanceCard(balance: BigDecimal, transactionCount: Int) {
                     Text("Saldo konta", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        "${if (isPositive) "+" else ""}${balance.setScale(2)} PLN",
+                        "${if (isPositive) "+" else ""}${PolishFormat.formatMoney(balance)}",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.ExtraBold,
                         color = balanceColor
@@ -286,7 +291,7 @@ private fun TransactionRow(tx: FinancialTransactionDto) {
                     Text(typeLabel, style = MaterialTheme.typography.labelSmall,
                         color = typeColor, fontWeight = FontWeight.Bold)
                 }
-                Text(tx.transactionDate,
+                Text(PolishFormat.formatDate(tx.transactionDate),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -300,7 +305,7 @@ private fun TransactionRow(tx: FinancialTransactionDto) {
         // Kwota
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                "$amountPrefix${tx.amount.abs().setScale(2)} PLN",
+                "$amountPrefix${PolishFormat.formatMoney(tx.amount.abs())}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = amountColor

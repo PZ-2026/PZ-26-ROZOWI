@@ -157,8 +157,7 @@ private fun ResolutionDetailContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     HorizontalDivider()
                     val endLabel = try {
-                        val ldt = java.time.LocalDateTime.parse(detail.endDate)
-                        "Głosowanie do: ${ldt.toLocalDate()} ${ldt.toLocalTime().withSecond(0)}"
+                        "Głosowanie do: ${pl.edu.ur.blokur.ui.utils.PolishFormat.formatDate(detail.endDate)}"
                     } catch (_: Exception) { "Do: ${detail.endDate}" }
                     Text(endLabel, style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)

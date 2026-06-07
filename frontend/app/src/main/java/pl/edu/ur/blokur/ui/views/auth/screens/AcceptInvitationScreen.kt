@@ -69,7 +69,7 @@ fun AcceptInvitationScreen(
             Spacer(modifier = Modifier.height(64.dp))
 
             Text(
-                text = "Blokur",
+                text = "BlokUR",
                 style = MaterialTheme.typography.displayMedium,
                 color = MaterialTheme.colorScheme.primary
             )

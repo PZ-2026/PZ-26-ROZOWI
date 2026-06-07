@@ -88,7 +88,8 @@ fun NotificationsScreen(
             is NotificationsUiState.Loading -> LoadingIndicator()
             is NotificationsUiState.Error -> EmptyState(
                 title = "Błąd",
-                description = s.message
+                description = s.message,
+                onRetry = viewModel::loadSettings
             )
             is NotificationsUiState.Success -> {
                 if (s.settings.isEmpty()) {

@@ -17,7 +17,8 @@ import pl.edu.ur.blokur.ui.views.properties.viewmodels.PropertyTreeViewModel
 fun PropertyTreeScreen(
     viewModel: PropertyTreeViewModel,
     modifier: Modifier = Modifier,
-    onNavigateToMeters: (String) -> Unit = {}
+    onNavigateToMeters: (String) -> Unit = {},
+    onNavigateToLedger: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val selectedNode by viewModel.selectedNode.collectAsState()
@@ -124,7 +125,8 @@ fun PropertyTreeScreen(
                     onEdit = viewModel::startEdit,
                     onSave = viewModel::save,
                     onDismiss = viewModel::dismissSheet,
-                    onNavigateToMeters = onNavigateToMeters
+                    onNavigateToMeters = onNavigateToMeters,
+                    onNavigateToLedger = onNavigateToLedger
                 )
             }
         }

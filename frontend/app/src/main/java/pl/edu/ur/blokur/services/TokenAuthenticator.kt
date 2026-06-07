@@ -14,6 +14,7 @@ import javax.inject.Named
  */
 class TokenAuthenticator @Inject constructor(
     private val tokenStorage: TokenStorage,
+    private val sessionManager: SessionManager,
     @Named("auth") private val authApiService: AuthApiService
 ) : Authenticator {
 
@@ -25,16 +26,17 @@ class TokenAuthenticator @Inject constructor(
         if (response.request.header(HEADER_TOKEN_REFRESHED) != null) return null
         if (response.request.url.pathSegments.contains("auth")) return null
 
-        val refreshToken = runBlocking { tokenStorage.getRefreshToken() } ?: return null
+        val refreshToken = runBlocking { tokenStorage.getRefreshToken() }
+            ?: return invalidateSessionAndAbort()
 
         return try {
             val refreshResponse = runBlocking {
                 authApiService.refresh(RefreshTokenRequestDto(refreshToken))
             }
 
-            if (!refreshResponse.isSuccessful) return null
+            if (!refreshResponse.isSuccessful) return invalidateSessionAndAbort()
 
-            val newTokens = refreshResponse.body() ?: return null
+            val newTokens = refreshResponse.body() ?: return invalidateSessionAndAbort()
 
             runBlocking {
                 tokenStorage.saveTokens(
@@ -49,7 +51,12 @@ class TokenAuthenticator @Inject constructor(
                 .header(HEADER_TOKEN_REFRESHED, "true")
                 .build()
         } catch (e: Exception) {
-            null
+            invalidateSessionAndAbort()
         }
+    }
+
+    private fun invalidateSessionAndAbort(): Request? {
+        runBlocking { sessionManager.invalidateSession() }
+        return null
     }
 }

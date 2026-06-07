@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.ui.views.tickets.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,7 +31,8 @@ import pl.edu.ur.blokur.di.CoilEntryPoint
 fun TicketImageThumbnail(
     imageId: String,
     modifier: Modifier = Modifier,
-    contentDescription: String? = "Zdjęcie zgłoszenia"
+    contentDescription: String? = "Zdjęcie zgłoszenia",
+    onClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val imageLoader = remember(context) {
@@ -50,7 +52,8 @@ fun TicketImageThumbnail(
         contentDescription = contentDescription,
         modifier = modifier
             .size(42.dp)
-            .clip(RoundedCornerShape(8.dp)),
+            .clip(RoundedCornerShape(8.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentScale = ContentScale.Crop,
         loading = {
             Box(

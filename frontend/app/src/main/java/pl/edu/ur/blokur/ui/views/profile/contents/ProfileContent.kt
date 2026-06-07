@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AdminPanelSettings
+import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Description
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import pl.edu.ur.blokur.ui.components.EmptyState
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.components.NormalCard
 import pl.edu.ur.blokur.ui.theme.PreviewTheme
@@ -46,10 +48,18 @@ fun ProfileContent(
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
+    onNavigateToFinances: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when (state) {
         is ProfileState.Loading -> LoadingIndicator()
+        is ProfileState.Error -> EmptyState(
+            title = "Błąd",
+            description = state.message,
+            onRetry = onRetry
+        )
         is ProfileState.Data -> ProfileDataContent(
             data = state,
             isManager = isManager,
@@ -58,6 +68,8 @@ fun ProfileContent(
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             onNavigateToInspections = onNavigateToInspections,
             onNavigateToCategories = onNavigateToCategories,
+            onNavigateToFinances = onNavigateToFinances,
+            onNavigateToAnnouncements = onNavigateToAnnouncements,
             modifier = modifier
         )
     }
@@ -72,6 +84,8 @@ private fun ProfileDataContent(
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
+    onNavigateToFinances: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -172,10 +186,28 @@ private fun ProfileDataContent(
                 }
 
                 AdminNavRow(
+                    icon = Icons.Rounded.DateRange,
+                    title = "Finanse",
+                    subtitle = "Salda, import CSV, kartoteki lokali",
+                    isFirst = true,
+                    isLast = false,
+                    onClick = onNavigateToFinances
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                AdminNavRow(
+                    icon = Icons.Rounded.Campaign,
+                    title = "Ogłoszenia",
+                    subtitle = "Twórz i edytuj ogłoszenia dla mieszkańców",
+                    isFirst = false,
+                    isLast = false,
+                    onClick = onNavigateToAnnouncements
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                AdminNavRow(
                     icon = Icons.Rounded.Notifications,
                     title = "Ustawienia powiadomień",
                     subtitle = "Konfiguruj alerty per typ zdarzenia",
-                    isFirst = true,
+                    isFirst = false,
                     isLast = false,
                     onClick = onNavigateToNotificationSettings
                 )

@@ -31,6 +31,7 @@ import pl.edu.ur.blokur.ui.components.StatusBadge
 import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.InfoBlue
 import pl.edu.ur.blokur.ui.theme.SuccessGreen
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 
 private data class TransactionPresentation(val label: String, val color: Color, val icon: ImageVector)
 
@@ -47,7 +48,7 @@ fun TransactionItem(transaction: FinancialTransactionDto) {
     val presentation = transaction.type.toPresentation()
     val amountText = run {
         val prefix = if (transaction.amount >= java.math.BigDecimal.ZERO) "+" else ""
-        "$prefix${"%.2f".format(transaction.amount)} PLN"
+        "$prefix${PolishFormat.formatMoney(transaction.amount.abs())}"
     }
     val amountColor = if (transaction.amount >= java.math.BigDecimal.ZERO) SuccessGreen else ErrorRed
 
@@ -74,15 +75,14 @@ fun TransactionItem(transaction: FinancialTransactionDto) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatusBadge(text = presentation.label, dotColor = presentation.color)
-                    Text(formatDate(transaction.transactionDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        PolishFormat.formatDate(transaction.transactionDate),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             Text(amountText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = amountColor)
         }
     }
 }
-
-private fun formatDate(date: String): String = try {
-    val parts = date.split("-")
-    if (parts.size == 3) "${parts[2]}.${parts[1]}.${parts[0]}" else date
-} catch (_: Exception) { date }

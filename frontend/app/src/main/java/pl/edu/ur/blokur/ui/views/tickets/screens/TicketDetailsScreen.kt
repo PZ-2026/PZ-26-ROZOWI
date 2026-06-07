@@ -97,6 +97,7 @@ fun TicketDetailsScreen(
             },
             onResumeTicket = viewModel::onResumeTicket,
             onDownloadProtocol = viewModel::downloadWorkAcceptanceProtocol,
+            onRetry = viewModel::reload,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

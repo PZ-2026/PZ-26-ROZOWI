@@ -48,6 +48,7 @@ fun MeterListScreen(
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    val isManager by viewModel.isManager.collectAsState()
     val showDialog by viewModel.showCreateDialog.collectAsState()
     val formState by viewModel.formState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -123,18 +124,24 @@ fun MeterListScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = viewModel::openCreateDialog,
-                icon = { Icon(Icons.Rounded.Add, null) },
-                text = { Text("Dodaj licznik") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
+            if (isManager) {
+                ExtendedFloatingActionButton(
+                    onClick = viewModel::openCreateDialog,
+                    icon = { Icon(Icons.Rounded.Add, null) },
+                    text = { Text("Dodaj licznik") },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
     ) { innerPadding ->
         when (val s = state) {
             is MeterListState.Loading -> LoadingIndicator()
-            is MeterListState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is MeterListState.Error -> EmptyState(
+                title = "Błąd",
+                description = s.message,
+                onRetry = viewModel::load
+            )
             is MeterListState.Success -> {
                 if (s.meters.isEmpty()) {
                     Box(

@@ -24,14 +24,10 @@ class ApartmentBalanceService @Inject constructor(
         sort: String = "debt_desc"
     ): List<ApartmentBalanceItemDto> {
         return runCatching {
-            val resp = api.getApartmentBalances(propertyId, minDebt, minDaysOverdue, sort)
-            if (!resp.isSuccessful) throw Exception(
-                when (resp.code()) {
-                    403 -> "Brak uprawnień do pobierania zestawienia."
-                    else -> "Błąd pobierania zestawienia (${resp.code()})"
-                }
+            ApiResponseHandler.requireSuccess(
+                api.getApartmentBalances(propertyId, minDebt, minDaysOverdue, sort),
+                "Błąd pobierania zestawienia"
             )
-            resp.body() ?: emptyList()
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 }

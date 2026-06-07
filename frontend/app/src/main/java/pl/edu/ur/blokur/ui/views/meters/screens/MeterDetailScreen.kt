@@ -16,6 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +32,7 @@ import pl.edu.ur.blokur.ui.components.LoadingIndicator
 import pl.edu.ur.blokur.ui.components.TopBar
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailState
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterDetailViewModel
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.meters.viewmodels.MeterEvent
 
 @Composable
@@ -41,7 +45,27 @@ fun MeterDetailScreen(
     val formState by viewModel.formState.collectAsState()
     val editingReading by viewModel.editingReading.collectAsState()
     val editFormState by viewModel.editFormState.collectAsState()
-    val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var readingToDelete by remember { mutableStateOf<String?>(null) }
+
+    readingToDelete?.let { readingId ->
+        AlertDialog(
+            onDismissRequest = { readingToDelete = null },
+            title = { Text("Usunąć odczyt?") },
+            text = { Text("Tej operacji nie można cofnąć.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteReading(readingId)
+                    readingToDelete = null
+                }) {
+                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { readingToDelete = null }) { Text("Anuluj") }
+            }
+        )
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -115,7 +139,11 @@ fun MeterDetailScreen(
 
             when (val s = state) {
                 is MeterDetailState.Loading -> LoadingIndicator()
-                is MeterDetailState.Error -> EmptyState(title = "Błąd", description = s.message)
+                is MeterDetailState.Error -> EmptyState(
+                    title = "Błąd",
+                    description = s.message,
+                    onRetry = viewModel::load
+                )
                 is MeterDetailState.Success -> {
                     if (s.readings.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
@@ -140,7 +168,7 @@ fun MeterDetailScreen(
                                 ReadingCard(
                                     reading = reading,
                                     onEdit = { viewModel.openEditDialog(reading) },
-                                    onDelete = { viewModel.deleteReading(reading.id) }
+                                    onDelete = { readingToDelete = reading.id }
                                 )
                             }
 
@@ -200,7 +228,7 @@ private fun ReadingCard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Data: ${reading.readingDate}",
+                "Data: ${PolishFormat.formatDate(reading.readingDate)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

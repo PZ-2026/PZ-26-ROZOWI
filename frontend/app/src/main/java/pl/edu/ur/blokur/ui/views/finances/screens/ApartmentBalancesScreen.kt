@@ -1,7 +1,6 @@
 package pl.edu.ur.blokur.ui.views.finances.screens
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +26,7 @@ import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,8 +40,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -52,13 +54,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import pl.edu.ur.blokur.dtos.ApartmentBalanceItemDto
 import pl.edu.ur.blokur.ui.components.EmptyState
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.components.LoadingIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.ApartmentBalancesViewModel
+import pl.edu.ur.blokur.ui.views.finances.viewmodels.BalancesEvent
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.BalancesFilterState
 import pl.edu.ur.blokur.ui.views.finances.viewmodels.BalancesUiState
+import androidx.compose.material3.SnackbarHostState
 import java.math.BigDecimal
-
-private const val API_BASE_URL = "https://blokur.pl"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,9 +74,27 @@ fun ApartmentBalancesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filterState by viewModel.filterState.collectAsState()
+    val isDownloadingPdf by viewModel.isDownloadingPdf.collectAsState()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is BalancesEvent.OpenPdf -> {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(event.uri, "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(intent)
+                }
+                is BalancesEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
@@ -119,16 +143,15 @@ fun ApartmentBalancesScreen(
                 filterState = filterState,
                 sortDesc = filterState.sort == "debt_desc",
                 onPropertyIdChanged = viewModel::onPropertyIdChanged,
+                onPropertyExpandedChange = viewModel::onPropertyExpandedChange,
                 onMinDebtChanged = viewModel::onMinDebtChanged,
                 onMinDaysOverdueChanged = viewModel::onMinDaysOverdueChanged,
                 onApply = viewModel::load
             )
             Spacer(Modifier.height(12.dp))
             Button(
-                onClick = {
-                    val url = viewModel.buildPdfUrl(API_BASE_URL)
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                },
+                onClick = viewModel::downloadBalancesPdf,
+                enabled = !isDownloadingPdf,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -136,9 +159,20 @@ fun ApartmentBalancesScreen(
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Rounded.PictureAsPdf, null, modifier = Modifier.size(18.dp))
+                if (isDownloadingPdf) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                } else {
+                    Icon(Icons.Rounded.PictureAsPdf, null, modifier = Modifier.size(18.dp))
+                }
                 Spacer(Modifier.width(8.dp))
-                Text("Pobierz zestawienie PDF", fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (isDownloadingPdf) "Generowanie PDF…" else "Pobierz zestawienie PDF",
+                    fontWeight = FontWeight.SemiBold
+                )
             }
             Spacer(Modifier.height(12.dp))
 
@@ -146,7 +180,8 @@ fun ApartmentBalancesScreen(
                 is BalancesUiState.Loading -> LoadingIndicator()
                 is BalancesUiState.Error -> EmptyState(
                     title = "Błąd",
-                    description = s.message
+                    description = s.message,
+                    onRetry = viewModel::load
                 )
                 is BalancesUiState.Success -> {
                     if (s.items.isEmpty()) {
@@ -183,11 +218,13 @@ fun ApartmentBalancesScreen(
 
 // ── Panel filtrów ─────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterPanel(
     filterState: BalancesFilterState,
     sortDesc: Boolean,
     onPropertyIdChanged: (String) -> Unit,
+    onPropertyExpandedChange: (Boolean) -> Unit,
     onMinDebtChanged: (String) -> Unit,
     onMinDaysOverdueChanged: (String) -> Unit,
     onApply: () -> Unit
@@ -207,10 +244,40 @@ private fun FilterPanel(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )
+            ExposedDropdownMenuBox(
+                expanded = filterState.isPropertyExpanded,
+                onExpandedChange = onPropertyExpandedChange
+            ) {
+                val selectedName = filterState.availableProperties.find { it.id == filterState.propertyId }?.name
+                OutlinedTextField(
+                    value = selectedName ?: "Wszystkie nieruchomości",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Wspólnota") },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = filterState.isPropertyExpanded) },
+                    shape = RoundedCornerShape(10.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = filterState.isPropertyExpanded,
+                    onDismissRequest = { onPropertyExpandedChange(false) }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Wszystkie nieruchomości") },
+                        onClick = { onPropertyIdChanged("") }
+                    )
+                    filterState.availableProperties.forEach { property ->
+                        DropdownMenuItem(
+                            text = { Text(property.name) },
+                            onClick = { onPropertyIdChanged(property.id) }
+                        )
+                    }
+                }
+            }
             OutlinedTextField(
                 value = filterState.minDebt,
                 onValueChange = onMinDebtChanged,
-                label = { Text("Min. zaległość (PLN)") },
+                label = { Text("Min. zaległość (zł)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
@@ -274,7 +341,7 @@ private fun ApartmentBalanceRow(item: ApartmentBalanceItemDto) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item.lastPaymentDate?.let { date ->
                     Text(
-                        "Wpłata: $date",
+                        "Wpłata: ${PolishFormat.formatDate(date)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -301,7 +368,7 @@ private fun ApartmentBalanceRow(item: ApartmentBalanceItemDto) {
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                "${if (isDebt) "" else "+"}${item.balance.setScale(2)} PLN",
+                "${if (isDebt) "" else "+"}${PolishFormat.formatMoney(item.balance)}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = balanceColor

@@ -15,36 +15,19 @@ class MeterService @Inject constructor(
     private val api: MeterApiService
 ) {
     suspend fun getMetersByApartment(apartmentId: String): List<MeterResponseDto> = withContext(Dispatchers.IO) {
-        val response = api.getMetersByApartment(apartmentId)
-        if (response.isSuccessful) {
-            response.body() ?: emptyList()
-        } else {
-            throw Exception(handleError(response.code(), "pobierania liczników"))
-        }
+        ApiResponseHandler.requireSuccess(api.getMetersByApartment(apartmentId), "Błąd pobierania liczników")
     }
 
     suspend fun createMeter(apartmentId: String, request: MeterRequestDto): MeterResponseDto = withContext(Dispatchers.IO) {
-        val response = api.createMeter(apartmentId, request)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak danych w odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "dodawania licznika"))
-        }
+        ApiResponseHandler.requireSuccess(api.createMeter(apartmentId, request), "Błąd dodawania licznika")
     }
 
     suspend fun deactivateMeter(id: String): MeterResponseDto = withContext(Dispatchers.IO) {
-        val response = api.deactivateMeter(id)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak danych w odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "dezaktywacji licznika"))
-        }
+        ApiResponseHandler.requireSuccess(api.deactivateMeter(id), "Błąd dezaktywacji licznika")
     }
 
     suspend fun getMeterReadingsByApartment(apartmentId: String, meterId: String? = null, page: Int = 0, size: Int = 15): PaginatedResponse<MeterReadingResponseDto> = withContext(Dispatchers.IO) {
-        val response = api.getMeterReadingsByApartment(apartmentId, 0, 1000)
-        if (!response.isSuccessful) throw Exception(handleError(response.code(), "pobierania odczytów"))
-        val body = response.body() ?: throw Exception("Pusta odpowiedź z serwera")
+        val body = ApiResponseHandler.requireSuccess(api.getMeterReadingsByApartment(apartmentId, 0, 1000), "Błąd pobierania odczytów")
 
         val filteredContent = if (meterId != null) {
             body.content.filter { it.meterId == meterId }
@@ -67,44 +50,18 @@ class MeterService @Inject constructor(
     }
 
     suspend fun createMeterReading(apartmentId: String, request: MeterReadingRequestDto): MeterReadingResponseDto = withContext(Dispatchers.IO) {
-        val response = api.createMeterReading(apartmentId, request)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak danych w odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "dodawania odczytu"))
-        }
+        ApiResponseHandler.requireSuccess(api.createMeterReading(apartmentId, request), "Błąd dodawania odczytu")
     }
 
     suspend fun deleteMeterReading(id: String) = withContext(Dispatchers.IO) {
-        val response = api.deleteMeterReading(id)
-        if (!response.isSuccessful) {
-            throw Exception(handleError(response.code(), "usuwania odczytu"))
-        }
+        ApiResponseHandler.requireSuccessNoBody(api.deleteMeterReading(id), "Błąd usuwania odczytu")
     }
 
     suspend fun getMeterReadingById(id: String): MeterReadingResponseDto = withContext(Dispatchers.IO) {
-        val response = api.getMeterReadingById(id)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak danych w odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "pobierania odczytu"))
-        }
+        ApiResponseHandler.requireSuccess(api.getMeterReadingById(id), "Błąd pobierania odczytu")
     }
 
     suspend fun updateMeterReading(id: String, request: MeterReadingRequestDto): MeterReadingResponseDto = withContext(Dispatchers.IO) {
-        val response = api.updateMeterReading(id, request)
-        if (response.isSuccessful) {
-            response.body() ?: throw Exception("Brak danych w odpowiedzi")
-        } else {
-            throw Exception(handleError(response.code(), "aktualizacji odczytu"))
-        }
-    }
-
-    private fun handleError(code: Int, action: String): String = when (code) {
-        400 -> "Błędne dane podczas $action."
-        401 -> "Brak autoryzacji. Zaloguj się ponownie."
-        403 -> "Brak uprawnień do $action."
-        404 -> "Nie znaleziono powiązanego lokalu lub licznika."
-        else -> "Wystąpił błąd serwera ($code) podczas $action."
+        ApiResponseHandler.requireSuccess(api.updateMeterReading(id, request), "Błąd aktualizacji odczytu")
     }
 }

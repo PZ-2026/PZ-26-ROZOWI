@@ -102,7 +102,11 @@ fun EditUserScreen(
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when (val s = state) {
                 is EditUserUiState.Loading -> LoadingIndicator()
-                is EditUserUiState.Error -> EmptyState(title = "Błąd", description = s.message)
+                is EditUserUiState.Error -> EmptyState(
+                    title = "Błąd",
+                    description = s.message,
+                    onRetry = viewModel::reload
+                )
                 is EditUserUiState.Success -> {
                     Column(
                         modifier = Modifier

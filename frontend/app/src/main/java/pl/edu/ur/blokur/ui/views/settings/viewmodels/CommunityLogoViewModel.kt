@@ -137,7 +137,14 @@ class CommunityLogoViewModel @Inject constructor(
                 val bytes = inputStream.readBytes()
                 inputStream.close()
 
+                if (bytes.size > 2 * 1024 * 1024) {
+                    throw Exception("Plik jest zbyt duży (maksymalnie 2 MB)")
+                }
                 val mimeType = context.contentResolver.getType(uri) ?: "image/png"
+                if (mimeType != "image/jpeg" && mimeType != "image/png") {
+                    throw Exception("Dozwolone są tylko formaty JPG i PNG")
+                }
+
                 val requestBody = bytes.toRequestBody(mimeType.toMediaType())
                 val part = MultipartBody.Part.createFormData(
                     "file",
@@ -145,13 +152,7 @@ class CommunityLogoViewModel @Inject constructor(
                     requestBody
                 )
 
-                val response = documentApiService.uploadPropertyLogo(propertyId, part)
-                if (!response.isSuccessful) {
-                    val message = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
-                        ?: "Błąd uploadu (${response.code()})"
-                    throw ApiException(message, response.code())
-                }
-                response.body()
+                pl.edu.ur.blokur.services.ApiResponseHandler.requireSuccess(documentApiService.uploadPropertyLogo(propertyId, part), "Błąd uploadu logo")
             }.onSuccess { updated ->
                 selectedUri = null
                 _state.value = _state.value.copy(

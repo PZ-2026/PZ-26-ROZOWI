@@ -1,9 +1,14 @@
 package pl.edu.ur.blokur
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.EntryPointAccessors
+import pl.edu.ur.blokur.di.SessionEntryPoint
 import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.ui.navigation.AppRoute
 import pl.edu.ur.blokur.ui.views.announcements.AnnouncementsRoutes
@@ -45,6 +50,22 @@ fun AppNavHost(
     appNavController: NavHostController = rememberNavController(),
     startDestination: AppRoute = AuthRoutes.Login
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            SessionEntryPoint::class.java
+        ).sessionManager()
+    }
+
+    LaunchedEffect(sessionManager) {
+        sessionManager.sessionExpired.collect {
+            appNavController.navigate(AuthRoutes.Login) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     NavHost(
         navController = appNavController,
         startDestination = startDestination
@@ -99,6 +120,12 @@ fun AppNavHost(
                     },
                     onNavigateToCategories = {
                         bottomNavController.navigate(CategoryRoutes.List)
+                    },
+                    onNavigateToFinances = {
+                        bottomNavController.navigate(FinancesRoutes.Main)
+                    },
+                    onNavigateToAnnouncements = {
+                        bottomNavController.navigate(AnnouncementsRoutes.Main)
                     }
                 )
                 ticketsGraph(bottomNavController)

@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.dtos.NotificationConfigDto
+import pl.edu.ur.blokur.dtos.UserRole
+import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.NotificationService
 import javax.inject.Inject
 
@@ -33,7 +35,8 @@ sealed interface NotificationsEvent {
 
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val authService: AuthService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<NotificationsUiState>(NotificationsUiState.Loading)
@@ -48,6 +51,10 @@ class NotificationsViewModel @Inject constructor(
 
     fun loadSettings() {
         viewModelScope.launch {
+            if (authService.getCurrentUserRole() != UserRole.ZARZADCA) {
+                _state.value = NotificationsUiState.Error("Brak uprawnień do tego ekranu.")
+                return@launch
+            }
             _state.value = NotificationsUiState.Loading
             runCatching { notificationService.getSettings() }
                 .onSuccess { _state.value = NotificationsUiState.Success(it) }

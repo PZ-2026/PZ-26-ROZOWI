@@ -49,6 +49,12 @@ object ApiResponseHandler {
         return response.body() ?: throw ApiException("Pusta odpowiedź z serwera", response.code())
     }
 
+    fun requireSuccessNoBody(response: Response<*>, defaultMessage: String) {
+        if (!response.isSuccessful) {
+            throw ApiException(mapHttpError(response, defaultMessage), response.code())
+        }
+    }
+
     private fun parseJsonMessage(raw: String): String? = try {
         gson.fromJson(raw, MessageResponseDto::class.java).message?.takeIf { it.isNotBlank() }
     } catch (_: Exception) {

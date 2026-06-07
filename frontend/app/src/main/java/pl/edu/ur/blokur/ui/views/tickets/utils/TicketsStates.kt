@@ -66,7 +66,8 @@ sealed interface TicketDetailsListState {
         val isSendingComment: Boolean = false,
         val commentResetKey: Int = 0,
         val isUploadingImage: Boolean = false,
-        val isDownloadingProtocol: Boolean = false
+        val isDownloadingProtocol: Boolean = false,
+        val isActionInProgress: Boolean = false
     ) : TicketDetailsListState
 }
 
@@ -88,7 +89,8 @@ data class CreateTicketFormState(
     val description: String = "",
     val selectedCategoryId: String = "",
     val selectedCategoryName: String = "",
-    val isCategoryExpanded: Boolean = false
+    val isCategoryExpanded: Boolean = false,
+    val imageUris: List<android.net.Uri> = emptyList()
 )
 
 sealed interface CreateTicketSubmitState {

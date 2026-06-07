@@ -62,6 +62,7 @@ import pl.edu.ur.blokur.ui.views.tickets.components.TicketCommentsSection
 import pl.edu.ur.blokur.ui.views.tickets.components.TicketImagesSection
 import pl.edu.ur.blokur.ui.views.tickets.utils.ConservatorActionType
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketDetailsListState
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
 
 @Composable
@@ -74,11 +75,16 @@ fun TicketDetailsContent(
     onAddAfterPhoto: () -> Unit = {},
     onResumeTicket: () -> Unit = {},
     onDownloadProtocol: () -> Unit = {},
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when (state) {
         is TicketDetailsListState.Loading -> LoadingIndicator()
-        is TicketDetailsListState.Error -> EmptyState(title = "Błąd", description = state.message)
+        is TicketDetailsListState.Error -> EmptyState(
+            title = "Błąd",
+            description = state.message,
+            onRetry = onRetry
+        )
         is TicketDetailsListState.Success -> TicketDetailsSuccessContent(
             ticket = state.ticket,
             conservators = state.availableConservators,
@@ -396,6 +402,20 @@ private fun TicketDetailsSuccessContent(
             }
         )
     }
+
+    if (state is TicketDetailsListState.Success && state.isActionInProgress) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = {}) {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.material3.CircularProgressIndicator()
+            }
+        }
+    }
 }
 
 @Composable
@@ -447,10 +467,7 @@ private fun MetadataRow(icon: ImageVector, label: String, value: String) {
     }
 }
 
-private fun formatDateTime(iso: String): String = try {
-    val parts = iso.split("T")
-    if (parts.size == 2) "${parts[0]}, ${parts[1].take(5)}" else iso
-} catch (_: Exception) { iso }
+private fun formatDateTime(iso: String): String = PolishFormat.formatDate(iso)
 
 @Preview(showBackground = true)
 @Composable

@@ -13,9 +13,7 @@ class AdminUserService @Inject constructor(
 ) {
     suspend fun getAllUsers(page: Int, size: Int, search: String? = null): PageDto<AdminUserDto> {
         return runCatching {
-            val resp = api.getAllUsers()
-            if (!resp.isSuccessful) throw Exception("Błąd pobierania użytkowników (${resp.code()})")
-            var allUsers = resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            var allUsers = ApiResponseHandler.requireSuccess(api.getAllUsers(), "Błąd pobierania użytkowników")
 
             if (!search.isNullOrBlank()) {
                 val s = search.lowercase()
@@ -51,42 +49,26 @@ class AdminUserService @Inject constructor(
 
     suspend fun createUser(request: CreateAdminUserRequest): AdminUserDto {
         return runCatching {
-            val resp = api.createUser(request)
-            if (!resp.isSuccessful) throw Exception(
-                when (resp.code()) {
-                    400 -> "Nieprawidłowe dane użytkownika."
-                    404 -> "Nie znaleziono wybranego lokalu."
-                    409 -> "Użytkownik z tym adresem e-mail już istnieje."
-                    else -> "Błąd tworzenia użytkownika (${resp.code()})"
-                }
-            )
-            resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            ApiResponseHandler.requireSuccess(api.createUser(request), "Błąd tworzenia użytkownika")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
     suspend fun deactivateUser(id: String) {
         runCatching {
-            val resp = api.deactivateUser(id)
-            if (!resp.isSuccessful && resp.code() != 204) {
-                throw Exception("Błąd deaktywacji konta (${resp.code()})")
-            }
+            ApiResponseHandler.requireSuccessNoBody(api.deactivateUser(id), "Błąd deaktywacji konta")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
     suspend fun getUserById(id: String): AdminUserDto {
         return runCatching {
-            val resp = api.getAllUsers()
-            if (!resp.isSuccessful) throw Exception("Błąd pobierania użytkowników (${resp.code()})")
-            val users = resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            val users = ApiResponseHandler.requireSuccess(api.getAllUsers(), "Błąd pobierania użytkowników")
             users.find { it.id == id } ?: throw Exception("Nie znaleziono użytkownika")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
     suspend fun updateUser(id: String, request: UpdateAdminUserRequest): AdminUserDto {
         return runCatching {
-            val resp = api.updateUser(id, request)
-            if (!resp.isSuccessful) throw Exception("Błąd edycji profilu (${resp.code()})")
-            resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            ApiResponseHandler.requireSuccess(api.updateUser(id, request), "Błąd edycji profilu")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 }

@@ -16,60 +16,35 @@ class CategoryService @Inject constructor(
     /** Pobiera listę aktywnych kategorii (dostępne dla wszystkich zalogowanych). */
     suspend fun getCategories(): List<CategoryDto> {
         return runCatching {
-            val resp = ticketApi.getCategories()
-            if (!resp.isSuccessful) throw Exception("Błąd pobierania kategorii (${resp.code()})")
-            resp.body() ?: emptyList()
+            ApiResponseHandler.requireSuccess(ticketApi.getCategories(), "Błąd pobierania kategorii")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
     /** Tworzy nową kategorię. Dostęp: ZARZADCA. */
     suspend fun createCategory(name: String): AdminCategoryDto {
         return runCatching {
-            val resp = adminApi.createCategory(CategoryCreateRequest(name.trim()))
-            if (!resp.isSuccessful) throw Exception(
-                when (resp.code()) {
-                    400 -> "Nieprawidłowa nazwa kategorii."
-                    409 -> "Kategoria o tej nazwie już istnieje."
-                    else -> "Błąd tworzenia kategorii (${resp.code()})"
-                }
-            )
-            resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            ApiResponseHandler.requireSuccess(adminApi.createCategory(CategoryCreateRequest(name.trim())), "Błąd tworzenia kategorii")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
     /** Aktualizuje istniejącą kategorię. Dostęp: ZARZADCA. */
     suspend fun updateCategory(id: String, name: String): AdminCategoryDto {
         return runCatching {
-            val resp = adminApi.updateCategory(id, CategoryCreateRequest(name.trim()))
-            if (!resp.isSuccessful) throw Exception(
-                when (resp.code()) {
-                    400 -> "Nieprawidłowa nazwa kategorii."
-                    404 -> "Nie znaleziono kategorii."
-                    409 -> "Kategoria o tej nazwie już istnieje."
-                    else -> "Błąd aktualizacji kategorii (${resp.code()})"
-                }
-            )
-            resp.body() ?: throw Exception("Pusta odpowiedź z serwera")
+            ApiResponseHandler.requireSuccess(adminApi.updateCategory(id, CategoryCreateRequest(name.trim())), "Błąd aktualizacji kategorii")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
     /** Deaktywuje kategorię (soft delete). Dostęp: ZARZADCA. */
     suspend fun deactivateCategory(id: String) {
         runCatching {
-            val resp = adminApi.deactivateCategory(id)
-            if (!resp.isSuccessful && resp.code() != 204) {
-                throw Exception("Błąd deaktywacji kategorii (${resp.code()})")
-            }
+            ApiResponseHandler.requireSuccessNoBody(adminApi.deactivateCategory(id), "Błąd deaktywacji kategorii")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 
     /** Ustawia godziny SLA dla kategorii. Dostęp: ZARZADCA. */
     suspend fun setSla(id: String, hours: Int) {
         runCatching {
-            val resp = adminApi.setSla(id, SlaRequest(hours))
-            if (!resp.isSuccessful && resp.code() != 204) {
-                throw Exception("Błąd ustawiania SLA (${resp.code()})")
-            }
+            ApiResponseHandler.requireSuccessNoBody(adminApi.setSla(id, SlaRequest(hours)), "Błąd ustawiania SLA")
         }.getOrElse { throw Exception(it.message ?: "Błąd połączenia") }
     }
 }

@@ -56,6 +56,10 @@ class EditUserViewModel @Inject constructor(
         loadUser()
     }
 
+    fun reload() {
+        loadUser()
+    }
+
     private fun loadUser() {
         if (userId.isEmpty()) {
             _state.value = EditUserUiState.Error("Brak identyfikatora użytkownika")

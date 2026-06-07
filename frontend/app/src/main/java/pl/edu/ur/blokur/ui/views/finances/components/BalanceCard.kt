@@ -18,6 +18,7 @@ import pl.edu.ur.blokur.ui.components.NormalCard
 import pl.edu.ur.blokur.ui.components.StatusBadge
 import pl.edu.ur.blokur.ui.theme.ErrorRed
 import pl.edu.ur.blokur.ui.theme.SuccessGreen
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import java.math.BigDecimal
 
 @Composable
@@ -30,7 +31,7 @@ fun BalanceCard(currentBalance: BigDecimal, transactions: List<FinancialTransact
         currentBalance < BigDecimal.ZERO -> "Zaległość" to ErrorRed
         else -> "Wyrównane" to MaterialTheme.colorScheme.onSurface
     }
-    val amountText = formatAmount(currentBalance, "PLN")
+    val amountText = formatAmount(currentBalance)
 
     NormalCard {
         Text("Bieżące saldo", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -46,17 +47,17 @@ fun BalanceCard(currentBalance: BigDecimal, transactions: List<FinancialTransact
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Suma wpłat", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("+${"%.2f".format(totalPaid)} PLN", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = SuccessGreen)
+                Text("+${PolishFormat.formatMoney(totalPaid)}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = SuccessGreen)
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text("Suma naliczeń", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${"%.2f".format(totalCharged)} PLN", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = ErrorRed)
+                Text("-${PolishFormat.formatMoney(totalCharged)}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = ErrorRed)
             }
         }
     }
 }
 
-private fun formatAmount(amount: BigDecimal, currency: String): String {
+private fun formatAmount(amount: BigDecimal): String {
     val prefix = if (amount >= BigDecimal.ZERO) "+" else ""
-    return "$prefix${"%.2f".format(amount)} $currency"
+    return "$prefix${PolishFormat.formatMoney(amount)}"
 }

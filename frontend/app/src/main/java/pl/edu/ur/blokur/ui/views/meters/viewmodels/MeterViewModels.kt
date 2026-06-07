@@ -16,6 +16,8 @@ import pl.edu.ur.blokur.dtos.MeterReadingRequestDto
 import pl.edu.ur.blokur.dtos.MeterReadingResponseDto
 import pl.edu.ur.blokur.dtos.MeterRequestDto
 import pl.edu.ur.blokur.dtos.MeterResponseDto
+import pl.edu.ur.blokur.dtos.UserRole
+import pl.edu.ur.blokur.services.AuthService
 import pl.edu.ur.blokur.services.MeterService
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -46,6 +48,7 @@ data class CreateMeterFormState(
 @HiltViewModel
 class MeterListViewModel @Inject constructor(
     private val meterService: MeterService,
+    private val authService: AuthService,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -53,6 +56,9 @@ class MeterListViewModel @Inject constructor(
 
     private val _state = MutableStateFlow<MeterListState>(MeterListState.Loading)
     val state: StateFlow<MeterListState> = _state.asStateFlow()
+
+    private val _isManager = MutableStateFlow(false)
+    val isManager: StateFlow<Boolean> = _isManager.asStateFlow()
 
     private val _events = Channel<MeterEvent>()
     val events: Flow<MeterEvent> = _events.receiveAsFlow()
@@ -63,7 +69,12 @@ class MeterListViewModel @Inject constructor(
     private val _formState = MutableStateFlow(CreateMeterFormState())
     val formState: StateFlow<CreateMeterFormState> = _formState.asStateFlow()
 
-    init { load() }
+    init {
+        viewModelScope.launch {
+            _isManager.value = authService.getCurrentUserRole() == UserRole.ZARZADCA
+            load()
+        }
+    }
 
     fun load() {
         viewModelScope.launch {

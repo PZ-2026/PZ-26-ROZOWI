@@ -95,6 +95,12 @@ class UsersViewModel @Inject constructor(
         }
     }
 
+    fun reload() {
+        viewModelScope.launch {
+            fetchUsers(reset = true, query = _searchQuery.value)
+        }
+    }
+
     private fun fetchUsers(reset: Boolean, query: String) {
         viewModelScope.launch {
             val current = _state.value as? UsersUiState.Success

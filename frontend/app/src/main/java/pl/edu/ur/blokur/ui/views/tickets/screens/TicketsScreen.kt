@@ -33,6 +33,7 @@ import pl.edu.ur.blokur.ui.views.tickets.components.TicketListItem
 import pl.edu.ur.blokur.ui.views.tickets.utils.toPresentation
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsListState
 import pl.edu.ur.blokur.ui.views.tickets.utils.TicketsScreenEvent
+import pl.edu.ur.blokur.ui.utils.PolishFormat
 import pl.edu.ur.blokur.ui.views.tickets.viewmodels.TicketsViewModel
 
 @Composable
@@ -73,7 +74,11 @@ fun TicketsScreen(
     ) { innerPadding ->
         when (val s = state) {
             is TicketsListState.Loading -> LoadingIndicator()
-            is TicketsListState.Error -> EmptyState(title = "Błąd", description = s.message)
+            is TicketsListState.Error -> EmptyState(
+                title = "Błąd",
+                description = s.message,
+                onRetry = viewModel::loadTickets
+            )
             is TicketsListState.Success -> {
                 LazyColumn(
                     modifier = Modifier
@@ -120,10 +125,11 @@ fun TicketsScreen(
                         items(s.tickets, key = { it.id }) { ticket ->
                             val presentation = ticket.status.toPresentation()
                             val assignedTo = ticket.assignedToName
+                            val formattedDate = PolishFormat.formatDate(ticket.createdAt)
                             val dateOrAssignee = if (assignedTo != null)
-                                "${ticket.createdAt.take(10)} • Przypisane: $assignedTo"
+                                "$formattedDate • Przypisane: $assignedTo"
                             else
-                                "${ticket.createdAt.take(10)} • Brak przypisania"
+                                "$formattedDate • Brak przypisania"
 
                             TicketListItem(
                                 title = ticket.title,

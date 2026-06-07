@@ -33,6 +33,7 @@ fun PropertyDetailPanel(
     onSave: () -> Unit,
     onDismiss: () -> Unit,
     onNavigateToMeters: (String) -> Unit = {},
+    onNavigateToLedger: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isEditable = formMode == FormMode.EDIT || formMode == FormMode.ADD
@@ -104,6 +105,13 @@ fun PropertyDetailPanel(
         when (formMode) {
             FormMode.VIEW -> {
                 if (selectedNode is SelectedNode.Apartment) {
+                    OutlinedButton(
+                        onClick = { onNavigateToLedger(selectedNode.apartment.id) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Kartoteka finansowa")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = { onNavigateToMeters(selectedNode.apartment.id) },
                         modifier = Modifier.fillMaxWidth()

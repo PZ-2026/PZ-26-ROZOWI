@@ -1,8 +1,11 @@
 package pl.edu.ur.blokur.ui.views.tickets.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,8 +13,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import pl.edu.ur.blokur.dtos.CategoryDto
 import pl.edu.ur.blokur.dtos.CreateTicketRequest
+import pl.edu.ur.blokur.services.TicketImageService
 import pl.edu.ur.blokur.services.TicketService
 import pl.edu.ur.blokur.ui.views.tickets.utils.CreateTicketFormState
 import pl.edu.ur.blokur.ui.views.tickets.utils.CreateTicketScreenEvent
@@ -20,7 +25,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateTicketViewModel @Inject constructor(
-    private val ticketService: TicketService
+    private val ticketService: TicketService,
+    private val ticketImageService: TicketImageService,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _categories = MutableStateFlow<List<CategoryDto>>(emptyList())
@@ -68,13 +75,40 @@ class CreateTicketViewModel @Inject constructor(
         viewModelScope.launch {
             _submitState.value = CreateTicketSubmitState.Submitting
             runCatching {
-                ticketService.createTicket(
+                val createdTicket = ticketService.createTicket(
                     CreateTicketRequest(
                         title = form.title.trim(),
                         description = form.description.trim(),
                         categoryId = form.selectedCategoryId
                     )
                 )
+
+                // Prześlij wybrane zdjęcia
+                if (form.imageUris.isNotEmpty()) {
+                    withContext(Dispatchers.IO) {
+                        val resolver = context.contentResolver
+                        for (uri in form.imageUris) {
+                            try {
+                                val mime = resolver.getType(uri) ?: "image/jpeg"
+                                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                                    ?: continue
+                                val ext = if (mime.contains("png")) "png" else "jpg"
+                                val filename = "photo_${System.currentTimeMillis()}.$ext"
+                                ticketImageService.uploadImage(
+                                    ticketId = createdTicket.id,
+                                    imageType = "BEFORE",
+                                    imageBytes = bytes,
+                                    filename = filename,
+                                    mimeType = mime
+                                )
+                            } catch (e: Exception) {
+                                // Ignoruj błędy pojedynczych zdjęć
+                            }
+                        }
+                    }
+                }
+
+                createdTicket
             }.onSuccess { created ->
                 _submitState.value = CreateTicketSubmitState.Success
                 _events.send(CreateTicketScreenEvent.ShowSuccess(created.ticketNumber))

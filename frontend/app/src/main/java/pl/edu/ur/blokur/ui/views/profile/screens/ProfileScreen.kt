@@ -30,7 +30,9 @@ fun ProfileScreen(
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
-    onNavigateToCategories: () -> Unit = {}
+    onNavigateToCategories: () -> Unit = {},
+    onNavigateToFinances: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -60,6 +62,9 @@ fun ProfileScreen(
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             onNavigateToInspections = onNavigateToInspections,
             onNavigateToCategories = onNavigateToCategories,
+            onNavigateToFinances = onNavigateToFinances,
+            onNavigateToAnnouncements = onNavigateToAnnouncements,
+            onRetry = viewModel::reload,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
