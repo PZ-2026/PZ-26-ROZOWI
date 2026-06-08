@@ -228,7 +228,8 @@ fun EditUserScreen(
                                     )
                                     ExposedDropdownMenu(
                                         expanded = expandedBuilding && isUserActive,
-                                        onDismissRequest = { expandedBuilding = false }
+                                        onDismissRequest = { expandedBuilding = false },
+                                        modifier = Modifier.exposedDropdownSize()
                                     ) {
                                         formState.buildings.forEach { b ->
                                             DropdownMenuItem(
@@ -260,7 +261,8 @@ fun EditUserScreen(
                                         )
                                         ExposedDropdownMenu(
                                             expanded = expandedStaircase && isUserActive,
-                                            onDismissRequest = { expandedStaircase = false }
+                                            onDismissRequest = { expandedStaircase = false },
+                                            modifier = Modifier.exposedDropdownSize()
                                         ) {
                                             formState.selectedBuilding?.staircases?.forEach { s ->
                                                 DropdownMenuItem(
@@ -293,7 +295,8 @@ fun EditUserScreen(
                                         )
                                         ExposedDropdownMenu(
                                             expanded = expandedApartment && isUserActive,
-                                            onDismissRequest = { expandedApartment = false }
+                                            onDismissRequest = { expandedApartment = false },
+                                            modifier = Modifier.exposedDropdownSize()
                                         ) {
                                             formState.selectedStaircase?.apartments?.forEach { a ->
                                                 DropdownMenuItem(
