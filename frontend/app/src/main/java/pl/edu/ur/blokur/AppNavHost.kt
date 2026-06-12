@@ -1,14 +1,22 @@
 package pl.edu.ur.blokur
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.EntryPointAccessors
+import kotlinx.serialization.Serializable
 import pl.edu.ur.blokur.di.SessionEntryPoint
+import pl.edu.ur.blokur.di.TokenStorageEntryPoint
 import pl.edu.ur.blokur.dtos.UserRole
 import pl.edu.ur.blokur.ui.navigation.AppRoute
 import pl.edu.ur.blokur.ui.views.announcements.AnnouncementsRoutes
@@ -42,13 +50,21 @@ import pl.edu.ur.blokur.ui.views.settings.settingsGraph
 
 import pl.edu.ur.blokur.ui.views.meters.metersGraph
 
+/** Trasa rozruchowa — sprawdza zapisane tokeny i przekierowuje na Login lub Main. */
+@Serializable
+data object SplashRoute : AppRoute
+
 /**
  * Globalny host nawigacyjny łączący wszystkie grafy funkcjonalności.
+ *
+ * Startuje od [SplashRoute], który sprawdza czy w DataStore istnieje zapisany
+ * access token i rola użytkownika. Jeśli tak — nawiguje od razu do ekranu głównego,
+ * pomijając ponowne logowanie. W przeciwnym razie kieruje na ekran logowania.
  */
 @Composable
 fun AppNavHost(
     appNavController: NavHostController = rememberNavController(),
-    startDestination: AppRoute = AuthRoutes.Login
+    startDestination: AppRoute = SplashRoute
 ) {
     val context = LocalContext.current
     val sessionManager = remember {
@@ -70,6 +86,43 @@ fun AppNavHost(
         navController = appNavController,
         startDestination = startDestination
     ) {
+
+        // ---------- Splash — auto-login check ----------
+        composable<SplashRoute> {
+            val tokenStorage = remember {
+                EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    TokenStorageEntryPoint::class.java
+                ).tokenStorage()
+            }
+
+            LaunchedEffect(Unit) {
+                val accessToken = tokenStorage.getAccessToken()
+                val role = tokenStorage.getUserRole()
+
+                if (accessToken != null && role != null) {
+                    // Sesja zapisana — przejdź do ekranu głównego
+                    appNavController.navigate(MainRoutes.Main) {
+                        popUpTo(SplashRoute) { inclusive = true }
+                    }
+                } else {
+                    // Brak sesji — ekran logowania
+                    appNavController.navigate(AuthRoutes.Login) {
+                        popUpTo(SplashRoute) { inclusive = true }
+                    }
+                }
+            }
+
+            // Minimalistyczny ekran ładowania widoczny przez ułamek sekundy
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        // ---------- Auth ----------
         authGraph(
             navController = appNavController,
             onLoginSuccess = { role ->
@@ -84,6 +137,7 @@ fun AppNavHost(
             }
         )
 
+        // ---------- Main + nested ----------
         mainGraph(
             navController = appNavController,
             onLogout = {
