@@ -10,12 +10,22 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.MainActivity
+import javax.inject.Inject
 
 /**
  * Serwis FCM — wymagany przez manifest przy integracji Firebase Messaging.
  * Obsługuje odbieranie wiadomości push również gdy aplikacja jest na pierwszym planie.
+ *
+ * Gdy FCM wygeneruje nowy token (rotacja, reinstalacja), [onNewToken] automatycznie
+ * rejestruje go w backendzie — dzięki czemu push notifications działają ciągle.
  */
+@AndroidEntryPoint
 class BlokurFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
@@ -23,8 +33,37 @@ class BlokurFirebaseMessagingService : FirebaseMessagingService() {
         private const val CHANNEL_ID = "blokur_notifications"
     }
 
+    @Inject
+    lateinit var deviceService: DeviceService
+
+    @Inject
+    lateinit var tokenStorage: TokenStorage
+
+    /** Scope do operacji asynchronicznych w ramach cyklu życia serwisu. */
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * Wywoływane przez Firebase gdy token FCM zostaje wygenerowany lub odświeżony
+     * (np. przy reinstalacji lub po długim czasie nieaktywności).
+     *
+     * Rejestrujemy nowy token w backendzie i zapisujemy go lokalnie w DataStore,
+     * dzięki czemu push notifications trafiają na aktualne urządzenie.
+     */
     override fun onNewToken(token: String) {
         Log.d(TAG, "Nowy token FCM: ${token.take(8)}…")
+        serviceScope.launch {
+            try {
+                val ok = deviceService.registerDevice(token)
+                if (ok) {
+                    tokenStorage.saveFcmToken(token)
+                    Log.d(TAG, "Token FCM zarejestrowany w backendzie po rotacji")
+                } else {
+                    Log.w(TAG, "Rejestracja tokenu FCM po rotacji nieudana (brak sesji?)")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Błąd rejestracji tokenu FCM po rotacji: ${e.message}")
+            }
+        }
     }
 
     override fun onMessageReceived(message: RemoteMessage) {

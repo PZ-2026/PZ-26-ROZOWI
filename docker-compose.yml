@@ -38,10 +38,16 @@ services:
       # Wymagane gdy SPRING_PROFILES_ACTIVE=prod:
       - SSL_KEYSTORE_PATH=${SSL_KEYSTORE_PATH:-}
       - SSL_KEYSTORE_PASSWORD=${SSL_KEYSTORE_PASSWORD:-}
-    # Opcjonalny mount katalogu z certyfikatem SSL (wymagany w trybie prod).
-    # Utwórz katalog ./certs, umieść w nim keystore.p12 i odkomentuj poniższe:
+      # Firebase Cloud Messaging — ustaw ścieżkę jeśli secrets/ zawiera klucz serwisowy:
+      - FCM_CREDENTIALS_PATH=${FCM_CREDENTIALS_PATH:-}
+    # Opcjonalne voluminki:
+    # 1. Certyfikat SSL (tryb prod): utwórz ./certs, umieść keystore.p12 i odkomentuj:
     # volumes:
     #   - ./certs:/certs:ro
+    # 2. Klucz serwisowy Firebase (FCM): utwórz ./backend/secrets/, wrzuć
+    #    firebase-service-account.json i odkomentuj obie linie poniżej:
+    # volumes:
+    #   - ./backend/secrets:/app/secrets:ro
 
 
 volumes:
