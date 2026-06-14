@@ -25,7 +25,8 @@ class ResetPasswordRequestTest {
 
     private ResetPasswordRequest buildRequest(String password) {
         ResetPasswordRequest req = new ResetPasswordRequest();
-        req.setToken("valid-token");
+        req.setEmail("jan@blokur.pl");
+        req.setCode("123456");
         req.setNewPassword(password);
         return req;
     }

@@ -78,9 +78,10 @@ data class ForgotPasswordRequestDto(
     @SerializedName("email") val email: String
 )
 
-/** POST /api/auth/reset-password — ciało żądania. */
+/** POST /api/auth/reset-password — ciało żądania (email + 6-cyfrowy kod). */
 data class ResetPasswordRequestDto(
-    @SerializedName("token") val token: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("code") val code: String,
     @SerializedName("newPassword") val newPassword: String
 )
 
@@ -90,10 +91,9 @@ data class MessageResponseDto(
 )
 
 /**
- * POST /api/auth/accept-invitation — ciło żądania przyjecia zaproszenia.
+ * POST /api/auth/accept-invitation — ciało żądania przyjęcia zaproszenia.
  *
- * Endpoint służy do pierwszego logowania użytkownika po zaproszeniu przez zarządcę.
- * Token zaproszenia jest przekazywany w linku mailowym (query param ?token=...).
+ * Użytkownik podaje swój email, 6-cyfrowy kod aktywacyjny otrzymany e-mailem oraz nowe hasło.
  *
  * Wymagania hasła (walidacja backendowa):
  * - minimum 8 znaków
@@ -101,7 +101,8 @@ data class MessageResponseDto(
  * - co najmniej jedna cyfra
  */
 data class AcceptInvitationRequestDto(
-    @SerializedName("token") val token: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("code") val code: String,
     @SerializedName("newPassword") val newPassword: String
 )
 

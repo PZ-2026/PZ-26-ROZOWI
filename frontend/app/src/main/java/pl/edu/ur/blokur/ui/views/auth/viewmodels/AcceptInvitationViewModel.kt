@@ -21,7 +21,7 @@ import javax.inject.Inject
 /**
  * ViewModel ekranu akceptacji zaproszenia.
  *
- * Token zaproszenia przekazywany jest z linku z emaila poprzez nawigację (SavedStateHandle).
+ * Użytkownik wpisuje swój email, 6-cyfrowy kod aktywacyjny otrzymany e-mailem oraz nowe hasło.
  */
 @HiltViewModel
 class AcceptInvitationViewModel @Inject constructor(
@@ -29,13 +29,12 @@ class AcceptInvitationViewModel @Inject constructor(
     private val authService: AuthService
 ) : ViewModel() {
 
-    /** Token z linku zaproszenia — przekazywany przez nawigację. */
-    val token: String = savedStateHandle.get<String>("token") ?: ""
+    private val initialEmail: String = savedStateHandle.get<String>("email") ?: ""
 
     private val _state = MutableStateFlow<AcceptInvitationState>(AcceptInvitationState.Idle)
     val state: StateFlow<AcceptInvitationState> = _state.asStateFlow()
 
-    private val _formFields = MutableStateFlow(AcceptInvitationFormFields())
+    private val _formFields = MutableStateFlow(AcceptInvitationFormFields(email = initialEmail))
     val formFields: StateFlow<AcceptInvitationFormFields> = _formFields.asStateFlow()
 
     private val _events = Channel<AcceptInvitationEvent>()
@@ -51,8 +50,16 @@ class AcceptInvitationViewModel @Inject constructor(
     fun submit() {
         val fields = _formFields.value
 
+        if (fields.email.isBlank()) {
+            _state.value = AcceptInvitationState.Error("Podaj adres e-mail")
+            return
+        }
+        if (!fields.code.matches(Regex("^\\d{6}$"))) {
+            _state.value = AcceptInvitationState.Error("Kod musi składać się z 6 cyfr")
+            return
+        }
         if (fields.newPassword.isBlank() || fields.confirmPassword.isBlank()) {
-            _state.value = AcceptInvitationState.Error("Wypełnij oba pola")
+            _state.value = AcceptInvitationState.Error("Wypełnij oba pola hasła")
             return
         }
         if (fields.newPassword.length < 8) {
@@ -63,21 +70,19 @@ class AcceptInvitationViewModel @Inject constructor(
             _state.value = AcceptInvitationState.Error("Hasła nie są identyczne")
             return
         }
-        if (token.isBlank()) {
-            _state.value = AcceptInvitationState.Error("Brak tokenu zaproszenia. Otwórz link z e-maila.")
-            return
-        }
 
         viewModelScope.launch {
             _state.value = AcceptInvitationState.Loading
-            runCatching { authService.acceptInvitation(token, fields.newPassword) }
+            runCatching {
+                authService.acceptInvitation(fields.email.trim(), fields.code, fields.newPassword)
+            }
                 .onSuccess { message ->
                     _state.value = AcceptInvitationState.Success(message)
                 }
                 .onFailure { e ->
                     _state.value = when (e) {
                         is AuthException.TokenExpired -> AcceptInvitationState.TokenExpired(
-                            e.message ?: "Link zaproszenia wygasł. Poproś zarządcę o nowe zaproszenie."
+                            e.message ?: "Kod zaproszenia wygasł. Poproś zarządcę o nowe zaproszenie."
                         )
                         else -> AcceptInvitationState.Error(
                             e.message ?: "Wystąpił błąd. Spróbuj ponownie."

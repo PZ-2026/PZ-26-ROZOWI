@@ -3,6 +3,7 @@ package pl.edu.ur.blokur.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
@@ -27,7 +28,7 @@ import pl.edu.ur.blokur.repository.InvitationTokenRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("InvitationService — zaproszenia nowych użytkowników (72 h)")
+@DisplayName("InvitationService — kody aktywacyjne nowych użytkowników (72 h)")
 class InvitationServiceTest {
 
     @Mock private InvitationTokenRepository tokenRepository;
@@ -45,8 +46,6 @@ class InvitationServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(invitationService, "fromAddress", "noreply@blokur.pl");
-        ReflectionTestUtils.setField(
-                invitationService, "inviteBaseUrl", "https://blokur.pl/invite");
 
         testUser = new User();
         testUser.setEmail("jan@blokur.pl");
@@ -54,29 +53,34 @@ class InvitationServiceTest {
         testUser.setPasswordHash("");
     }
 
-    // -------------------------------------------------------
-    // inviteUser
-    // -------------------------------------------------------
-
     @Nested
     @DisplayName("inviteUser")
     class InviteUser {
 
         @Test
-        @DisplayName("Zapisuje token zaproszenia z ważnością 72 godzin")
-        void shouldSaveTokenWithSeventyTwoHourExpiry() {
+        @DisplayName("Zapisuje 6-cyfrowy kod z ważnością 72 godzin")
+        void shouldSaveSixDigitCodeWithSeventyTwoHourExpiry() {
             invitationService.inviteUser(testUser);
 
             ArgumentCaptor<InvitationToken> captor = ArgumentCaptor.forClass(InvitationToken.class);
             verify(tokenRepository).save(captor.capture());
 
             InvitationToken saved = captor.getValue();
+            assertThat(saved.getToken()).matches("\\d{6}");
             assertThat(saved.getExpiryDate()).isAfter(LocalDateTime.now().plusHours(71));
             assertThat(saved.getExpiryDate()).isBefore(LocalDateTime.now().plusHours(73));
         }
 
         @Test
-        @DisplayName("Zapisuje token przypisany do właściwego użytkownika")
+        @DisplayName("Czyści wcześniejsze kody zaproszenia tego użytkownika")
+        void shouldDeleteExistingCodesForUser() {
+            invitationService.inviteUser(testUser);
+
+            verify(tokenRepository).deleteByUser(testUser);
+        }
+
+        @Test
+        @DisplayName("Zapisuje kod przypisany do właściwego użytkownika")
         void shouldSaveTokenForCorrectUser() {
             invitationService.inviteUser(testUser);
 
@@ -87,20 +91,10 @@ class InvitationServiceTest {
         }
 
         @Test
-        @DisplayName("Wysyła e-mail powitalny na adres użytkownika")
-        void shouldSendWelcomeEmailToUser() {
-            invitationService.inviteUser(testUser);
+        @DisplayName("Wysyła e-mail powitalny zawierający 6-cyfrowy kod i imię")
+        void shouldSendWelcomeEmailWithCode() {
+            testUser.setFirstName("Katarzyna");
 
-            ArgumentCaptor<SimpleMailMessage> captor =
-                    ArgumentCaptor.forClass(SimpleMailMessage.class);
-            verify(mailSender).send(captor.capture());
-
-            assertThat(captor.getValue().getTo()).contains("jan@blokur.pl");
-        }
-
-        @Test
-        @DisplayName("E-mail powitalny zawiera link /invite/{token}")
-        void shouldIncludeInviteLinkInEmail() {
             invitationService.inviteUser(testUser);
 
             ArgumentCaptor<SimpleMailMessage> mailCaptor =
@@ -110,145 +104,99 @@ class InvitationServiceTest {
             verify(mailSender).send(mailCaptor.capture());
             verify(tokenRepository).save(tokenCaptor.capture());
 
-            String token = tokenCaptor.getValue().getToken();
-            assertThat(mailCaptor.getValue().getText())
-                    .contains("https://blokur.pl/invite/" + token);
-        }
-
-        @Test
-        @DisplayName("E-mail powitalny zawiera imię użytkownika")
-        void shouldIncludeFirstNameInEmail() {
-            testUser.setFirstName("Katarzyna");
-
-            invitationService.inviteUser(testUser);
-
-            ArgumentCaptor<SimpleMailMessage> captor =
-                    ArgumentCaptor.forClass(SimpleMailMessage.class);
-            verify(mailSender).send(captor.capture());
-
-            assertThat(captor.getValue().getText()).contains("Katarzyna");
-        }
-
-        @Test
-        @DisplayName("Każde zaproszenie generuje unikalny token")
-        void shouldGenerateUniqueTokenEachTime() {
-            User secondUser = new User();
-            secondUser.setEmail("anna@blokur.pl");
-            secondUser.setFirstName("Anna");
-
-            invitationService.inviteUser(testUser);
-            invitationService.inviteUser(secondUser);
-
-            ArgumentCaptor<InvitationToken> captor = ArgumentCaptor.forClass(InvitationToken.class);
-            verify(tokenRepository, times(2)).save(captor.capture());
-
-            String token1 = captor.getAllValues().get(0).getToken();
-            String token2 = captor.getAllValues().get(1).getToken();
-            assertThat(token1).isNotEqualTo(token2);
+            SimpleMailMessage mail = mailCaptor.getValue();
+            assertThat(mail.getTo()).contains("jan@blokur.pl");
+            assertThat(mail.getText()).contains("Katarzyna");
+            assertThat(mail.getText()).contains(tokenCaptor.getValue().getToken());
         }
     }
-
-    // -------------------------------------------------------
-    // acceptInvitation
-    // -------------------------------------------------------
 
     @Nested
     @DisplayName("acceptInvitation")
     class AcceptInvitation {
 
         @Test
-        @DisplayName("Nieprawidłowy token — rzuca IllegalArgumentException")
-        void shouldThrowWhenTokenNotFound() {
-            when(tokenRepository.findByToken("nieistniejacy")).thenReturn(Optional.empty());
+        @DisplayName("Nieznany email — rzuca IllegalArgumentException")
+        void shouldThrowWhenEmailNotFound() {
+            when(userRepository.findByEmail("brak@blokur.pl")).thenReturn(Optional.empty());
 
             assertThatThrownBy(
-                            () -> invitationService.acceptInvitation("nieistniejacy", "NoweHaslo1"))
+                            () ->
+                                    invitationService.acceptInvitation(
+                                            "brak@blokur.pl", "123456", "NoweHaslo1"))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Nieprawidłowy token");
+                    .hasMessageContaining("Nieprawidłowy kod");
         }
 
         @Test
-        @DisplayName("Wygasły token — rzuca TokenExpiredException (410) i usuwa token z bazy")
-        void shouldThrowAndDeleteExpiredToken() {
-            InvitationToken expiredToken =
-                    new InvitationToken(testUser, "wygasly", LocalDateTime.now().minusHours(1));
-            when(tokenRepository.findByToken("wygasly")).thenReturn(Optional.of(expiredToken));
+        @DisplayName("Nieprawidłowy kod — rzuca IllegalArgumentException")
+        void shouldThrowWhenCodeNotFound() {
+            when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
+            when(tokenRepository.findByUserAndToken(testUser, "000000")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> invitationService.acceptInvitation("wygasly", "NoweHaslo1"))
+            assertThatThrownBy(
+                            () ->
+                                    invitationService.acceptInvitation(
+                                            "jan@blokur.pl", "000000", "NoweHaslo1"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Nieprawidłowy kod");
+        }
+
+        @Test
+        @DisplayName("Wygasły kod — rzuca TokenExpiredException i usuwa kod z bazy")
+        void shouldThrowAndDeleteExpiredToken() {
+            InvitationToken expired =
+                    new InvitationToken(testUser, "123456", LocalDateTime.now().minusHours(1));
+            when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
+            when(tokenRepository.findByUserAndToken(testUser, "123456"))
+                    .thenReturn(Optional.of(expired));
+
+            assertThatThrownBy(
+                            () ->
+                                    invitationService.acceptInvitation(
+                                            "jan@blokur.pl", "123456", "NoweHaslo1"))
                     .isInstanceOf(TokenExpiredException.class)
                     .hasMessageContaining("wygasł");
 
-            verify(tokenRepository).delete(expiredToken);
-        }
-
-        @Test
-        @DisplayName("Wygasły token — nie ustawia hasła użytkownika")
-        void shouldNotSetPasswordForExpiredToken() {
-            InvitationToken expiredToken =
-                    new InvitationToken(testUser, "wygasly", LocalDateTime.now().minusHours(1));
-            when(tokenRepository.findByToken("wygasly")).thenReturn(Optional.of(expiredToken));
-
-            assertThatThrownBy(() -> invitationService.acceptInvitation("wygasly", "NoweHaslo1"));
-
+            verify(tokenRepository).delete(expired);
             verify(userRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("Prawidłowy token — hashuje nowe hasło i zapisuje użytkownika")
-        void shouldHashAndSaveNewPassword() {
-            InvitationToken validToken =
-                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
-            when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
+        @DisplayName("Prawidłowy kod — hashuje hasło, zapisuje użytkownika i usuwa kod")
+        void shouldHashSaveAndConsumeToken() {
+            InvitationToken valid =
+                    new InvitationToken(testUser, "654321", LocalDateTime.now().plusHours(72));
+            when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
+            when(tokenRepository.findByUserAndToken(testUser, "654321"))
+                    .thenReturn(Optional.of(valid));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 
-            invitationService.acceptInvitation("dobryToken", "NoweHaslo1");
+            invitationService.acceptInvitation("jan@blokur.pl", "654321", "NoweHaslo1");
 
             assertThat(testUser.getPasswordHash()).isEqualTo("nowyHash");
             verify(userRepository).save(testUser);
+            verify(tokenRepository).delete(valid);
         }
 
         @Test
-        @DisplayName(
-                "Prawidłowy token — usuwa token po ustawieniu hasła (brak możliwości ponownego"
-                        + " użycia)")
-        void shouldDeleteTokenAfterSuccessfulAccept() {
-            InvitationToken validToken =
-                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
-            when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
-            when(passwordEncoder.encode(any())).thenReturn("hash");
-
-            invitationService.acceptInvitation("dobryToken", "NoweHaslo1");
-
-            verify(tokenRepository).delete(validToken);
-        }
-
-        @Test
-        @DisplayName("Zużyty token — nie może być użyty ponownie (token usuniętym z bazy)")
+        @DisplayName("Zużyty kod — nie może być użyty ponownie")
         void shouldNotAllowReuse() {
-            InvitationToken validToken =
-                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
-            when(tokenRepository.findByToken("dobryToken"))
-                    .thenReturn(Optional.of(validToken))
+            InvitationToken valid =
+                    new InvitationToken(testUser, "111222", LocalDateTime.now().plusHours(72));
+            when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
+            when(tokenRepository.findByUserAndToken(eq(testUser), eq("111222")))
+                    .thenReturn(Optional.of(valid))
                     .thenReturn(Optional.empty());
             when(passwordEncoder.encode(any())).thenReturn("hash");
 
-            invitationService.acceptInvitation("dobryToken", "NoweHaslo1");
+            invitationService.acceptInvitation("jan@blokur.pl", "111222", "NoweHaslo1");
 
-            assertThatThrownBy(() -> invitationService.acceptInvitation("dobryToken", "InneHaslo1"))
+            assertThatThrownBy(
+                            () ->
+                                    invitationService.acceptInvitation(
+                                            "jan@blokur.pl", "111222", "InneHaslo1"))
                     .isInstanceOf(IllegalArgumentException.class);
-        }
-
-        @Test
-        @DisplayName("Prawidłowy token — stare (puste) hasło nie pozostaje w bazie")
-        void shouldReplaceEmptyPassword() {
-            InvitationToken validToken =
-                    new InvitationToken(testUser, "dobryToken", LocalDateTime.now().plusHours(72));
-            when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
-            when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
-
-            invitationService.acceptInvitation("dobryToken", "NoweHaslo1");
-
-            assertThat(testUser.getPasswordHash()).isNotEqualTo("");
         }
     }
 }

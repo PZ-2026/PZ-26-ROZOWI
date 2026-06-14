@@ -21,7 +21,8 @@ import javax.inject.Inject
 /**
  * ViewModel ekranu resetowania hasła.
  *
- * Token odczytywany jest z SavedStateHandle (nawigacja type-safe).
+ * Email może być wstępnie wypełniony z poprzedniego ekranu (Forgot Password). Użytkownik wpisuje
+ * 6-cyfrowy kod otrzymany e-mailem oraz nowe hasło.
  */
 @HiltViewModel
 class ResetPasswordViewModel @Inject constructor(
@@ -29,13 +30,12 @@ class ResetPasswordViewModel @Inject constructor(
     private val authService: AuthService
 ) : ViewModel() {
 
-    /** Token z linku mailowego — przekazywany przez nawigację. */
-    val token: String = savedStateHandle.get<String>("token") ?: ""
+    private val initialEmail: String = savedStateHandle.get<String>("email") ?: ""
 
     private val _state = MutableStateFlow<ResetPasswordState>(ResetPasswordState.Idle)
     val state: StateFlow<ResetPasswordState> = _state.asStateFlow()
 
-    private val _formFields = MutableStateFlow(ResetPasswordFormFields())
+    private val _formFields = MutableStateFlow(ResetPasswordFormFields(email = initialEmail))
     val formFields: StateFlow<ResetPasswordFormFields> = _formFields.asStateFlow()
 
     private val _events = Channel<ResetPasswordEvent>()
@@ -51,8 +51,16 @@ class ResetPasswordViewModel @Inject constructor(
     fun submit() {
         val fields = _formFields.value
 
+        if (fields.email.isBlank()) {
+            _state.value = ResetPasswordState.Error("Podaj adres e-mail")
+            return
+        }
+        if (!fields.code.matches(Regex("^\\d{6}$"))) {
+            _state.value = ResetPasswordState.Error("Kod musi składać się z 6 cyfr")
+            return
+        }
         if (fields.newPassword.isBlank() || fields.confirmPassword.isBlank()) {
-            _state.value = ResetPasswordState.Error("Wypełnij oba pola")
+            _state.value = ResetPasswordState.Error("Wypełnij oba pola hasła")
             return
         }
         if (fields.newPassword.length < 8) {
@@ -63,21 +71,19 @@ class ResetPasswordViewModel @Inject constructor(
             _state.value = ResetPasswordState.Error("Hasła nie są identyczne")
             return
         }
-        if (token.isBlank()) {
-            _state.value = ResetPasswordState.Error("Brak tokenu resetowania. Otwórz link z e-maila.")
-            return
-        }
 
         viewModelScope.launch {
             _state.value = ResetPasswordState.Loading
-            runCatching { authService.resetPassword(token, fields.newPassword) }
+            runCatching {
+                authService.resetPassword(fields.email.trim(), fields.code, fields.newPassword)
+            }
                 .onSuccess { message ->
                     _state.value = ResetPasswordState.Success(message)
                 }
                 .onFailure { e ->
                     _state.value = when (e) {
                         is AuthException.TokenExpired -> ResetPasswordState.TokenExpired(
-                            e.message ?: "Token resetowania hasła wygasł."
+                            e.message ?: "Kod resetowania hasła wygasł."
                         )
                         is AuthException.RateLimited -> ResetPasswordState.Error(
                             e.message ?: "Zbyt wiele prób."

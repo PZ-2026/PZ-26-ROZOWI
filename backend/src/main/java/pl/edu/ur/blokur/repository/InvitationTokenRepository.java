@@ -4,22 +4,14 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import pl.edu.ur.blokur.models.InvitationToken;
+import pl.edu.ur.blokur.models.User;
 
-/** Repozytorium jednorazowych tokenów zaproszenia nowych użytkowników. */
+/** Repozytorium jednorazowych kodów zaproszenia nowych użytkowników. */
 public interface InvitationTokenRepository extends JpaRepository<InvitationToken, UUID> {
 
-    /**
-     * Wyszukuje token zaproszenia po jego wartości.
-     *
-     * @param token wartość tokenu
-     * @return token jeśli istnieje
-     */
-    Optional<InvitationToken> findByToken(String token);
+    /** Wyszukuje aktywny kod zaproszenia danego użytkownika. */
+    Optional<InvitationToken> findByUserAndToken(User user, String token);
 
-    /**
-     * Usuwa token zaproszenia o zadanej wartości.
-     *
-     * @param token wartość tokenu do usunięcia
-     */
-    void deleteByToken(String token);
+    /** Usuwa wszystkie istniejące kody zaproszenia danego użytkownika. */
+    void deleteByUser(User user);
 }

@@ -27,6 +27,7 @@ import pl.edu.ur.blokur.ui.theme.GradientEnd
 import pl.edu.ur.blokur.ui.theme.GradientStart
 import pl.edu.ur.blokur.ui.views.auth.contents.ForgotPasswordForm
 import pl.edu.ur.blokur.ui.views.auth.utils.ForgotPasswordEvent
+import pl.edu.ur.blokur.ui.views.auth.utils.ForgotPasswordState
 import pl.edu.ur.blokur.ui.views.auth.viewmodels.ForgotPasswordViewModel
 
 /**
@@ -36,7 +37,8 @@ import pl.edu.ur.blokur.ui.views.auth.viewmodels.ForgotPasswordViewModel
 @Composable
 fun ForgotPasswordScreen(
     viewModel: ForgotPasswordViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onCodeSent: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val formFields by viewModel.formFields.collectAsState()
@@ -47,6 +49,12 @@ fun ForgotPasswordScreen(
                 is ForgotPasswordEvent.NavigateBack -> onNavigateBack()
                 is ForgotPasswordEvent.ShowSnackbar -> Unit
             }
+        }
+    }
+
+    LaunchedEffect(state) {
+        if (state is ForgotPasswordState.Success) {
+            onCodeSent(formFields.email.trim())
         }
     }
 

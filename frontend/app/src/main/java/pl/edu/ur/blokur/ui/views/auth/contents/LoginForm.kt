@@ -43,7 +43,8 @@ fun LoginForm(
     loginFormFields: LoginFormFields,
     onLoginFormChange: (LoginFormFields) -> Unit,
     onLoginClicked: () -> Unit,
-    onForgotPassword: () -> Unit = {}
+    onForgotPassword: () -> Unit = {},
+    onHaveInvitationCode: () -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val isLoading = state is AuthState.Loading
@@ -173,6 +174,19 @@ fun LoginForm(
             enabled = !isLoading && !isLocked && loginFormFields.email.isNotBlank() && loginFormFields.password.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
         )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            TextButton(onClick = onHaveInvitationCode) {
+                Text(
+                    text = "Mam kod aktywacyjny",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
     }
 }
 

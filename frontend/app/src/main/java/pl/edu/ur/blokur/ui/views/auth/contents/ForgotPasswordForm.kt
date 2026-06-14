@@ -66,7 +66,7 @@ fun ForgotPasswordForm(
         )
 
         Text(
-            text = "Podaj adres e-mail powiązany z Twoim kontem. Wyślemy Ci link do resetowania hasła.",
+            text = "Podaj adres e-mail powiązany z Twoim kontem. Wyślemy Ci 6-cyfrowy kod do resetowania hasła.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -132,7 +132,7 @@ fun ForgotPasswordForm(
             Spacer(modifier = Modifier.height(4.dp))
 
             PrimaryButton(
-                text = if (isLoading) "Wysyłanie..." else "Wyślij link resetujący",
+                text = if (isLoading) "Wysyłanie..." else "Wyślij kod resetujący",
                 onClick = onSubmit,
                 enabled = !isLoading && formFields.email.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()

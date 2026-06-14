@@ -91,13 +91,13 @@ class AuthService @Inject constructor(
     /**
      * Resetuje hasło — POST /api/auth/reset-password.
      *
-     * @param token   token z linku mailowego.
+     * @param email adres e-mail, na który wysłany został kod.
+     * @param code  6-cyfrowy kod z wiadomości e-mail.
      * @param newPassword nowe hasło (min. 8 znaków).
-     * @return komunikat z serwera.
      */
-    suspend fun resetPassword(token: String, newPassword: String): String {
+    suspend fun resetPassword(email: String, code: String, newPassword: String): String {
         val response = authApiService.resetPassword(
-            ResetPasswordRequestDto(token = token, newPassword = newPassword)
+            ResetPasswordRequestDto(email = email, code = code, newPassword = newPassword)
         )
         if (!response.isSuccessful) {
             throw mapAuthFailure(response, "Nie udało się zmienić hasła", checkExpiredToken = true)
@@ -109,14 +109,15 @@ class AuthService @Inject constructor(
     /**
      * Ustawia hasło i akceptuje zaproszenie do systemu.
      *
-     * @param token token zaproszenia z linku.
+     * @param email adres e-mail nowego konta.
+     * @param code  6-cyfrowy kod aktywacyjny z wiadomości e-mail.
      * @param newPassword nowe hasło użytkownika.
-     * @return komunikat z serwera.
      */
-    suspend fun acceptInvitation(token: String, newPassword: String): String {
+    suspend fun acceptInvitation(email: String, code: String, newPassword: String): String {
         val response = authApiService.acceptInvitation(
             pl.edu.ur.blokur.dtos.AcceptInvitationRequestDto(
-                token = token,
+                email = email,
+                code = code,
                 newPassword = newPassword
             )
         )

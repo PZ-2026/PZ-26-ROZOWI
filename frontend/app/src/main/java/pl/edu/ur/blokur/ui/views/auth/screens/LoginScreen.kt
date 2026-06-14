@@ -45,7 +45,8 @@ import pl.edu.ur.blokur.ui.theme.GradientStart
 fun LoginScreen(
     viewModel: AuthViewModel,
     onLoginSuccess: (UserRole) -> Unit,
-    onForgotPassword: () -> Unit = {}
+    onForgotPassword: () -> Unit = {},
+    onHaveInvitationCode: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val formFields by viewModel.formFields.collectAsState()
@@ -99,7 +100,8 @@ fun LoginScreen(
                 loginFormFields = formFields,
                 onLoginFormChange = viewModel::onFormChanged,
                 onLoginClicked = viewModel::login,
-                onForgotPassword = onForgotPassword
+                onForgotPassword = onForgotPassword,
+                onHaveInvitationCode = onHaveInvitationCode
             )
 
             Spacer(modifier = Modifier.height(48.dp))
