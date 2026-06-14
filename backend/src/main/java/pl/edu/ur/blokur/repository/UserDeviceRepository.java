@@ -65,4 +65,15 @@ public interface UserDeviceRepository extends JpaRepository<UserDevice, UUID> {
      */
     @Query("SELECT ud.fcmToken FROM UserDevice ud WHERE ud.userId IN :userIds")
     List<String> findFcmTokensByUserIdIn(@Param("userIds") List<UUID> userIds);
+
+    /**
+     * Wstawia nowy token FCM lub aktualizuje istniejący (UPSERT na poziomie bazy danych).
+     * CAŁKOWICIE zapobiega to Race Conditions (Wyścigom) w przypadku współbieżnych requestów z tego samego urządzenia.
+     */
+    @Modifying
+    @Query(value = "INSERT INTO user_devices (id, created_at, fcm_token, platform, user_id) " +
+                   "VALUES (gen_random_uuid(), CURRENT_TIMESTAMP, :token, :platform, :userId) " +
+                   "ON CONFLICT (fcm_token) DO UPDATE SET user_id = EXCLUDED.user_id, platform = EXCLUDED.platform", 
+           nativeQuery = true)
+    void upsertFcmToken(@Param("token") String token, @Param("userId") UUID userId, @Param("platform") String platform);
 }

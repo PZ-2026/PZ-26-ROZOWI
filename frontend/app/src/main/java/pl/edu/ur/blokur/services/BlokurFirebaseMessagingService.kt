@@ -63,7 +63,7 @@ class BlokurFirebaseMessagingService : FirebaseMessagingService() {
 
                 val newRole = authService.forceTokenRefresh()
                 if (newRole != null) {
-                    if (oldRole == newRole) {
+                    if (oldRole == newRole.name) {
                         Log.i(TAG, "Rola po odświeżeniu jest taka sama ($newRole). Ignoruję powiadomienie PUSH.")
                         return@launch
                     }

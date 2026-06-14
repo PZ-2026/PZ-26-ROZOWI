@@ -19,6 +19,9 @@ import pl.edu.ur.blokur.dtos.UpdateAdminUserRequest
 import pl.edu.ur.blokur.services.AdminUserService
 import pl.edu.ur.blokur.services.PropertyService
 import javax.inject.Inject
+import pl.edu.ur.blokur.services.AuthService
+import pl.edu.ur.blokur.services.SessionManager
+import pl.edu.ur.blokur.services.TokenStorage
 
 sealed interface EditUserUiState {
     data object Loading : EditUserUiState
@@ -31,9 +34,7 @@ sealed interface EditUserEvent {
     data object NavigateBack : EditUserEvent
 }
 
-import pl.edu.ur.blokur.services.AuthService
-import pl.edu.ur.blokur.services.SessionManager
-import pl.edu.ur.blokur.services.TokenStorage
+
 
 @HiltViewModel
 class EditUserViewModel @Inject constructor(
