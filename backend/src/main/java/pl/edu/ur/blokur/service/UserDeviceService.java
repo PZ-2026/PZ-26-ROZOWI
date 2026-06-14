@@ -47,11 +47,17 @@ public class UserDeviceService {
             device.setPlatform(platform);
             userDeviceRepository.save(device);
         } else {
-            var device = new UserDevice();
-            device.setUserId(userId);
-            device.setFcmToken(fcmToken);
-            device.setPlatform(platform);
-            userDeviceRepository.save(device);
+            try {
+                var device = new UserDevice();
+                device.setUserId(userId);
+                device.setFcmToken(fcmToken);
+                device.setPlatform(platform);
+                userDeviceRepository.saveAndFlush(device);
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                // Wyłapano Race Condition: Inny wątek właśnie wstawił ten sam token.
+                // Ponieważ token jest już w bazie (i to prawdopodobnie dla tego samego usera),
+                // po prostu to ignorujemy, aby nie wysadzać serwera.
+            }
         }
     }
 

@@ -41,10 +41,12 @@ class BlokurFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun handleRoleChangedPush() {
-        val authService = dagger.hilt.android.EntryPointAccessors.fromApplication(
+        val entryPoint = dagger.hilt.android.EntryPointAccessors.fromApplication(
             applicationContext,
             pl.edu.ur.blokur.di.AuthEntryPoint::class.java
-        ).authService()
+        )
+        val authService = entryPoint.authService()
+        val tokenStorage = entryPoint.tokenStorage()
 
         val sessionManager = dagger.hilt.android.EntryPointAccessors.fromApplication(
             applicationContext,
@@ -53,14 +55,25 @@ class BlokurFirebaseMessagingService : FirebaseMessagingService() {
 
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {
+                val oldRole = tokenStorage.getUserRole()
+                if (oldRole == null) {
+                    Log.i(TAG, "Zignorowano powiadomienie ZMIANA_ROLI, użytkownik nie jest zalogowany.")
+                    return@launch
+                }
+
                 val newRole = authService.forceTokenRefresh()
                 if (newRole != null) {
-                    Log.i(TAG, "Zmieniono rolę z sukcesem na $newRole, wysyłam sygnał forceRouteRefresh.")
+                    if (oldRole == newRole) {
+                        Log.i(TAG, "Rola po odświeżeniu jest taka sama ($newRole). Ignoruję powiadomienie PUSH.")
+                        return@launch
+                    }
+
+                    Log.i(TAG, "Zmieniono rolę z sukcesem z $oldRole na $newRole, wysyłam sygnał forceRouteRefresh.")
                     
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         android.widget.Toast.makeText(
                             applicationContext,
-                            "System: Automatycznie zaktualizowano rolę na $newRole",
+                            "System: Automatycznie zaktualizowano rolę z $oldRole na $newRole",
                             android.widget.Toast.LENGTH_LONG
                         ).show()
                     }

@@ -74,8 +74,7 @@ class AuthViewModel @Inject constructor(
                 .onSuccess { role ->
                     _state.value = AuthState.Success
                     _events.send(AuthEvent.NavigateToMain(role))
-                    // Rejestracja FCM token — fire-and-forget, błędy nie blokują nawigacji
-                    tryRegisterFcmToken()
+                    // Rejestracja FCM token została przeniesiona do ResidentMainViewModel
                 }
                 .onFailure { e ->
                     _state.value = when (e) {

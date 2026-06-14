@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.service;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.AndroidConfig;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -83,7 +84,14 @@ public class PushNotificationService {
             }
 
             try {
-                Message.Builder builder = Message.builder().setToken(token);
+                AndroidConfig androidConfig = AndroidConfig.builder()
+                        .setPriority(AndroidConfig.Priority.HIGH)
+                        .build();
+
+                Message.Builder builder = Message.builder()
+                        .setToken(token)
+                        .setAndroidConfig(androidConfig);
+                
                 if (data != null) {
                     builder.putAllData(data);
                 }
@@ -176,11 +184,17 @@ public class PushNotificationService {
         }
 
         try {
+            AndroidConfig androidConfig = AndroidConfig.builder()
+                    .setPriority(AndroidConfig.Priority.HIGH)
+                    .build();
+
+            Notification notification =
+                    Notification.builder().setTitle(title).setBody(body).build();
             Message.Builder builder =
                     Message.builder()
-                            .setNotification(
-                                    Notification.builder().setTitle(title).setBody(body).build())
-                            .setToken(token);
+                            .setToken(token)
+                            .setAndroidConfig(androidConfig)
+                            .setNotification(notification);
             if (data != null) {
                 builder.putAllData(data);
             }

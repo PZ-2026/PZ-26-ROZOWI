@@ -4,9 +4,11 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import pl.edu.ur.blokur.services.AuthService
+import pl.edu.ur.blokur.services.TokenStorage
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface AuthEntryPoint {
     fun authService(): AuthService
+    fun tokenStorage(): TokenStorage
 }
