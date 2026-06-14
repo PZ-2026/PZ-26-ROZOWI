@@ -41,6 +41,8 @@ class TokenAuthenticator @Inject constructor(
             ?: return invalidateSessionAndAbort()
 
         return try {
+            val oldRole = runBlocking { tokenStorage.getUserRole() }
+
             val refreshResponse = runBlocking {
                 authApiService.refresh(RefreshTokenRequestDto(refreshToken))
             }
@@ -58,6 +60,11 @@ class TokenAuthenticator @Inject constructor(
                     refreshToken = newTokens.refreshToken,
                     role = newTokens.role
                 )
+
+                if (oldRole != null && oldRole != newTokens.role) {
+                    Log.d(TAG, "Wykryto zmianę roli z $oldRole na ${newTokens.role}. Wymuszam przeładowanie aplikacji.")
+                    sessionManager.forceRouteRefresh()
+                }
             }
 
             Log.d(TAG, "Token odświeżony pomyślnie")

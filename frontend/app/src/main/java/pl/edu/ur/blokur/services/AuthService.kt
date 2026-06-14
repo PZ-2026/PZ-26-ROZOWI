@@ -74,6 +74,30 @@ class AuthService @Inject constructor(
     }
 
     /**
+     * Wymusza odświeżenie tokenu JWT używając zapisanego refresh tokenu.
+     * Wykorzystywane, gdy rola użytkownika ulega zmianie w tle (np. przez ciche PUSH).
+     */
+    suspend fun forceTokenRefresh(): UserRole? {
+        val refreshToken = tokenStorage.getRefreshToken() ?: return null
+        return try {
+            val refreshResponse = authApiService.refresh(pl.edu.ur.blokur.dtos.RefreshTokenRequestDto(refreshToken))
+            if (!refreshResponse.isSuccessful) return null
+            
+            val body = refreshResponse.body() ?: return null
+            val role = UserRole.entries.firstOrNull { it.name == body.role } ?: return null
+            
+            tokenStorage.saveTokens(
+                accessToken = body.token,
+                refreshToken = body.refreshToken,
+                role = body.role
+            )
+            role
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Wysyła żądanie resetowania hasła — POST /api/auth/forgot-password.
      *
      * Backend zawsze zwraca 200 OK (nie ujawnia czy e-mail istnieje).

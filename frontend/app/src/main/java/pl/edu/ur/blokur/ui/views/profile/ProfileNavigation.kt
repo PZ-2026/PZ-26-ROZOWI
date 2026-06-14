@@ -17,6 +17,7 @@ sealed interface ProfileRoutes : AppRoute {
 fun NavGraphBuilder.profileGraph(
     navController: NavController,
     onNavigateToNotificationSettings: () -> Unit = {},
+    onNavigateToGlobalNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
@@ -29,6 +30,7 @@ fun NavGraphBuilder.profileGraph(
         ProfileScreen(
             viewModel = viewModel,
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
+            onNavigateToGlobalNotificationSettings = onNavigateToGlobalNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             onNavigateToInspections = onNavigateToInspections,

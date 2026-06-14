@@ -20,7 +20,9 @@ import pl.edu.ur.blokur.ui.views.main.utils.ResidentMainEvent
 import pl.edu.ur.blokur.ui.views.main.utils.ResidentMainState
 import pl.edu.ur.blokur.ui.views.main.utils.bottomNavItems
 import pl.edu.ur.blokur.ui.views.main.utils.navItemsForRole
+import pl.edu.ur.blokur.services.FcmTokenProvider
 import javax.inject.Inject
+import android.util.Log
 
 /**
  * ViewModel głównego ekranu po zalogowaniu.
@@ -32,7 +34,8 @@ class ResidentMainViewModel @Inject constructor(
     private val authService: AuthService,
     private val deviceService: DeviceService,
     private val tokenStorage: TokenStorage,
-    private val userApartmentService: UserApartmentService
+    private val userApartmentService: UserApartmentService,
+    private val fcmTokenProvider: FcmTokenProvider
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ResidentMainState>(ResidentMainState.Loading)
@@ -46,6 +49,7 @@ class ResidentMainViewModel @Inject constructor(
 
     init {
         loadRoleAndNav()
+        tryRegisterFcmToken()
     }
 
     fun loadRoleAndNav() {
@@ -58,6 +62,24 @@ class ResidentMainViewModel @Inject constructor(
                 _state.value = ResidentMainState.ViewingWelcome
             }.onFailure { e ->
                 _state.value = ResidentMainState.Error(e.message ?: "Nieznany błąd krytyczny")
+            }
+        }
+    }
+
+    private fun tryRegisterFcmToken() {
+        viewModelScope.launch {
+            try {
+                val token = fcmTokenProvider.getToken()
+                if (token != null) {
+                    val ok = deviceService.registerDevice(token)
+                    if (ok) {
+                        tokenStorage.saveFcmToken(token)
+                    }
+                } else {
+                    Log.d("ResidentMainVM", "FCM token niedostępny — pominięto rejestrację urządzenia")
+                }
+            } catch (e: Exception) {
+                Log.w("ResidentMainVM", "Nie udało się zarejestrować FCM token: ${e.message}")
             }
         }
     }

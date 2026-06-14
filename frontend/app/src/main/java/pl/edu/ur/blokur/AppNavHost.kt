@@ -82,6 +82,14 @@ fun AppNavHost(
         }
     }
 
+    LaunchedEffect(sessionManager) {
+        sessionManager.forceRouteRefresh.collect {
+            appNavController.navigate(SplashRoute) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     NavHost(
         navController = appNavController,
         startDestination = startDestination
@@ -161,6 +169,9 @@ fun AppNavHost(
                 profileGraph(
                     navController = bottomNavController,
                     onNavigateToNotificationSettings = {
+                        bottomNavController.navigate(NotificationRoutes.UserSettings)
+                    },
+                    onNavigateToGlobalNotificationSettings = {
                         bottomNavController.navigate(NotificationRoutes.Settings)
                     },
                     onNavigateToCommunityLogo = {

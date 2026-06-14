@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.launch
 import pl.edu.ur.blokur.MainActivity
 
 /**
@@ -28,8 +29,51 @@ class BlokurFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        val type = message.data["type"]
+        if (type == "ZMIANA_ROLI") {
+            Log.i(TAG, "Odebrano cichy PUSH ZMIANA_ROLI. Wymuszam odświeżenie sesji...")
+            handleRoleChangedPush()
+            return
+        }
+
         Log.d(TAG, "Odebrano push: ${message.notification?.title}")
         showNotification(message)
+    }
+
+    private fun handleRoleChangedPush() {
+        val authService = dagger.hilt.android.EntryPointAccessors.fromApplication(
+            applicationContext,
+            pl.edu.ur.blokur.di.AuthEntryPoint::class.java
+        ).authService()
+
+        val sessionManager = dagger.hilt.android.EntryPointAccessors.fromApplication(
+            applicationContext,
+            pl.edu.ur.blokur.di.SessionEntryPoint::class.java
+        ).sessionManager()
+
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                val newRole = authService.forceTokenRefresh()
+                if (newRole != null) {
+                    Log.i(TAG, "Zmieniono rolę z sukcesem na $newRole, wysyłam sygnał forceRouteRefresh.")
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        android.widget.Toast.makeText(
+                            applicationContext,
+                            "System: Automatycznie zaktualizowano rolę na $newRole",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    
+                    sessionManager.forceRouteRefresh()
+                } else {
+                    Log.w(TAG, "Nie udało się odświeżyć tokena przy zmianie roli, wylogowuję.")
+                    sessionManager.invalidateSession()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Błąd podczas odświeżania sesji po zmianie roli", e)
+            }
+        }
     }
 
     private fun showNotification(message: RemoteMessage) {

@@ -39,14 +39,20 @@ public class UserDeviceService {
             return;
         }
 
-        // Token może być przypisany do innego użytkownika (np. po przelogowaniu) — usuń stary wpis
-        userDeviceRepository.findByFcmToken(fcmToken).ifPresent(userDeviceRepository::delete);
-
-        var device = new UserDevice();
-        device.setUserId(userId);
-        device.setFcmToken(fcmToken);
-        device.setPlatform(platform);
-        userDeviceRepository.save(device);
+        // Token może być przypisany do innego użytkownika (np. po przelogowaniu) — zaaktualizuj go
+        var existingDevice = userDeviceRepository.findByFcmToken(fcmToken);
+        if (existingDevice.isPresent()) {
+            var device = existingDevice.get();
+            device.setUserId(userId);
+            device.setPlatform(platform);
+            userDeviceRepository.save(device);
+        } else {
+            var device = new UserDevice();
+            device.setUserId(userId);
+            device.setFcmToken(fcmToken);
+            device.setPlatform(platform);
+            userDeviceRepository.save(device);
+        }
     }
 
     /**

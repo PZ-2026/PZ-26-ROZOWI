@@ -19,4 +19,13 @@ interface NotificationApiService {
         @Path("eventType") eventType: String,
         @Body request: UpdateNotificationConfigRequest
     ): Response<NotificationConfigDto>
+
+    @GET("api/notifications/settings")
+    suspend fun getMySettings(): Response<List<NotificationConfigDto>>
+
+    @PATCH("api/notifications/settings/{eventType}")
+    suspend fun updateMySetting(
+        @Path("eventType") eventType: String,
+        @Body request: UpdateNotificationConfigRequest
+    ): Response<NotificationConfigDto>
 }

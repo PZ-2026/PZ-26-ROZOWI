@@ -53,15 +53,15 @@ fun NavGraphBuilder.announcementsGraph(navController: NavController) {
     composable<AnnouncementsRoutes.Create> {
         val viewModel: CreateAnnouncementViewModel = hiltViewModel()
         val mainEntry = remember(navController.currentBackStackEntry) {
-            navController.getBackStackEntry(AnnouncementsRoutes.Main)
+            navController.previousBackStackEntry
         }
-        val mainViewModel: AnnouncementsViewModel = hiltViewModel(mainEntry)
+        val mainViewModel: AnnouncementsViewModel? = mainEntry?.let { hiltViewModel(it) }
 
         CreateAnnouncementScreen(
             viewModel = viewModel,
             onNavigateBack = {
                 navController.popBackStack()
-                mainViewModel.loadAnnouncements()
+                mainViewModel?.loadAnnouncements()
             }
         )
     }
@@ -69,15 +69,15 @@ fun NavGraphBuilder.announcementsGraph(navController: NavController) {
     composable<AnnouncementsRoutes.Edit> {
         val viewModel: EditAnnouncementViewModel = hiltViewModel()
         val mainEntry = remember(navController.currentBackStackEntry) {
-            navController.getBackStackEntry(AnnouncementsRoutes.Main)
+            navController.previousBackStackEntry
         }
-        val mainViewModel: AnnouncementsViewModel = hiltViewModel(mainEntry)
+        val mainViewModel: AnnouncementsViewModel? = mainEntry?.let { hiltViewModel(it) }
 
         EditAnnouncementScreen(
             viewModel = viewModel,
             onNavigateBack = {
                 navController.popBackStack()
-                mainViewModel.loadAnnouncements()
+                mainViewModel?.loadAnnouncements()
             }
         )
     }
