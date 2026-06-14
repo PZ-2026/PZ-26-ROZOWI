@@ -67,6 +67,14 @@ class ResetPasswordViewModel @Inject constructor(
             _state.value = ResetPasswordState.Error("Hasło musi mieć co najmniej 8 znaków")
             return
         }
+        if (!fields.newPassword.any { it.isUpperCase() }) {
+            _state.value = ResetPasswordState.Error("Hasło musi zawierać co najmniej jedną wielką literę")
+            return
+        }
+        if (!fields.newPassword.any { it.isDigit() }) {
+            _state.value = ResetPasswordState.Error("Hasło musi zawierać co najmniej jedną cyfrę")
+            return
+        }
         if (fields.newPassword != fields.confirmPassword) {
             _state.value = ResetPasswordState.Error("Hasła nie są identyczne")
             return

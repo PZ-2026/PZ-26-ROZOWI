@@ -76,7 +76,7 @@ fun ResetPasswordForm(
         )
 
         Text(
-            text = "Wpisz 6-cyfrowy kod resetujący otrzymany e-mailem oraz nowe hasło (min. 8 znaków).",
+            text = "Wpisz 6-cyfrowy kod resetujący otrzymany e-mailem oraz nowe hasło (min. 8 znaków, wielka litera, cyfra).",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

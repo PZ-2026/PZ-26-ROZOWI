@@ -75,7 +75,7 @@ fun AcceptInvitationForm(
         )
 
         Text(
-            text = "Wpisz swój adres e-mail, 6-cyfrowy kod aktywacyjny otrzymany pocztą oraz hasło (min. 8 znaków), aby aktywować konto.",
+            text = "Wpisz swój adres e-mail, 6-cyfrowy kod aktywacyjny otrzymany pocztą oraz hasło (min. 8 znaków, wielka litera, cyfra), aby aktywować konto.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
