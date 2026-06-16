@@ -224,7 +224,8 @@ private fun PropertyFields(
             val managersWithEmpty = listOf("") + filteredManagers
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.exposedDropdownSize()
             ) {
                 managersWithEmpty.forEach { email ->
                     DropdownMenuItem(

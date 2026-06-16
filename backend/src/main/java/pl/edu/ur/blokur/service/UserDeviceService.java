@@ -35,18 +35,9 @@ public class UserDeviceService {
                 .findById(userId)
                 .orElseThrow(() -> new NotFoundException("Użytkownik nie istnieje"));
 
-        if (userDeviceRepository.existsByFcmTokenAndUserId(fcmToken, userId)) {
-            return;
-        }
-
-        // Token może być przypisany do innego użytkownika (np. po przelogowaniu) — usuń stary wpis
-        userDeviceRepository.findByFcmToken(fcmToken).ifPresent(userDeviceRepository::delete);
-
-        var device = new UserDevice();
-        device.setUserId(userId);
-        device.setFcmToken(fcmToken);
-        device.setPlatform(platform);
-        userDeviceRepository.save(device);
+        // Zlecamy całkowitą kontrolę nad unikalnością bazie danych.
+        // Nawet jeśli 10 urządzeń wyśle to w tej samej mikrosekundzie, baza przetworzy to atomowo (UPSERT).
+        userDeviceRepository.upsertFcmToken(fcmToken, userId, platform);
     }
 
     /**

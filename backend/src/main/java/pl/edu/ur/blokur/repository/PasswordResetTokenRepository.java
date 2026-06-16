@@ -4,22 +4,14 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import pl.edu.ur.blokur.models.PasswordResetToken;
+import pl.edu.ur.blokur.models.User;
 
-/** Repozytorium tokenów jednorazowego resetu hasła. */
+/** Repozytorium 6-cyfrowych kodów jednorazowego resetu hasła. */
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, UUID> {
 
-    /**
-     * Wyszukuje token po jego wartości.
-     *
-     * @param token wartość tokenu
-     * @return token jeśli istnieje
-     */
-    Optional<PasswordResetToken> findByToken(String token);
+    /** Wyszukuje aktywny kod resetu hasła danego użytkownika. */
+    Optional<PasswordResetToken> findByUserAndToken(User user, String token);
 
-    /**
-     * Usuwa token o zadanej wartości.
-     *
-     * @param token wartość tokenu do usunięcia
-     */
-    void deleteByToken(String token);
+    /** Usuwa wszystkie istniejące kody resetu danego użytkownika. */
+    void deleteByUser(User user);
 }

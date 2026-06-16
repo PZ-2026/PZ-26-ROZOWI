@@ -23,6 +23,7 @@ public class AdminUserService {
     private final UserRepository userRepository;
     private final ApartmentRepository apartmentRepository;
     private final InvitationService invitationService;
+    private final PushNotificationService pushNotificationService;
 
     /**
      * Tworzy serwis z wymaganymi zależnościami.
@@ -30,14 +31,17 @@ public class AdminUserService {
      * @param userRepository repozytorium użytkowników
      * @param apartmentRepository repozytorium mieszkań
      * @param invitationService serwis do wysyłki zaproszeń z linkiem do ustawienia hasła (72 h)
+     * @param pushNotificationService serwis powiadomień PUSH
      */
     public AdminUserService(
             UserRepository userRepository,
             ApartmentRepository apartmentRepository,
-            InvitationService invitationService) {
+            InvitationService invitationService,
+            PushNotificationService pushNotificationService) {
         this.userRepository = userRepository;
         this.apartmentRepository = apartmentRepository;
         this.invitationService = invitationService;
+        this.pushNotificationService = pushNotificationService;
     }
 
     /**
@@ -142,6 +146,8 @@ public class AdminUserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
+        
+        boolean roleChanged = !user.getRole().equals(request.getRole());
         user.setRole(request.getRole());
 
         if (request.getApartmentId() != null) {
@@ -163,7 +169,16 @@ public class AdminUserService {
             }
         }
 
-        return userRepository.save(user);
+        var savedUser = userRepository.save(user);
+
+        if (roleChanged && pushNotificationService != null) {
+            System.out.println("LOG SYSTEMOWY: ZMIENIONO ROLE. Wysylam do " + savedUser.getId() + " powiadomienie.");
+            pushNotificationService.sendSystemDataOnly(
+                    savedUser.getId(),
+                    java.util.Map.of("type", PushNotificationService.EVENT_ZMIANA_ROLI));
+        }
+
+        return savedUser;
     }
 
     /**

@@ -26,6 +26,7 @@ object ApiResponseHandler {
         403 -> "Brak uprawnień do wykonania tej operacji."
         404 -> "Nie znaleziono żądanego zasobu."
         409 -> "Operacja niedozwolona w aktualnym stanie."
+        413 -> "Plik jest za duży. Maksymalny dopuszczalny rozmiar to 10 MB."
         422 -> "Niezgodność danych z regułami biznesowymi."
         423 -> "Konto tymczasowo zablokowane. Spróbuj ponownie później."
         429 -> {
@@ -37,9 +38,14 @@ object ApiResponseHandler {
     }
 
     fun mapHttpError(response: Response<*>, defaultMessage: String): String {
+        val code = response.code()
+        if (code == 413) {
+            return "Plik jest za duży. Maksymalny dopuszczalny rozmiar to 10 MB."
+        }
+        
         val retryAfter = response.headers()["Retry-After"]?.toIntOrNull()
         val bodyMessage = response.errorBody()?.string()?.let { parseJsonMessage(it) }
-        return bodyMessage ?: mapHttpError(response.code(), defaultMessage, retryAfter)
+        return bodyMessage ?: mapHttpError(code, defaultMessage, retryAfter)
     }
 
     fun <T> requireSuccess(response: Response<T>, defaultMessage: String): T {

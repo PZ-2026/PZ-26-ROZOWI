@@ -26,4 +26,19 @@ class NotificationService @Inject constructor(
             ApiResponseHandler.requireSuccess(resp, "Błąd aktualizacji ustawień powiadomień")
         }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd aktualizacji ustawień powiadomień") }
     }
+    /** Pobiera listę wszystkich osobistych konfiguracji typów powiadomień użytkownika. */
+    suspend fun getMySettings(): List<NotificationConfigDto> {
+        return runCatching {
+            val resp = api.getMySettings()
+            ApiResponseHandler.requireSuccess(resp, "Błąd pobierania osobistych ustawień powiadomień")
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd pobierania osobistych ustawień powiadomień") }
+    }
+
+    /** Włącza lub wyłącza personalnie wybrany typ powiadomień dla zalogowanego użytkownika. */
+    suspend fun updateMySetting(eventType: String, enabled: Boolean): NotificationConfigDto {
+        return runCatching {
+            val resp = api.updateMySetting(eventType, UpdateNotificationConfigRequest(enabled))
+            ApiResponseHandler.requireSuccess(resp, "Błąd aktualizacji osobistego ustawienia powiadomień")
+        }.getOrElse { throw ApiResponseHandler.wrapException(it, "Błąd aktualizacji osobistego ustawienia powiadomień") }
+    }
 }

@@ -26,7 +26,7 @@ import pl.edu.ur.blokur.repository.PasswordResetTokenRepository;
 import pl.edu.ur.blokur.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("PasswordResetService — reset hasła przez e-mail (TTL 1 h)")
+@DisplayName("PasswordResetService — reset hasła 6-cyfrowym kodem (TTL 1 h)")
 class PasswordResetServiceTest {
 
     @Mock private UserRepository userRepository;
@@ -44,24 +44,18 @@ class PasswordResetServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(passwordResetService, "fromAddress", "noreply@blokur.pl");
-        ReflectionTestUtils.setField(
-                passwordResetService, "resetBaseUrl", "https://blokur.pl/reset");
 
         testUser = new User();
         testUser.setEmail("jan@blokur.pl");
         testUser.setPasswordHash("staryHash");
     }
 
-    // -------------------------------------------------------
-    // requestPasswordReset
-    // -------------------------------------------------------
-
     @Nested
     @DisplayName("requestPasswordReset")
     class RequestPasswordReset {
 
         @Test
-        @DisplayName("Gdy e-mail nie istnieje w bazie — nie zapisuje tokena ani nie wysyła maila")
+        @DisplayName("Gdy e-mail nie istnieje — nie zapisuje kodu ani nie wysyła maila")
         void shouldDoNothingWhenEmailNotFound() {
             when(userRepository.findByEmail("brak@blokur.pl")).thenReturn(Optional.empty());
 
@@ -72,114 +66,111 @@ class PasswordResetServiceTest {
         }
 
         @Test
-        @DisplayName("Gdy e-mail istnieje — zapisuje token w bazie")
-        void shouldSaveTokenWhenEmailExists() {
+        @DisplayName("Gdy e-mail istnieje — usuwa stare kody i zapisuje nowy 6-cyfrowy")
+        void shouldReplaceExistingCodes() {
             when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
 
             passwordResetService.requestPasswordReset("jan@blokur.pl");
+
+            verify(tokenRepository).deleteByUser(testUser);
 
             ArgumentCaptor<PasswordResetToken> captor =
                     ArgumentCaptor.forClass(PasswordResetToken.class);
             verify(tokenRepository).save(captor.capture());
 
             PasswordResetToken saved = captor.getValue();
-            assertThat(saved.getToken()).isNotBlank();
+            assertThat(saved.getToken()).matches("\\d{6}");
             assertThat(saved.getUser()).isEqualTo(testUser);
             assertThat(saved.getExpiryDate()).isAfter(LocalDateTime.now().plusMinutes(59));
             assertThat(saved.getExpiryDate()).isBefore(LocalDateTime.now().plusMinutes(61));
         }
 
         @Test
-        @DisplayName("Gdy e-mail istnieje — wysyła e-mail z linkiem zawierającym token")
-        void shouldSendEmailWithResetLink() {
+        @DisplayName("Wysyła e-mail zawierający 6-cyfrowy kod")
+        void shouldSendEmailWithCode() {
             when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
 
             passwordResetService.requestPasswordReset("jan@blokur.pl");
 
             ArgumentCaptor<SimpleMailMessage> mailCaptor =
                     ArgumentCaptor.forClass(SimpleMailMessage.class);
+            ArgumentCaptor<PasswordResetToken> tokenCaptor =
+                    ArgumentCaptor.forClass(PasswordResetToken.class);
             verify(mailSender).send(mailCaptor.capture());
+            verify(tokenRepository).save(tokenCaptor.capture());
 
             SimpleMailMessage mail = mailCaptor.getValue();
             assertThat(mail.getTo()).contains("jan@blokur.pl");
-            assertThat(mail.getText()).contains("https://blokur.pl/reset?token=");
+            assertThat(mail.getText()).contains(tokenCaptor.getValue().getToken());
         }
     }
-
-    // -------------------------------------------------------
-    // resetPassword
-    // -------------------------------------------------------
 
     @Nested
     @DisplayName("resetPassword")
     class ResetPassword {
 
         @Test
-        @DisplayName("Nieprawidłowy token — rzuca IllegalArgumentException")
-        void shouldThrowWhenTokenNotFound() {
-            when(tokenRepository.findByToken("nieistniejacy")).thenReturn(Optional.empty());
+        @DisplayName("Nieznany email — rzuca IllegalArgumentException")
+        void shouldThrowWhenEmailNotFound() {
+            when(userRepository.findByEmail("brak@blokur.pl")).thenReturn(Optional.empty());
 
             assertThatThrownBy(
-                            () -> passwordResetService.resetPassword("nieistniejacy", "NoweHaslo1"))
+                            () ->
+                                    passwordResetService.resetPassword(
+                                            "brak@blokur.pl", "123456", "NoweHaslo1"))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Nieprawidłowy token");
+                    .hasMessageContaining("Nieprawidłowy kod");
         }
 
         @Test
-        @DisplayName("Wygasły token — rzuca IllegalArgumentException i usuwa token z bazy")
-        void shouldThrowAndDeleteExpiredToken() {
-            PasswordResetToken expiredToken =
-                    new PasswordResetToken(testUser, "wygasly", LocalDateTime.now().minusHours(1));
-            when(tokenRepository.findByToken("wygasly")).thenReturn(Optional.of(expiredToken));
+        @DisplayName("Nieprawidłowy kod — rzuca IllegalArgumentException")
+        void shouldThrowWhenCodeNotFound() {
+            when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
+            when(tokenRepository.findByUserAndToken(testUser, "000000"))
+                    .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> passwordResetService.resetPassword("wygasly", "NoweHaslo1"))
+            assertThatThrownBy(
+                            () ->
+                                    passwordResetService.resetPassword(
+                                            "jan@blokur.pl", "000000", "NoweHaslo1"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Nieprawidłowy kod");
+        }
+
+        @Test
+        @DisplayName("Wygasły kod — rzuca IllegalArgumentException i usuwa kod z bazy")
+        void shouldThrowAndDeleteExpiredToken() {
+            PasswordResetToken expired =
+                    new PasswordResetToken(testUser, "123456", LocalDateTime.now().minusHours(1));
+            when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
+            when(tokenRepository.findByUserAndToken(testUser, "123456"))
+                    .thenReturn(Optional.of(expired));
+
+            assertThatThrownBy(
+                            () ->
+                                    passwordResetService.resetPassword(
+                                            "jan@blokur.pl", "123456", "NoweHaslo1"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("wygasł");
 
-            verify(tokenRepository).delete(expiredToken);
+            verify(tokenRepository).delete(expired);
         }
 
         @Test
-        @DisplayName("Prawidłowy token — hashuje nowe hasło i zapisuje użytkownika")
-        void shouldHashAndSaveNewPassword() {
-            PasswordResetToken validToken =
-                    new PasswordResetToken(
-                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
-            when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
+        @DisplayName("Prawidłowy kod — hashuje hasło, zapisuje użytkownika i usuwa kod")
+        void shouldHashSaveAndConsumeCode() {
+            PasswordResetToken valid =
+                    new PasswordResetToken(testUser, "654321", LocalDateTime.now().plusHours(1));
+            when(userRepository.findByEmail("jan@blokur.pl")).thenReturn(Optional.of(testUser));
+            when(tokenRepository.findByUserAndToken(testUser, "654321"))
+                    .thenReturn(Optional.of(valid));
             when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
 
-            passwordResetService.resetPassword("dobryToken", "NoweHaslo1");
+            passwordResetService.resetPassword("jan@blokur.pl", "654321", "NoweHaslo1");
 
             assertThat(testUser.getPasswordHash()).isEqualTo("nowyHash");
             verify(userRepository).save(testUser);
-        }
-
-        @Test
-        @DisplayName("Prawidłowy token — usuwa token po zmianie hasła")
-        void shouldDeleteTokenAfterSuccessfulReset() {
-            PasswordResetToken validToken =
-                    new PasswordResetToken(
-                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
-            when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
-            when(passwordEncoder.encode(any())).thenReturn("hash");
-
-            passwordResetService.resetPassword("dobryToken", "NoweHaslo1");
-
-            verify(tokenRepository).delete(validToken);
-        }
-
-        @Test
-        @DisplayName("Prawidłowy token — stare hasło nie pozostaje w bazie")
-        void shouldNotKeepOldPassword() {
-            PasswordResetToken validToken =
-                    new PasswordResetToken(
-                            testUser, "dobryToken", LocalDateTime.now().plusHours(1));
-            when(tokenRepository.findByToken("dobryToken")).thenReturn(Optional.of(validToken));
-            when(passwordEncoder.encode("NoweHaslo1")).thenReturn("nowyHash");
-
-            passwordResetService.resetPassword("dobryToken", "NoweHaslo1");
-
-            assertThat(testUser.getPasswordHash()).isNotEqualTo("staryHash");
+            verify(tokenRepository).delete(valid);
         }
     }
 }

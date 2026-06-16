@@ -23,10 +23,10 @@ sealed interface AuthRoutes : AppRoute {
     data object ForgotPassword : AuthRoutes
 
     @Serializable
-    data class ResetPassword(val token: String) : AuthRoutes
+    data class ResetPassword(val email: String = "") : AuthRoutes
 
     @Serializable
-    data class AcceptInvitation(val token: String) : AuthRoutes
+    data class AcceptInvitation(val email: String = "") : AuthRoutes
 }
 
 fun NavGraphBuilder.authGraph(
@@ -40,6 +40,9 @@ fun NavGraphBuilder.authGraph(
             onLoginSuccess = onLoginSuccess,
             onForgotPassword = {
                 navController.navigate(AuthRoutes.ForgotPassword)
+            },
+            onHaveInvitationCode = {
+                navController.navigate(AuthRoutes.AcceptInvitation())
             }
         )
     }
@@ -48,7 +51,12 @@ fun NavGraphBuilder.authGraph(
         val viewModel: ForgotPasswordViewModel = hiltViewModel()
         ForgotPasswordScreen(
             viewModel = viewModel,
-            onNavigateBack = { navController.popBackStack() }
+            onNavigateBack = { navController.popBackStack() },
+            onCodeSent = { email ->
+                navController.navigate(AuthRoutes.ResetPassword(email)) {
+                    popUpTo(AuthRoutes.Login) { inclusive = false }
+                }
+            }
         )
     }
 

@@ -3,7 +3,9 @@ package pl.edu.ur.blokur.models;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /** Encja jednorazowego tokenu służącego do resetowania hasła lub zapraszania nowego użytkownika. */
@@ -11,6 +13,7 @@ import lombok.Setter;
 @Table(name = "password_reset_tokens")
 @Getter
 @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PasswordResetToken {
 
     @Id
@@ -22,7 +25,7 @@ public class PasswordResetToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String token;
 
     @Column(name = "expiry_date", nullable = false)

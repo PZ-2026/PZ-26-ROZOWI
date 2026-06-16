@@ -16,8 +16,15 @@ class SessionManager @Inject constructor(
     private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val sessionExpired: SharedFlow<Unit> = _sessionExpired.asSharedFlow()
 
+    private val _forceRouteRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val forceRouteRefresh: SharedFlow<Unit> = _forceRouteRefresh.asSharedFlow()
+
     suspend fun invalidateSession() {
         tokenStorage.clearTokens()
         _sessionExpired.emit(Unit)
+    }
+
+    suspend fun forceRouteRefresh() {
+        _forceRouteRefresh.emit(Unit)
     }
 }

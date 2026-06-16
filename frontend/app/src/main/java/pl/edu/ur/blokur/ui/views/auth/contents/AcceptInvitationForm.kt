@@ -16,7 +16,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Pin
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Icon
@@ -73,7 +75,7 @@ fun AcceptInvitationForm(
         )
 
         Text(
-            text = "Wprowadź nowe hasło do swojego konta, aby aktywować swój dostęp. Hasło musi mieć co najmniej 8 znaków.",
+            text = "Wpisz swój adres e-mail, 6-cyfrowy kod aktywacyjny otrzymany pocztą oraz hasło (min. 8 znaków, wielka litera, cyfra), aby aktywować konto.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -125,6 +127,51 @@ fun AcceptInvitationForm(
         }
 
         if (!isSuccess && !isTokenExpired) {
+            OutlinedTextField(
+                value = formFields.email,
+                onValueChange = { onFormChanged(formFields.copy(email = it)) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Adres e-mail") },
+                singleLine = true,
+                enabled = !isLoading,
+                isError = state is AcceptInvitationState.Error,
+                leadingIcon = {
+                    Icon(imageVector = Icons.Rounded.Email, contentDescription = null)
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
+                shape = MaterialTheme.shapes.medium
+            )
+
+            OutlinedTextField(
+                value = formFields.code,
+                onValueChange = { input ->
+                    val filtered = input.filter { it.isDigit() }.take(6)
+                    onFormChanged(formFields.copy(code = filtered))
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Kod aktywacyjny (6 cyfr)") },
+                singleLine = true,
+                enabled = !isLoading,
+                isError = state is AcceptInvitationState.Error,
+                leadingIcon = {
+                    Icon(imageVector = Icons.Rounded.Pin, contentDescription = null)
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.NumberPassword,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
+                shape = MaterialTheme.shapes.medium
+            )
+
             OutlinedTextField(
                 value = formFields.newPassword,
                 onValueChange = { onFormChanged(formFields.copy(newPassword = it)) },
@@ -194,9 +241,11 @@ fun AcceptInvitationForm(
             Spacer(modifier = Modifier.height(4.dp))
 
             PrimaryButton(
-                text = if (isLoading) "Zapisywanie..." else "Ustaw hasło",
+                text = if (isLoading) "Zapisywanie..." else "Aktywuj konto",
                 onClick = onSubmit,
                 enabled = !isLoading
+                    && formFields.email.isNotBlank()
+                    && formFields.code.length == 6
                     && formFields.newPassword.isNotBlank()
                     && formFields.confirmPassword.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()

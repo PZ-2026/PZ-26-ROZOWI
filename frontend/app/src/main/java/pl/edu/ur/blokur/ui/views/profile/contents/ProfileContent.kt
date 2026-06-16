@@ -44,6 +44,7 @@ fun ProfileContent(
     state: ProfileState,
     isManager: Boolean = false,
     onNavigateToNotificationSettings: () -> Unit = {},
+    onNavigateToGlobalNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
@@ -64,6 +65,7 @@ fun ProfileContent(
             data = state,
             isManager = isManager,
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
+            onNavigateToGlobalNotificationSettings = onNavigateToGlobalNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             onNavigateToInspections = onNavigateToInspections,
@@ -80,6 +82,7 @@ private fun ProfileDataContent(
     data: ProfileState.Data,
     isManager: Boolean = false,
     onNavigateToNotificationSettings: () -> Unit = {},
+    onNavigateToGlobalNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
@@ -158,12 +161,23 @@ private fun ProfileDataContent(
                 title = "Przeglądy w budynku",
                 subtitle = "Harmonogram przeglądów technicznych (podgląd)",
                 isFirst = true,
-                isLast = true,
+                isLast = false,
                 onClick = onNavigateToInspections
             )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
         }
 
+        AdminNavRow(
+            icon = Icons.Rounded.Notifications,
+            title = "Moje powiadomienia",
+            subtitle = "Konfiguruj powiadomienia dla swojego konta",
+            isFirst = isManager,
+            isLast = !isManager,
+            onClick = onNavigateToNotificationSettings
+        )
+
         if (isManager) {
+            Spacer(modifier = Modifier.height(8.dp))
             Column(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
@@ -205,11 +219,11 @@ private fun ProfileDataContent(
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 AdminNavRow(
                     icon = Icons.Rounded.Notifications,
-                    title = "Ustawienia powiadomień",
-                    subtitle = "Konfiguruj alerty per typ zdarzenia",
+                    title = "Globalne powiadomienia",
+                    subtitle = "Włącz/wyłącz powiadomienia w całym systemie",
                     isFirst = false,
                     isLast = false,
-                    onClick = onNavigateToNotificationSettings
+                    onClick = onNavigateToGlobalNotificationSettings // Nowy parametr
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 AdminNavRow(

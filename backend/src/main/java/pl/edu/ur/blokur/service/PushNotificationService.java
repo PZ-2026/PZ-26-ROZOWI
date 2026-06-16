@@ -1,6 +1,7 @@
 package pl.edu.ur.blokur.service;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.AndroidConfig;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -30,6 +31,7 @@ public class PushNotificationService {
     public static final String EVENT_PRZEGLAD = "PRZEGLAD";
     public static final String EVENT_NOWY_DOKUMENT = "NOWY_DOKUMENT";
     public static final String EVENT_WSTRZYMANIE = "WSTRZYMANIE_ZGLOSZENIA";
+    public static final String EVENT_ZMIANA_ROLI = "ZMIANA_ROLI";
 
     private static final Logger log = LoggerFactory.getLogger(PushNotificationService.class);
 
@@ -51,6 +53,59 @@ public class PushNotificationService {
         this.userDeviceRepository = userDeviceRepository;
         this.notificationSettingRepository = notificationSettingRepository;
         this.notificationConfigRepository = notificationConfigRepository;
+    }
+
+    /**
+     * Wysyła powiadomienie ciche (Data-Only PUSH) do użytkownika, omijając globalne filtry
+     * powiadomień. Tego typu powiadomienie zawsze jest odbierane w tle na Androidzie.
+     *
+     * @param userId identyfikator użytkownika
+     * @param data dane do wysłania w PUSH
+     */
+    @Async
+    @Transactional(readOnly = true)
+    public void sendSystemDataOnly(UUID userId, Map<String, String> data) {
+        log.info("Zlecono wysyłkę PUSH (SystemDataOnly) do userId: {}", userId);
+        if (userId == null) {
+            return;
+        }
+
+        var tokens = userDeviceRepository.findFcmTokensByUserId(userId);
+        if (tokens.isEmpty()) {
+            log.info("Brak aktywnych tokenów FCM dla userId: {}. Zignorowano.", userId);
+            return;
+        }
+
+        for (String token : tokens) {
+            if (FirebaseApp.getApps().isEmpty()) {
+                log.info(
+                        "Firebase nie jest zainicjalizowany — pomijam wysyłkę PUSH (token: {})", token);
+                continue;
+            }
+
+            try {
+                AndroidConfig androidConfig = AndroidConfig.builder()
+                        .setPriority(AndroidConfig.Priority.HIGH)
+                        .build();
+
+                Message.Builder builder = Message.builder()
+                        .setToken(token)
+                        .setAndroidConfig(androidConfig);
+                
+                if (data != null) {
+                    builder.putAllData(data);
+                }
+                var messageId = FirebaseMessaging.getInstance().send(builder.build());
+                log.info("Cichy FCM wysłany do {}: {}", userId, messageId);
+            } catch (FirebaseMessagingException e) {
+                if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED) {
+                    log.info("Token FCM nieaktywny, usuwam: {}", token);
+                    userDeviceRepository.deleteByFcmToken(token);
+                } else {
+                    log.error("Błąd wysyłki FCM (token: {}): {}", token, e.getMessage());
+                }
+            }
+        }
     }
 
     /**
@@ -129,11 +184,17 @@ public class PushNotificationService {
         }
 
         try {
+            AndroidConfig androidConfig = AndroidConfig.builder()
+                    .setPriority(AndroidConfig.Priority.HIGH)
+                    .build();
+
+            Notification notification =
+                    Notification.builder().setTitle(title).setBody(body).build();
             Message.Builder builder =
                     Message.builder()
-                            .setNotification(
-                                    Notification.builder().setTitle(title).setBody(body).build())
-                            .setToken(token);
+                            .setToken(token)
+                            .setAndroidConfig(androidConfig)
+                            .setNotification(notification);
             if (data != null) {
                 builder.putAllData(data);
             }

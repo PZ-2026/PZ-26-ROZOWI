@@ -72,7 +72,7 @@ sealed interface ResetPasswordState {
     data object Loading : ResetPasswordState
     data class Success(val message: String) : ResetPasswordState
     data class Error(val message: String) : ResetPasswordState
-    /** Token z linku mailowego wygasł — użytkownik może poprosić o nowy link. */
+    /** Kod z wiadomości e-mail wygasł — użytkownik może poprosić o nowy kod. */
     data class TokenExpired(val message: String) : ResetPasswordState
 }
 
@@ -85,6 +85,8 @@ sealed interface ResetPasswordEvent {
 
 /** Pola formularza resetowania hasła. */
 data class ResetPasswordFormFields(
+    val email: String = "",
+    val code: String = "",
     val newPassword: String = "",
     val confirmPassword: String = "",
     val passwordVisible: Boolean = false
@@ -110,6 +112,8 @@ sealed interface AcceptInvitationEvent {
 
 /** Pola formularza akceptacji zaproszenia. */
 data class AcceptInvitationFormFields(
+    val email: String = "",
+    val code: String = "",
     val newPassword: String = "",
     val confirmPassword: String = "",
     val passwordVisible: Boolean = false

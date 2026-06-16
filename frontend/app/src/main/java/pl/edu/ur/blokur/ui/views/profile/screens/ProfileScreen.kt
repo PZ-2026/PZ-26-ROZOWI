@@ -27,6 +27,7 @@ import pl.edu.ur.blokur.ui.views.profile.viewmodels.ProfileViewModel
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToNotificationSettings: () -> Unit = {},
+    onNavigateToGlobalNotificationSettings: () -> Unit = {},
     onNavigateToCommunityLogo: () -> Unit = {},
     onNavigateToDocumentDistribution: () -> Unit = {},
     onNavigateToInspections: () -> Unit = {},
@@ -58,6 +59,7 @@ fun ProfileScreen(
             state = state,
             isManager = isManager,
             onNavigateToNotificationSettings = onNavigateToNotificationSettings,
+            onNavigateToGlobalNotificationSettings = onNavigateToGlobalNotificationSettings,
             onNavigateToCommunityLogo = onNavigateToCommunityLogo,
             onNavigateToDocumentDistribution = onNavigateToDocumentDistribution,
             onNavigateToInspections = onNavigateToInspections,

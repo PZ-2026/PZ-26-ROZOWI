@@ -74,6 +74,30 @@ class AuthService @Inject constructor(
     }
 
     /**
+     * Wymusza odświeżenie tokenu JWT używając zapisanego refresh tokenu.
+     * Wykorzystywane, gdy rola użytkownika ulega zmianie w tle (np. przez ciche PUSH).
+     */
+    suspend fun forceTokenRefresh(): UserRole? {
+        val refreshToken = tokenStorage.getRefreshToken() ?: return null
+        return try {
+            val refreshResponse = authApiService.refresh(pl.edu.ur.blokur.dtos.RefreshTokenRequestDto(refreshToken))
+            if (!refreshResponse.isSuccessful) return null
+            
+            val body = refreshResponse.body() ?: return null
+            val role = UserRole.entries.firstOrNull { it.name == body.role } ?: return null
+            
+            tokenStorage.saveTokens(
+                accessToken = body.token,
+                refreshToken = body.refreshToken,
+                role = body.role
+            )
+            role
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Wysyła żądanie resetowania hasła — POST /api/auth/forgot-password.
      *
      * Backend zawsze zwraca 200 OK (nie ujawnia czy e-mail istnieje).
@@ -91,13 +115,13 @@ class AuthService @Inject constructor(
     /**
      * Resetuje hasło — POST /api/auth/reset-password.
      *
-     * @param token   token z linku mailowego.
+     * @param email adres e-mail, na który wysłany został kod.
+     * @param code  6-cyfrowy kod z wiadomości e-mail.
      * @param newPassword nowe hasło (min. 8 znaków).
-     * @return komunikat z serwera.
      */
-    suspend fun resetPassword(token: String, newPassword: String): String {
+    suspend fun resetPassword(email: String, code: String, newPassword: String): String {
         val response = authApiService.resetPassword(
-            ResetPasswordRequestDto(token = token, newPassword = newPassword)
+            ResetPasswordRequestDto(email = email, code = code, newPassword = newPassword)
         )
         if (!response.isSuccessful) {
             throw mapAuthFailure(response, "Nie udało się zmienić hasła", checkExpiredToken = true)
@@ -109,14 +133,15 @@ class AuthService @Inject constructor(
     /**
      * Ustawia hasło i akceptuje zaproszenie do systemu.
      *
-     * @param token token zaproszenia z linku.
+     * @param email adres e-mail nowego konta.
+     * @param code  6-cyfrowy kod aktywacyjny z wiadomości e-mail.
      * @param newPassword nowe hasło użytkownika.
-     * @return komunikat z serwera.
      */
-    suspend fun acceptInvitation(token: String, newPassword: String): String {
+    suspend fun acceptInvitation(email: String, code: String, newPassword: String): String {
         val response = authApiService.acceptInvitation(
             pl.edu.ur.blokur.dtos.AcceptInvitationRequestDto(
-                token = token,
+                email = email,
+                code = code,
                 newPassword = newPassword
             )
         )

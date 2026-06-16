@@ -165,14 +165,15 @@ public class AuthController {
         return ResponseEntity.ok(
                 Map.of(
                         "message",
-                        "Jeśli podany adres e-mail istnieje w systemie, wysłaliśmy link do"
+                        "Jeśli podany adres e-mail istnieje w systemie, wysłaliśmy kod do"
                                 + " resetowania hasła."));
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
-            passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+            passwordResetService.resetPassword(
+                    request.getEmail(), request.getCode(), request.getNewPassword());
             return ResponseEntity.ok(
                     Map.of("message", "Hasło zostało zmienione. Możesz się teraz zalogować."));
         } catch (IllegalArgumentException e) {
@@ -182,18 +183,14 @@ public class AuthController {
     }
 
     /**
-     * Przyjmuje zaproszenie — ustawia hasło dla nowo utworzonego konta.
-     *
-     * <p>Token jest ważny przez 72 h od chwili wysyłki. Wygasły token skutkuje odpowiedzią 410
-     * (Gone), nieistniejący — 400 (Bad Request).
-     *
-     * @param request token z linka aktywacyjnego oraz wybrane hasło
-     * @return 200 po pomyślnym ustawieniu hasła, 400 przy nieprawidłowym tokenie
+     * Przyjmuje zaproszenie — ustawia hasło dla nowo utworzonego konta na podstawie 6-cyfrowego
+     * kodu aktywacyjnego.
      */
     @PostMapping("/accept-invitation")
     public ResponseEntity<?> acceptInvitation(@Valid @RequestBody AcceptInvitationRequest request) {
         try {
-            invitationService.acceptInvitation(request.getToken(), request.getNewPassword());
+            invitationService.acceptInvitation(
+                    request.getEmail(), request.getCode(), request.getNewPassword());
             return ResponseEntity.ok(
                     Map.of("message", "Hasło zostało ustawione. Możesz się teraz zalogować."));
         } catch (IllegalArgumentException e) {

@@ -19,6 +19,9 @@ import pl.edu.ur.blokur.dtos.UpdateAdminUserRequest
 import pl.edu.ur.blokur.services.AdminUserService
 import pl.edu.ur.blokur.services.PropertyService
 import javax.inject.Inject
+import pl.edu.ur.blokur.services.AuthService
+import pl.edu.ur.blokur.services.SessionManager
+import pl.edu.ur.blokur.services.TokenStorage
 
 sealed interface EditUserUiState {
     data object Loading : EditUserUiState
@@ -31,10 +34,15 @@ sealed interface EditUserEvent {
     data object NavigateBack : EditUserEvent
 }
 
+
+
 @HiltViewModel
 class EditUserViewModel @Inject constructor(
     private val adminUserService: AdminUserService,
     private val propertyService: PropertyService,
+    private val tokenStorage: TokenStorage,
+    private val authService: AuthService,
+    private val sessionManager: SessionManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -157,7 +165,22 @@ class EditUserViewModel @Inject constructor(
                 apartmentId = form.selectedApartment?.id
             )
             runCatching { adminUserService.updateUser(userId, request) }
-                .onSuccess {
+                .onSuccess { updatedUser ->
+                    val currentUserEmail = tokenStorage.getUserEmail()
+                    val currentUserRole = tokenStorage.getUserRole()
+
+                    if (updatedUser.email == currentUserEmail && updatedUser.role != currentUserRole) {
+                        try {
+                            val newRole = authService.forceTokenRefresh()
+                            if (newRole != null) {
+                                sessionManager.forceRouteRefresh()
+                            }
+                        } catch (e: Exception) {
+                            // W razie błędu fallback do wylogowania
+                            sessionManager.invalidateSession()
+                        }
+                    }
+
                     _events.send(EditUserEvent.ShowSnackbar("Zapisano zmiany"))
                     _events.send(EditUserEvent.NavigateBack)
                 }

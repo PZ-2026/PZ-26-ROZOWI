@@ -57,11 +57,13 @@ object NetworkModule {
     @Named("main")
     fun provideMainOkHttpClient(
         authInterceptor: AuthInterceptor,
-        tokenAuthenticator: TokenAuthenticator
+        tokenAuthenticator: TokenAuthenticator,
+        forbiddenRetryInterceptor: ForbiddenRetryInterceptor
     ): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor())
             .addInterceptor(authInterceptor)
+            .addInterceptor(forbiddenRetryInterceptor)
             .authenticator(tokenAuthenticator)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "blokur-dev-placeholder",
-    "storage_bucket": "blokur-dev-placeholder.appspot.com"
+    "project_number": "84909897143",
+    "project_id": "blokur-ff0d6",
+    "storage_bucket": "blokur-ff0d6.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:84909897143:android:f9a88c8747ef8129196432",
         "android_client_info": {
           "package_name": "pl.edu.ur.blokur"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyPlaceholderKeyForLocalDevOnly000000"
+          "current_key": "AIzaSyB2XvEEkz1PS11Drtq5txuKt5DlZQoIlnQ"
         }
       ],
       "services": {
